@@ -1,0 +1,12 @@
+SISTEMA DE MADEIRAS — V683 ASSINATURA DE ENTREGA
+
+O pacote contém o site e a função de servidor que gera e valida o código e grava a assinatura no pedido correto. O link não leva o código. O cliente abre o link, informa nome e código de 8 dígitos e confirma. O convite não expira por tempo; fica válido até ser assinado. Se o funcionário fechar a janela, o pedido entregue mantém a opção “Ver link e código da assinatura”.
+
+CONFIGURAÇÃO SEGURA NO NETLIFY
+1. Configure duas variáveis privadas no projeto Netlify:
+   - FIREBASE_SERVICE_ACCOUNT_JSON: JSON da conta de serviço criada no projeto Firebase estoque-madeiras-cc4d7. A conta precisa do papel Cloud Datastore User para ler e atualizar pedidos no Firestore.
+   - DELIVERY_SIGNATURE_SECRET: segredo aleatório e estável de pelo menos 32 caracteres. Guarde-o em local seguro e não o coloque no HTML, no ZIP nem em mensagens. Não o troque enquanto houver convites pendentes.
+2. Publique a pasta completa usando um deploy com build do Netlify (por repositório Git ou Netlify CLI). Arrastar somente o HTML para o Netlify Drop publica apenas a tela e não instala a função.
+3. Depois de a função aparecer no deploy, teste com um pedido confirmado de teste. A entrega deve ficar marcada como entregue e aguardando assinatura. A assinatura só muda para “Assinado por…” depois do cliente enviar nome e código.
+
+A função valida o login do funcionário e o vínculo ativo da empresa. As regras do Firestore não são alteradas e a página pública do cliente não lê o banco diretamente.
