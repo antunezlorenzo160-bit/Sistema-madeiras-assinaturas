@@ -1,3 +1,4 @@
+import { validateSignatureImage } from './assinatura-imagem.mjs';
 import { createHash, createHmac, randomBytes, timingSafeEqual, createCipheriv, createDecipheriv } from 'node:crypto';
 import { cert, getApps, initializeApp } from 'firebase-admin/app';
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
@@ -108,10 +109,12 @@ async function createInvite({ db, key, uid, empresaId, orderId }) {
   });
   return { link: `${siteUrl}/?assinar=${encodeURIComponent(result.token)}`, code: result.code, entregueEm: result.entregueEm };
 }
-async function signDelivery({ db, key, token, code, recipientName }) {
+async function signDelivery({ db, key, token, code, recipientName, signatureImage }) {
   if (typeof token !== 'string' || !/^[A-Za-z0-9_-]{40,60}$/.test(token)) throw new ApiError(404, 'Link inválido ou já utilizado.');
   if (typeof recipientName !== 'string' || recipientName.trim().length < 2 || recipientName.trim().length > 120) throw new ApiError(400, 'Informe seu nome completo.');
   if (typeof code !== 'string' || !/^\d{8}$/.test(code)) throw new ApiError(400, 'Digite o código de 8 números recebido.');
+  try { validateSignatureImage(signatureImage); }
+  catch (error) { throw new ApiError(400, error.message); }
   const tokenHash = digest(token);
   const tokenRef = db.doc(`${TOKEN_INDEX}/${tokenHash}`);
   const tokenSnap = await tokenRef.get();
@@ -143,7 +146,7 @@ async function signDelivery({ db, key, token, code, recipientName }) {
     const orderSnap = await tx.get(orderRef);
     if (!orderSnap.exists || orderSnap.data().status !== 'entregue') return { error: new ApiError(409, 'O pedido não está marcado como entregue.') };
     tx.update(inviteRef, { status: 'signed', signedName: recipientName.trim(), signedAt: now, updatedAt: now });
-    tx.update(orderRef, { assinaturaStatus: 'assinado', assinadoPor: recipientName.trim(), assinadoEm: now, assinaturaCodigoVerificado: true, atualizadoEm: now });
+    tx.update(orderRef, { assinaturaStatus: 'assinado', assinadoPor: recipientName.trim(), assinadoEm: now, assinaturaCodigoVerificado: true, assinaturaImagem: signatureImage, atualizadoEm: now });
     tx.update(tokenRef, { status: 'signed', signedAt: now });
     return { alreadySigned: false };
   });
@@ -162,7 +165,7 @@ export default async function handler(req) {
       return json(200, await createInvite({ db, key, uid: member.uid, empresaId: member.empresaId, orderId: input.orderId }));
     }
     if (input.action === 'sign') {
-      return json(200, await signDelivery({ db, key, token: input.token, code: input.code, recipientName: input.recipientName }));
+      return json(200, await signDelivery({ db, key, token: input.token, code: input.code, recipientName: input.recipientName, signatureImage: input.signatureImage }));
     }
     throw new ApiError(400, 'Ação inválida.');
   } catch (error) {
