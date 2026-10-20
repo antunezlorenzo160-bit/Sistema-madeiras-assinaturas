@@ -3,6 +3,7 @@ import json,re
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 root=Path(__file__).resolve().parents[1]
+(root/'review').mkdir(exist_ok=True)
 html=(root/'public/index.html').read_text()
 template=json.loads(re.search(r'const TEMPLATE=(".*?");\nlet credentials',html,re.S)[1])
 def fn(name):
@@ -38,7 +39,7 @@ with sync_playwright() as p:
  assert len(payloads)==1
  payload=payloads[0];assert payload['recipientName']=='Recebedor de teste'
  (root/'tests/fixtures/assinatura-teste.json').write_text(json.dumps(payload))
- # Run the actual history renderer and PDF clone code in an isolated document.
+ # Run the real renderer, export function and print styles with mocked order data.
  page.goto('http://local.test/')
  page.evaluate("""() => {
  window.esc=v=>String(v).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
@@ -49,20 +50,25 @@ with sync_playwright() as p:
  window.statusProducaoPedido=()=>'';window.reservaOrcamentoV380=()=>'';
  }""")
  # Expose functions without executing the full authenticated application.
- for name in ['assinaturaImagemPedido','htmlPlanilhaOrcamentoGuardado','resolverBloco','cloneLimpoParaExportar']:
+ for name in ['assinaturaImagemPedido','htmlPlanilhaOrcamentoGuardado','resolverBloco','cloneLimpoParaExportar','gerarPdfBloco']:
   source=fn(name)
   if name=='cloneLimpoParaExportar':source=source[:source.index('\nasync function') ] if '\nasync function' in source else source
+  if name=='gerarPdfBloco':source=source.split('\nwindow.copiarBloco=')[0]
   page.evaluate('() => {'+source+'\nwindow.'+name+'='+name+';}')
  order={'id':'teste','status':'entregue','assinaturaStatus':'assinado','assinadoPor':'Recebedor de teste','assinadoEm':1,'cliente':'Pedido de teste','itens':[],'assinaturaImagem':payload['signatureImage']}
+ styles=''.join(re.findall(r'<style\b[^>]*>.*?</style>',template,re.S|re.I))
+ page.evaluate('styles=>{document.head.innerHTML=styles}',styles)
  page.evaluate("o=>{document.body.innerHTML=htmlPlanilhaOrcamentoGuardado(o)}",order)
  assert page.locator('.assinatura-recebedor img').count()==1
  assert page.locator('.assinatura-recebedor img').evaluate('(img)=>img.complete && img.naturalWidth===600')
  page.screenshot(path=str(root/'review/historico-assinatura.png'),full_page=True)
- page.evaluate("() => {const c=cloneLimpoParaExportar('orcGuardado_teste');document.body.replaceChildren(c)}")
- assert page.locator('.assinatura-recebedor img').count()==1
+ page.evaluate("() => {window.print=()=>{window.printReady=true};gerarPdfBloco('orcGuardado_teste','Pedido de teste')}")
+ page.wait_for_function('window.printReady===true')
+ assert page.locator('#printAreaCustom .assinatura-recebedor img').count()==1
+ assert page.locator('#printAreaCustom .assinatura-recebedor img').evaluate('(img)=>img.complete && img.naturalWidth===600')
  page.pdf(path=str(root/'review/pedido-assinado.pdf'),format='A4',print_background=True)
  # Legacy orders remain renderable without an image.
  del order['assinaturaImagem']
  assert 'assinatura-recebedor' not in page.evaluate('o=>htmlPlanilhaOrcamentoGuardado(o)',order)
  browser.close()
-print('PASS: blank, clear, draw, submit, visible success, history, PDF clone, legacy orders')
+print('PASS: blank, clear, draw, submit, visible success, history, real PDF export, legacy orders')

@@ -9,7 +9,7 @@ O histórico mostra a imagem abaixo do nome e da data. O PDF usa o mesmo bloco, 
 ## Validação
 
 - `npm test`: nove testes de validação de imagem e do handler com Firestore em memória, incluindo código incorreto, token inválido, pedido não entregue e proteção contra sobrescrita.
-- `python tests/assinatura-browser.py`: Chromium com tela de celular e API simulada; verifica desenho, limpeza, envio vazio, payload PNG, sucesso visível, imagem no histórico e no clone exportado para PDF e pedidos antigos. Requer Python Playwright e Chromium em `/usr/bin/chromium`; cria evidências em `review/`.
+- `python tests/assinatura-browser.py`: Chromium com tela de celular e API simulada; verifica desenho, limpeza, envio vazio, payload PNG, sucesso visível, imagem no histórico e no fluxo real de exportação para PDF com os estilos de impressão do sistema e pedidos antigos. Requer Python Playwright e Chromium em `/usr/bin/chromium`; cria evidências em `review/`.
 - Sintaxe dos scripts externos e dos scripts do HTML e do TEMPLATE verificada com `node --check`.
 
 Os testes não usam credenciais nem dados do Firebase real. A integração com Firestore/Netlify ainda precisa de teste em ambiente de homologação com as variáveis já documentadas em LEIA-ANTES-DE-PUBLICAR.txt. Nenhuma regra do banco ou configuração de produção foi alterada. Não houve deploy.
