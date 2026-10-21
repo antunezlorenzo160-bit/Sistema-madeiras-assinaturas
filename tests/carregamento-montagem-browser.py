@@ -17,7 +17,7 @@ with sync_playwright() as p:
  page.evaluate('''() => {
  let counter=0;Object.defineProperty(crypto,'randomUUID',{value:()=> 'new-'+(++counter),configurable:true});
  window.carregamentos=[];window.lancamentos=[];window.sessaoCargaAtual='A';window.baseTotalTopo={};window.contadorPacotes=0;window.sessaoPacotes='packages';window.modoMedida='m3';
- window.COL={cargas:'sm2_carregamentos'};window.ops=[];window.alertas=[];window.estoque={pecas:100};window.destination='carga';
+ window.STORAGE={lancamentos:'lancamentos'};window.COL={cargas:'sm2_carregamentos'};window.ops=[];window.alertas=[];window.estoque={pecas:100};window.destination='carga';
  window.__v456Local={data:{},setItem(k,v){this.data[k]=v},getItem(k){return this.data[k]??null}};
  window.alert=m=>alertas.push(m);window.enfileirarOffline=(nome,id,obj,modo)=>ops.push({nome,id,obj,modo});window.sincronizarOfflineOps=async()=>{};
  window.save=()=>{__v456Local.setItem('carregamentos_lancamentos_v1',JSON.stringify(carregamentos));__v456Local.setItem('lancamentos',JSON.stringify(lancamentos))};
