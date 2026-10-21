@@ -7,3 +7,7 @@ A formatação trabalha numa cópia temporária do bloco, respeita elementos ocu
 Validação: `python tests/copia-browser.py` passou no Chromium para cabeçalho, colunas, serviços vazios e preenchidos, grupos, totais, remoção de controles, escrita da área de transferência e falha de permissão. Os 10 testes Node e `python tests/assinatura-browser.py` também passaram.
 
 A tabela de texto é editável. A aparência ao colar depende do aplicativo e da largura da tela; no WhatsApp as três crases ativam a fonte monoespaçada. Para preservar exatamente o layout, logomarca e assinatura desenhada, enviar o PDF existente. Não houve merge na main nem publicação em produção.
+
+## Conferência no celular
+
+Na prévia do PR #2, abrir um pedido ou o histórico de entregas, tocar em Copiar e colar no WhatsApp. Conferir que o cliente e as datas ficam em linhas distintas, que há uma coluna vazia de serviços quando o item não possui serviço e que os valores continuam correspondendo ao PDF. Não remover as três crases que envolvem a tabela: são elas que mantêm a fonte monoespaçada no WhatsApp.
