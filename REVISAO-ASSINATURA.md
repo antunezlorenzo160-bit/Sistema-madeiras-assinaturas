@@ -24,3 +24,7 @@ Os testes não usam credenciais nem dados do Firebase real. A integração com F
 4. Voltar ao histórico, conferir nome, data e imagem no pedido correto e gerar seu PDF.
 5. Reenviar o convite e conferir que a assinatura original não é alterada.
 6. Abrir um pedido antigo sem imagem e conferir que o histórico e o PDF continuam funcionando.
+
+## Posição da assinatura
+
+A assinatura confirmada (nome, data e imagem) aparece em um bloco ao final do pedido, abaixo dos itens e dos totais. O mesmo bloco é usado no histórico e no PDF e procura permanecer inteiro na impressão. A assinatura não é posicionada com rodapé fixo de página, evitando sobreposição com tabelas longas. O aviso de assinatura pendente continua junto do status da entrega. O teste Chromium confirma a ordem e a posição visual abaixo dos totais, a preservação do bloco na exportação e o aviso pendente.

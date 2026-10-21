@@ -60,15 +60,27 @@ with sync_playwright() as p:
  page.evaluate('styles=>{document.head.innerHTML=styles}',styles)
  page.evaluate("o=>{document.body.innerHTML=htmlPlanilhaOrcamentoGuardado(o)}",order)
  assert page.locator('.assinatura-recebedor img').count()==1
+ assert page.locator('.assinatura-entrega-rodape').count()==1
+ assert page.evaluate("Boolean(document.querySelector('.orc-totais').compareDocumentPosition(document.querySelector('.assinatura-entrega-rodape')) & Node.DOCUMENT_POSITION_FOLLOWING)")
+ assert 'Assinado por' not in page.locator('#orcGuardado_teste > div').first.inner_text()
+ assert page.locator('.assinatura-entrega-rodape').bounding_box()['y']>=page.locator('.orc-totais').bounding_box()['y']+page.locator('.orc-totais').bounding_box()['height']
+
  assert page.locator('.assinatura-recebedor img').evaluate('(img)=>img.complete && img.naturalWidth===600')
  page.screenshot(path=str(root/'review/historico-assinatura.png'),full_page=True)
  page.evaluate("() => {window.print=()=>{window.printReady=true};gerarPdfBloco('orcGuardado_teste','Pedido de teste')}")
  page.wait_for_function('window.printReady===true')
  assert page.locator('#printAreaCustom .assinatura-recebedor img').count()==1
+ assert page.evaluate("Boolean(document.querySelector('#printAreaCustom .orc-totais').compareDocumentPosition(document.querySelector('#printAreaCustom .assinatura-entrega-rodape')) & Node.DOCUMENT_POSITION_FOLLOWING)")
+
  assert page.locator('#printAreaCustom .assinatura-recebedor img').evaluate('(img)=>img.complete && img.naturalWidth===600')
  page.pdf(path=str(root/'review/pedido-assinado.pdf'),format='A4',print_background=True)
+ # Pending invitations remain visible near the delivery status, without a footer.
+ pending={**order,'assinaturaStatus':'pendente'}
+ pending_html=page.evaluate('o=>htmlPlanilhaOrcamentoGuardado(o)',pending)
+ assert 'Aguardando assinatura do cliente' in pending_html
+ assert 'assinatura-entrega-rodape' not in pending_html
  # Legacy orders remain renderable without an image.
  del order['assinaturaImagem']
  assert 'assinatura-recebedor' not in page.evaluate('o=>htmlPlanilhaOrcamentoGuardado(o)',order)
  browser.close()
-print('PASS: blank, clear, draw, submit, visible success, history, real PDF export, legacy orders')
+print('PASS: blank, clear, draw, submit, visible success, history, signature below totals on screen/PDF, pending status, real PDF export, legacy orders')
