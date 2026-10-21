@@ -1,0 +1,92 @@
+"""Check the actual summary renderer and PDF export with changes of dimensions."""
+from pathlib import Path
+import re,json
+from playwright.sync_api import sync_playwright
+root=Path(__file__).resolve().parents[1]
+s=(root/'public/index.html').read_text();t=json.loads(re.search(r'const TEMPLATE=(".*?");\nlet credentials',s,re.S)[1])
+def fn(name):
+ a=t.index('function '+name+'(');m=re.search(r'^function |^async function ',t[a+10:],re.M)
+ return t[a:a+10+m.start()]
+with sync_playwright() as p:
+ browser=p.chromium.launch(executable_path='/usr/bin/chromium',args=['--no-sandbox'])
+ page=browser.new_page(viewport={'width':390,'height':844});page.route('**/*',lambda r:r.abort())
+ page.set_content('<main><section id="resumoCalculadoraExport"><div class="stats">'+''.join('<span id="'+name+'"></span>'for name in ['statSumValor','labelSumQtd','sumQtd','sumVolume','sumVolumeTopo','sumValor','sumTipos'])+'</div><div class="table-wrap"><table><tbody id="tbLancamentos"></tbody></table></div></section></main>')
+ page.evaluate('''() => {
+ window.$=id=>document.getElementById(id);window.esc=v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
+ window.num4=n=>Number(n).toLocaleString('pt-BR',{minimumFractionDigits:4,maximumFractionDigits:4});window.num2=n=>Number(n).toFixed(2);window.numCm=n=>Number(n).toLocaleString('pt-BR');window.numM1=n=>Number(n).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1});window.numCompOrc=n=>Number(n).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:2});window.moeda=n=>'R$ '+Number(n).toFixed(2);
+ window.modoMedida='m3';window.baseTotalTopo={};window.orcamento=[];window.resumoOrcOculto=false;window.destinoSelecionado=()=> 'carga';window.chaveBaseTotalTopo=()=> 'carga';window.itemPertenceModoCalculadoraV387=()=>true;window.atualizarIndicadorRegrasV376=()=>{};window.nomeGranelV385=x=>x.madeira;window.compOrcamento=x=>numCompOrc(x.comprimento)+' m';
+ }''')
+ for name in ['chaveAgrupamentoItem','agruparItensResumoCalculadora','fonteResumoAtual','classeSeparacaoGrupo','chaveBlocoResumoV598','organizarBlocosResumoV598','renderLancamentos','resolverBloco','cloneLimpoParaExportar','gerarPdfBloco']:
+  source=fn(name)
+  if name=='renderLancamentos':source=source.split('// V377')[0]
+  if name=='gerarPdfBloco':source=source.split('window.copiarBloco=')[0]
+  page.evaluate('() => {'+source+';window.'+name+'='+name+';}')
+ def item(id,especie,e,c,l,q,v,tipo='m3'):
+  return {'id':id,'madeiraId':especie,'madeira':especie,'tipoMedida':tipo,'espessura':e,'comprimento':c,'largura':l,'quantidade':q,'volume':v,'valor':v*100,'preco':100}
+ data=[item('a','Garapeira',4,6,15,1,.036),item('b','Garapeira',4,6,10,2,.048),item('c','Garapeira',4,4.5,49,1,.0882),item('d','Garapeira',5,4.5,10,1,.0225),item('e','Garapeira',5,4.5,20,1,.045),item('f','Angelin',5,4.5,20,1,.045)]
+ # Interleave the same blocks as in launches entered at different times.
+ data=[data[0],data[2],data[3],data[1],data[5],data[4]]
+ page.evaluate('data=>{window.lancamentos=data;renderLancamentos()}',data)
+ heads=page.locator('.resumo-bloco-inicio-v596').all_text_contents()
+ assert len(heads)==4,heads
+ assert '4 cm' in heads[0] and '6,0 m' in heads[0]
+ assert '4 cm' in heads[1] and '4,5 m' in heads[1]
+ assert '5 cm' in heads[2] and '4,5 m' in heads[2]
+ assert 'Angelin' in heads[3]
+ totals=page.locator('#tbLancamentos .resumo-total-bloco-v597').all_text_contents()
+ assert len(totals)==4,totals
+ assert [x.strip() for x in totals]==['Volume total do bloco: 0,0840 m³','Volume total do bloco: 0,0882 m³','Volume total do bloco: 0,0675 m³','Volume total do bloco: 0,0450 m³'],totals
+ assert page.locator('#tbLancamentos tr').last.get_attribute('class')=='resumo-total-bloco-v597'
+ assert page.locator('.grupo-especie-head').count()==4
+ assert page.locator('.linha-excluir-pecas').count()==6
+ assert page.locator('#sumQtd').inner_text()=='7'
+ assert page.locator('#sumVolume').inner_text()=='0,2847 m³'
+ # Same species/thickness/length, different width stays in the same block.
+ assert page.locator('#tbLancamentos tr').nth(3).locator('td').nth(2).inner_text()=='10 cm'
+ styles=''.join(re.findall(r'<style\b[^>]*>.*?</style>',t,re.S|re.I))
+ page.evaluate('css=>{document.head.innerHTML=css}',styles)
+ page.evaluate("() => {window.print=()=>{window.printReady=true};gerarPdfBloco('resumoCalculadoraExport','Resumo dos lançamentos')}")
+ page.wait_for_function('window.printReady===true')
+ pdfheads=page.locator('#printAreaCustom .resumo-bloco-inicio-v596').all_text_contents()
+ assert pdfheads==heads
+ assert page.locator('#printAreaCustom .resumo-total-bloco-v597').all_text_contents()==totals
+ (root/'review').mkdir(exist_ok=True)
+ page.pdf(path=str(root/'review/resumo-blocos.pdf'),format='A4',print_background=True)
+ # Export must not change the stored source items.
+ assert page.evaluate('lancamentos')==data
+ # Regression from the user's screenshot: 14 interleaved widths, two thicknesses.
+ screenshot=[item('p1','Garapeira',2.5,3,12,4,.036),item('p2','Garapeira',2.5,3,36,3,.081),item('p3','Garapeira',2.5,3,45,4,.135),item('p4','Garapeira',4,3,45,2,.108),item('p5','Garapeira',2.5,3,23,2,.0345),item('p6','Garapeira',2.5,3,20,1,.015),item('p7','Garapeira',4,3,36,3,.1296),item('p8','Garapeira',4,3,30,1,.036),item('p9','Garapeira',4,3,12,2,.0288),item('p10','Garapeira',2.5,3,25,3,.05625),item('p11','Garapeira',4,3,25,4,.12),item('p12','Garapeira',4,3,24,1,.0288),item('p13','Garapeira',4,3,21,1,.0252),item('p14','Garapeira',2.5,3,56,1,.042)]
+ page.evaluate('data=>{window.lancamentos=data;renderLancamentos()}',screenshot)
+ assert page.locator('#tbLancamentos .resumo-bloco-inicio-v596').count()==2
+ assert page.locator('#tbLancamentos .resumo-total-bloco-v597').all_text_contents()==['Volume total do bloco: 0,3998 m³','Volume total do bloco: 0,4764 m³']
+ assert page.locator('#tbLancamentos .linha-excluir-pecas').count()==14
+ assert page.locator('#sumQtd').inner_text()=='32'
+ assert page.locator('#sumVolume').inner_text()=='0,8762 m³'
+ assert page.evaluate('lancamentos')==screenshot
+ page.evaluate("() => {window.dispatchEvent(new Event('afterprint'));window.printReady=false;gerarPdfBloco('resumoCalculadoraExport','Resumo dos lançamentos')}")
+ page.wait_for_function('window.printReady===true')
+ assert page.locator('#printAreaCustom .resumo-bloco-inicio-v596').count()==2
+ assert page.locator('#printAreaCustom .resumo-total-bloco-v597').all_text_contents()==['Volume total do bloco: 0,3998 m³','Volume total do bloco: 0,4764 m³']
+ page.pdf(path=str(root/'review/resumo-blocos-unificados.pdf'),format='A4',print_background=True)
+ # Area and linear data must split by length, not invent thickness; granel has no length.
+ mixed=[item('m1','Produto',0,3,10,2,1,'m2'),item('m2','Produto',0,4,10,2,1,'m2'),item('l1','Produto',0,4,0,1,4,'linear'),item('g1','Granel',0,0,0,1,1,'granel')]
+ page.evaluate('data=>{window.lancamentos=data;renderLancamentos()}',mixed)
+ heads=page.locator('#tbLancamentos .resumo-bloco-inicio-v596').all_text_contents()
+ assert len(heads)==4,heads
+ assert all('Esp.' not in h for h in heads)
+ assert 'Comp.' not in heads[-1]
+ mixedtotals=page.locator('#tbLancamentos .resumo-total-bloco-v597').all_text_contents()
+ assert len(mixedtotals)==4
+ assert mixedtotals[0].startswith('Área total do bloco:')
+ assert mixedtotals[2].startswith('Metragem total do bloco:')
+ assert mixedtotals[3]=='Volume total do bloco: 1,0000 m³'
+ # Closed m³ and pieces with matching visible dimensions share the same volume block.
+ closed=item('closed','Garapeira',4,3,0,1,.5);closed['vendaFechadaM3']=True
+ page.evaluate('data=>{window.lancamentos=data;renderLancamentos()}',[item('piece','Garapeira',4,3,10,1,.1),closed])
+ assert page.locator('#tbLancamentos .resumo-bloco-inicio-v596').count()==1
+ assert page.locator('#tbLancamentos .resumo-total-bloco-v597').inner_text()=='Volume total do bloco: 0,6000 m³'
+ page.evaluate('() => {window.lancamentos=[];renderLancamentos()}')
+ assert page.locator('#tbLancamentos .resumo-total-bloco-v597').count()==0
+ assert 'Nenhuma peça' in page.locator('#tbLancamentos').inner_text()
+ browser.close()
+print('PASS: new blocks for thickness/length/species/unit, width stays inside block, quantities/volume unchanged, headers and exact block totals in real PDF, mixed measurement types and empty summary')
