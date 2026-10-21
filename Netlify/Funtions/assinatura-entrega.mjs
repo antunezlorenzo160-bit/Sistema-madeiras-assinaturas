@@ -69,10 +69,9 @@ async function authorizedCompany(auth, db, req) {
   }
   return { uid: decoded.uid, empresaId: data.empresaId };
 }
-async function createInvite({ db, key, uid, empresaId, orderId }) {
+async function createInvite({ db, key, uid, empresaId, orderId, siteUrl }) {
   if (!/^[A-Za-z0-9_-]{1,180}$/.test(orderId)) throw new ApiError(400, 'Identificador do pedido inválido.');
   const { inviteId, order, invitation } = refs(db, empresaId, orderId);
-  const siteUrl = process.env.DEPLOY_PRIME_URL || process.env.URL;
   if (!siteUrl || !/^https:\/\//.test(siteUrl)) throw new ApiError(503, 'Endereço do site não configurado no servidor.');
   const tokenIndexCollection = db.collection(TOKEN_INDEX);
   const now = Date.now();
@@ -162,7 +161,7 @@ export default async function handler(req) {
     if (input.action === 'create') {
       const member = await authorizedCompany(auth, db, req);
       if (typeof input.orderId !== 'string') throw new ApiError(400, 'Pedido inválido.');
-      return json(200, await createInvite({ db, key, uid: member.uid, empresaId: member.empresaId, orderId: input.orderId }));
+      return json(200, await createInvite({ db, key, uid: member.uid, empresaId: member.empresaId, orderId: input.orderId, siteUrl: new URL(req.url).origin }));
     }
     if (input.action === 'sign') {
       return json(200, await signDelivery({ db, key, token: input.token, code: input.code, recipientName: input.recipientName, signatureImage: input.signatureImage }));

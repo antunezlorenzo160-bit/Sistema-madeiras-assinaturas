@@ -30,3 +30,35 @@ test('saves image, name and timestamp together in the correct order; prevents ov
 test('invalid code cannot save an image',async()=>{const records=setup();assert.equal((await submit({code:'99999999'})).status,400);assert.equal(records.get(paths.order).assinaturaImagem,undefined);assert.equal(records.get(paths.invite).attempts,1);});
 test('missing image cannot mark order signed',async()=>{const records=setup();assert.equal((await submit({signatureImage:undefined})).status,400);assert.equal(records.get(paths.invite).status,'pending');});
 test('wrong token and undelivered orders cannot be signed',async()=>{const records=setup();assert.equal((await submit({token:'b'.repeat(43)})).status,404);records.set(paths.order,{status:'confirmado'});assert.equal((await submit({})).status,409);assert.equal(records.get(paths.order).assinaturaImagem,undefined);});
+
+test('new and reopened invitations stay on the request site instead of the production URL',async()=>{
+ const records=new Map([
+  ['membros/employee',{ativo:true,empresaId:'company'}],
+  ['empresas/company/dados/sm2_orcamentos_guardados/registros/order',{status:'confirmado'}],
+ ]);
+ const snap=path=>({exists:records.has(path),data:()=>records.get(path)});
+ const db={doc:path=>({path,get:async()=>snap(path)}),collection:path=>({doc:id=>({path:path+'/'+id})}),runTransaction:async fn=>{
+  const changes=[];
+  const tx={get:async ref=>snap(ref.path),create:(ref,data)=>{assert.equal(records.has(ref.path),false);changes.push([ref.path,data]);},set:(ref,data)=>changes.push([ref.path,data]),update:(ref,data)=>changes.push([ref.path,{...records.get(ref.path),...data}])};
+  const result=await fn(tx);for(const [path,data]of changes)records.set(path,data);return result;
+ }};
+ globalThis.signatureTestServices={db,key,auth:{verifyIdToken:async()=>({uid:'employee'})}};
+ const previousUrl=process.env.URL, previousPrimeUrl=process.env.DEPLOY_PRIME_URL;
+ process.env.URL='https://production.example';process.env.DEPLOY_PRIME_URL='https://production.example';
+ try{
+  const create=async origin=>{
+   const r=await handler(new Request(origin+'/.netlify/functions/assinatura-entrega',{method:'POST',headers:{authorization:'Bearer test','content-type':'application/json'},body:JSON.stringify({action:'create',orderId:'order'})}));
+   assert.equal(r.status,200);return r.json();
+  };
+  const first=await create('https://deploy-preview-1--example.netlify.app');
+  const reopened=await create('https://deploy-preview-1--example.netlify.app');
+  assert.equal(new URL(first.link).origin,'https://deploy-preview-1--example.netlify.app');
+  assert.equal(reopened.link,first.link);assert.equal(reopened.code,first.code);
+  const production=await create('https://production.example');
+  assert.equal(new URL(production.link).origin,'https://production.example');
+  assert.equal(new URL(production.link).search,new URL(first.link).search);
+ }finally{
+  if(previousUrl===undefined)delete process.env.URL;else process.env.URL=previousUrl;
+  if(previousPrimeUrl===undefined)delete process.env.DEPLOY_PRIME_URL;else process.env.DEPLOY_PRIME_URL=previousPrimeUrl;
+ }
+});
