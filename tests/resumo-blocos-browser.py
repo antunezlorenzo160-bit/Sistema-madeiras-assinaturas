@@ -31,6 +31,10 @@ with sync_playwright() as p:
  assert '4 cm' in heads[1] and '4,5 m' in heads[1]
  assert '5 cm' in heads[2] and '4,5 m' in heads[2]
  assert 'Angelin' in heads[3]
+ totals=page.locator('#tbLancamentos .resumo-total-bloco-v597').all_text_contents()
+ assert len(totals)==4,totals
+ assert [x.strip() for x in totals]==['Volume total do bloco: 0,0840 m³','Volume total do bloco: 0,0882 m³','Volume total do bloco: 0,0675 m³','Volume total do bloco: 0,0450 m³'],totals
+ assert page.locator('#tbLancamentos tr').last.get_attribute('class')=='resumo-total-bloco-v597'
  assert page.locator('.grupo-especie-head').count()==4
  assert page.locator('.linha-excluir-pecas').count()==6
  assert page.locator('#sumQtd').inner_text()=='7'
@@ -43,6 +47,7 @@ with sync_playwright() as p:
  page.wait_for_function('window.printReady===true')
  pdfheads=page.locator('#printAreaCustom .resumo-bloco-inicio-v596').all_text_contents()
  assert pdfheads==heads
+ assert page.locator('#printAreaCustom .resumo-total-bloco-v597').all_text_contents()==totals
  (root/'review').mkdir(exist_ok=True)
  page.pdf(path=str(root/'review/resumo-blocos.pdf'),format='A4',print_background=True)
  # Export must not change the stored source items.
@@ -54,5 +59,13 @@ with sync_playwright() as p:
  assert len(heads)==4,heads
  assert all('Esp.' not in h for h in heads)
  assert 'Comp.' not in heads[-1]
+ mixedtotals=page.locator('#tbLancamentos .resumo-total-bloco-v597').all_text_contents()
+ assert len(mixedtotals)==4
+ assert mixedtotals[0].startswith('Área total do bloco:')
+ assert mixedtotals[2].startswith('Metragem total do bloco:')
+ assert mixedtotals[3]=='Volume total do bloco: 1,0000 m³'
+ page.evaluate('() => {window.lancamentos=[];renderLancamentos()}')
+ assert page.locator('#tbLancamentos .resumo-total-bloco-v597').count()==0
+ assert 'Nenhuma peça' in page.locator('#tbLancamentos').inner_text()
  browser.close()
-print('PASS: new blocks for thickness/length/species/unit, width stays inside block, quantities/volume unchanged, same headers in real PDF, mixed measurement types')
+print('PASS: new blocks for thickness/length/species/unit, width stays inside block, quantities/volume unchanged, headers and exact block totals in real PDF, mixed measurement types and empty summary')
