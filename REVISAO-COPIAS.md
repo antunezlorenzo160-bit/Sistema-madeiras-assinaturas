@@ -1,6 +1,6 @@
 # Cópias em tabela
 
-O botão Copiar dos pedidos, histórico e demais blocos que usam `copiarBloco` passa a separar cliente, datas, status, assinatura e totais em linhas. As tabelas usam colunas alinhadas e blocos de três crases para a fonte monoespaçada do WhatsApp. As células vazias são preservadas para evitar deslocamento de valores; grupos e subtotais mantêm sua posição, e textos compridos quebram em linhas sem corte de conteúdo. A legenda da imagem da assinatura é removida do texto; nome e data são mantidos. A imagem continua no PDF.
+O botão Copiar dos pedidos, histórico e demais blocos que usam `copiarBloco` passa a separar cliente, datas, status, assinatura e totais em linhas. As tabelas usam colunas alinhadas e blocos de três crases para a fonte monoespaçada do WhatsApp. As células vazias são preservadas durante a extração para evitar deslocamento de valores; grupos e subtotais mantêm sua posição, e textos compridos quebram em linhas sem corte de conteúdo. A legenda da imagem da assinatura é removida do texto; nome e data são mantidos. A imagem continua no PDF.
 
 A formatação trabalha numa cópia temporária do bloco, respeita elementos ocultos e não altera o pedido nem o documento impresso. Se o navegador negar as duas formas de acesso à área de transferência, aparece uma mensagem de falha em vez de confirmar que copiou.
 
@@ -10,4 +10,6 @@ A tabela de texto é editável. A aparência ao colar depende do aplicativo e da
 
 ## Conferência no celular
 
-Na prévia do PR #2, abrir um pedido ou o histórico de entregas, tocar em Copiar e colar no WhatsApp. Conferir que o cliente e as datas ficam em linhas distintas, que há uma coluna vazia de serviços quando o item não possui serviço e que os valores continuam correspondendo ao PDF. Não remover as três crases que envolvem a tabela: são elas que mantêm a fonte monoespaçada no WhatsApp.
+Na prévia do PR #2, abrir um pedido ou o histórico de entregas, tocar em Copiar e colar no WhatsApp. Conferir que o cliente e as datas ficam em linhas distintas, que serviços preenchidos aparecem abaixo da tabela com o número da linha correspondente e que os valores continuam correspondendo ao PDF. Não remover as três crases que envolvem a tabela: são elas que mantêm a fonte monoespaçada no WhatsApp.
+
+A tabela foi compactada para até 34 caracteres por linha: separação por um espaço, unidades no cabeçalho e coluna de serviços substituída por notas identificadas por linha. Colunas longas quebram em continuação sem descartar os dados. Isso evita o transbordamento observado no WhatsApp do celular.

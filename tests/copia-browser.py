@@ -30,13 +30,16 @@ with sync_playwright() as p:
  assert 'Volume total: 0,4563 m³' in text
  assert 'Assinado por RECEBEDOR TESTE' in text and 'Assinatura do recebedor' not in text
  assert 'REMOVER' not in text and 'AÇÕES INTERNAS' not in text and 'Gerar PDF' not in text
- assert '1.509,38' in text and '0,4313 m³' in text and 'IND 10%' in text
- # Every table line preserves the same separators, including an empty services cell.
+ assert '1.509,38' in text and '0,4313' in text and 'IND 10%' in text
+ # Compact columns must fit the mobile budget and preserve price/unit meaning.
  blocks=re.findall(r'```\n(.*?)\n```',text,re.S)
  assert len(blocks)==2,text
  for block in blocks:
-  offsets=[[m.start() for m in re.finditer(r' \| ',line)] for line in block.splitlines()]
-  assert all(o==offsets[0] for o in offsets),offsets
+  assert all(len(line)<=34 for line in block.splitlines()),block
+ assert 'm³' in blocks[0].splitlines()[0] and 'R$' in blocks[0].splitlines()[0]
+ assert '1.509,38' in blocks[0] and '0,4313' in blocks[0]
+ assert 'Serv. linha 2: IND 10%' in text
+ assert 'Ser.' not in blocks[0]
  assert page.locator('#pedido').inner_html()==before
  assert page.evaluate("textoExportacao('missing')")==''
  # Check the real clipboard handler and its error path.
