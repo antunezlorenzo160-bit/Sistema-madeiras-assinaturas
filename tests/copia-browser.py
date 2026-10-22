@@ -42,6 +42,31 @@ with sync_playwright() as p:
  assert 'Ser.' not in blocks[0]
  assert page.locator('#pedido').inner_html()==before
  assert page.evaluate("textoExportacao('missing')")==''
+ # Reproduce the stock sheet sent through WhatsApp: compact columns and footers.
+ page.evaluate("""() => {
+ const stock=document.createElement('article');stock.id='estoque';stock.className='planilha-m3';
+ const bloco=(comp,rows,qtd,vol)=>`<div class="comprimento-bloco"><h5 class="comprimento-titulo">${comp} m</h5><table><thead><tr><th>pç</th><th>espessura</th><th>largura</th><th>comprimento</th><th>volume</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${r[0]}pç${r[3]||''}</td><td>2,5 cm</td><td>${r[1]} cm</td><td>× ${comp} m</td><td>${r[2]} m³${r[4]||''}</td></tr>`).join('')}</tbody><tfoot><tr><td><strong>${qtd}pç</strong></td><td>2,5 cm</td><td>—</td><td>Total ${comp} m</td><td>${vol} m³</td></tr></tfoot></table></div>`;
+ stock.innerHTML='<h3>Angelin</h3><div>Estoque 1</div><h4>Angelin 2,5 cm</h4><div class="stat"><small>Peças nesta espessura</small><strong>46</strong><span><span>Compradas: 2 pç</span><br><span>Reservadas: 1 pç</span><br><span>Restantes: 43 pç</span></span></div><div class="stat"><small>Volume total</small><strong>0,4800 m³</strong><span>Volume livre: 0,4500 m³</span></div>'+bloco('3,0',[[8,15,'0,0900','<span>RES 1 pç</span>','<span>LIVRE 0,0788 m³</span>'],[35,12,'0,3150']],43,'0,4050')+bloco('4,0',[[3,25,'0,0750']],3,'0,0750')+'<div class="stat"><small>Volume total da planilha</small><strong>0,4800 m³</strong><span>Volume livre: 0,4500 m³</span></div>';
+ document.body.appendChild(stock);
+ }""")
+ stock_before=page.locator('#estoque').inner_html()
+ stock_text=page.evaluate("textoExportacao('estoque')")
+ stock_blocks=re.findall(r'```\n(.*?)\n```',stock_text,re.S)
+ assert len(stock_blocks)==2,stock_text
+ assert 'Espessura: 2,5 cm • Comprimento: 3,0 m' in stock_text
+ assert 'Espessura: 2,5 cm • Comprimento: 4,0 m' in stock_text
+ assert 'Subtotal: 43 pç • 0,4050 m³' in stock_text
+ assert 'Subtotal: 3 pç • 0,0750 m³' in stock_text
+ assert 'Volume total: 0,4800 m³\nVolume livre: 0,4500 m³' in stock_text
+ assert 'Peças nesta espessura: 46\nCompradas: 2 pç\nReservadas: 1 pç\nRestantes: 43 pç' in stock_text
+ assert 'Largura 15 cm: RES 1 pç; LIVRE 0,0788 m³' in stock_text
+ for block in stock_blocks:
+  assert len(block.splitlines()) in (2,3),block
+  assert 'Larg.cm' in block and 'm³' in block
+  assert all(len(line)<=26 for line in block.splitlines()),block
+ assert page.locator('#estoque').inner_html()==stock_before
+ (root/'review').mkdir(exist_ok=True)
+ (root/'review/copia-estoque-whatsapp.txt').write_text(stock_text)
  # Check the real clipboard handler and its error path.
  page.evaluate("() => {window.copied=null;window.messages=[];window.alert=m=>messages.push(m);Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async t=>{window.copied=t}}})}")
  page.evaluate("copiarBloco('pedido')")
