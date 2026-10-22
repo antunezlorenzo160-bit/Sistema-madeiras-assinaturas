@@ -19,6 +19,8 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
   dialog.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><h2 id="tituloCubagemToras">Cubagem de toras</h2><button type="button" data-fechar aria-label="Fechar cubagem de toras">Fechar</button></div>
     <p>Diâmetro da ponta fina + comprimento. Volume cilíndrico, sem desconto de casca.</p>
     <form id="formToras">
+      <label for="toraMaoObra">Mão de obra (opcional)</label><input id="toraMaoObra" maxlength="100" autocomplete="off">
+      <label for="toraCliente">Nome do cliente (opcional)</label><input id="toraCliente" maxlength="100" autocomplete="name">
       <label for="toraEspecie">Espécie / identificação (opcional)</label><input id="toraEspecie" maxlength="100" autocomplete="off">
       <div class="grid3">
         <div><label for="toraDiametro">Diâmetro da ponta fina (cm)</label><input id="toraDiametro" type="number" min="0.01" step="any" inputmode="decimal" required></div>
@@ -56,6 +58,11 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
       total += volume; quantidade += l.quantidade;
       const bloco = doc.createElement('div'); bloco.style.cssText = 'padding:10px 0;border-bottom:1px solid #888;break-inside:avoid';
       const titulo = doc.createElement('strong'); titulo.textContent = (indice + 1) + '. ' + (l.especie || 'Espécie não informada'); bloco.appendChild(titulo);
+      for (const [rotulo, valor] of [['Mão de obra', l.maoObra], ['Cliente', l.cliente]]) {
+        if (typeof valor === 'string' && valor.trim()) {
+          const detalhe = doc.createElement('div'); detalhe.textContent = rotulo + ': ' + valor; bloco.appendChild(detalhe);
+        }
+      }
       for (const texto of ['Ponta fina: ' + fmt(l.diametro, 2) + ' cm • Comprimento: ' + fmt(l.comprimento, 2) + ' m', 'Quantidade: ' + l.quantidade + (l.quantidade === 1 ? ' tora' : ' toras'), 'Volume por tora: ' + fmt(unitario) + ' m³', 'Volume do grupo: ' + fmt(volume) + ' m³']) {
         const p = doc.createElement('div'); p.textContent = texto; bloco.appendChild(p);
       }
@@ -74,7 +81,7 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
     event.preventDefault();
     try {
       const [diametro, comprimento, quantidade] = ler(); volumeToras(diametro, comprimento, quantidade);
-      linhas.push({ especie: el('toraEspecie').value.trim(), diametro, comprimento, quantidade }); salvar(); render();
+      linhas.push({ maoObra: el('toraMaoObra').value.trim(), cliente: el('toraCliente').value.trim(), especie: el('toraEspecie').value.trim(), diametro, comprimento, quantidade }); salvar(); render();
       el('toraDiametro').value = ''; preview(); el('toraDiametro').focus();
     } catch (e) { el('toraPreview').textContent = e.message; }
   });
