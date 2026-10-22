@@ -14,9 +14,10 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
   if (!abrir || doc.getElementById('cubagemToras')) return;
   const dialog = doc.createElement('dialog');
   dialog.id = 'cubagemToras';
+  dialog.className = 'card';
   dialog.setAttribute('aria-labelledby', 'tituloCubagemToras');
   dialog.style.cssText = 'box-sizing:border-box;width:min(680px,96vw);max-height:92dvh;overflow:auto;padding:18px;border:1px solid #888;border-radius:14px;background:var(--card,#fff);color:var(--text,#111)';
-  dialog.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><h2 id="tituloCubagemToras">Cubagem de toras</h2><button type="button" data-fechar aria-label="Fechar cubagem de toras">Fechar</button></div>
+  dialog.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><h2 id="tituloCubagemToras">Cubagem de toras</h2><button type="button" class="btn btn-secondary" data-fechar aria-label="Fechar cubagem de toras">Fechar</button></div>
     <p>Diâmetro da ponta fina + comprimento. Volume cilíndrico, sem desconto de casca.</p>
     <form id="formToras">
       <label for="toraMaoObra">Mão de obra (opcional)</label><input id="toraMaoObra" maxlength="100" autocomplete="off">
@@ -31,10 +32,50 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
       <button class="btn btn-primary" type="submit">Adicionar à lista</button>
     </form>
     <p id="toraAviso" role="status">Lista salva somente neste dispositivo. Não movimenta estoque ou pedidos.</p>
-    <div class="export-actions"><button type="button" data-copiar>Copiar lista</button><button type="button" data-pdf>Gerar PDF</button><button type="button" data-limpar>Limpar lista</button></div>
+    <div class="export-actions"><button type="button" class="btn btn-secondary" data-copiar>Copiar lista</button><button type="button" class="btn btn-primary" data-pdf>Gerar PDF</button><button type="button" class="btn btn-secondary" data-limpar>Limpar lista</button></div>
     <div id="torasExport"><h3>Resumo da cubagem de toras</h3><p>Método: cilindro pelo diâmetro da ponta fina, sem desconto de casca.</p><p>Volume = π × (diâmetro em metros)² ÷ 4 × comprimento × quantidade.</p><div id="torasLinhas"></div><p id="torasTotal"></p></div>`;
   doc.body.appendChild(dialog);
   const el = id => dialog.querySelector('#' + id);
+  // O modal está fora de <main>. Copiar a aparência dos controles reais
+  // também respeita temas cujos seletores são limitados ao conteúdo principal.
+  const copiarEstilo = (origem, destino, propriedades) => {
+    if (!origem) return;
+    const estilo = doc.defaultView.getComputedStyle(origem);
+    for (const propriedade of propriedades) destino.style.setProperty(propriedade, estilo.getPropertyValue(propriedade));
+  };
+  function aplicarTema() {
+    const card = doc.querySelector('#calculadora .card');
+    const fonte = ['font-family', 'font-size', 'font-weight', 'line-height', 'color'];
+    copiarEstilo(card, dialog, [...fonte, 'background-color', 'background-image', 'border-color', 'border-style', 'border-width', 'border-radius', 'box-shadow']);
+    dialog.querySelectorAll('input').forEach(input => {
+      copiarEstilo(doc.getElementById('largura'), input, [...fonte, 'background-color', 'background-image', 'border-color', 'border-style', 'border-width', 'border-radius', 'padding']);
+      input.style.width = '100%'; input.style.boxSizing = 'border-box';
+    });
+    dialog.querySelectorAll('label').forEach(label => {
+      copiarEstilo(doc.querySelector('label[for="largura"]') || doc.querySelector('#calculadora label'), label, fonte);
+      label.style.display = 'block'; label.style.marginTop = '10px'; label.style.marginBottom = '4px';
+    });
+    dialog.querySelectorAll('button').forEach(button => {
+      const origem = button.classList.contains('btn-primary') ? doc.getElementById('btnLancar') : doc.querySelector('#calculadora .btn-secondary');
+      copiarEstilo(origem, button, [...fonte, 'background-color', 'background-image', 'border-color', 'border-style', 'border-width', 'border-radius', 'padding', 'box-shadow']);
+      button.style.cursor = 'pointer';
+    });
+    dialog.querySelectorAll('#torasLinhas > div').forEach(bloco => {
+      const origem = card && doc.defaultView.getComputedStyle(card);
+      if (origem) bloco.style.borderColor = origem.borderColor;
+    });
+  }
+  const estiloToras = doc.createElement('style');
+  estiloToras.textContent = '#cubagemToras .export-actions{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}#cubagemToras .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}#cubagemToras input{min-width:0}#cubagemToras::backdrop{background:rgb(0 0 0 / 55%)}@media(max-width:600px){#cubagemToras .grid3{grid-template-columns:1fr}}';
+  doc.head.appendChild(estiloToras);
+  let temaPendente = false;
+  const observarTema = new doc.defaultView.MutationObserver(() => {
+    if (temaPendente) return;
+    temaPendente = true;
+    doc.defaultView.requestAnimationFrame(() => { temaPendente = false; aplicarTema(); });
+  });
+  for (const elemento of [doc.documentElement, doc.body]) observarTema.observe(elemento, { attributes: true, attributeFilter: ['class', 'style', 'data-theme', 'data-tema'] });
+
   const fmt = (v, casas = 4) => v.toLocaleString('pt-BR', { minimumFractionDigits: casas, maximumFractionDigits: casas });
   const key = 'cubagem_toras_ponta_fina_v1';
   let linhas = [];
@@ -66,9 +107,10 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
       for (const texto of ['Ponta fina: ' + fmt(l.diametro, 2) + ' cm • Comprimento: ' + fmt(l.comprimento, 2) + ' m', 'Quantidade: ' + l.quantidade + (l.quantidade === 1 ? ' tora' : ' toras'), 'Volume por tora: ' + fmt(unitario) + ' m³', 'Volume do grupo: ' + fmt(volume) + ' m³']) {
         const p = doc.createElement('div'); p.textContent = texto; bloco.appendChild(p);
       }
-      const remover = doc.createElement('button'); remover.type = 'button'; remover.className = 'no-print'; remover.textContent = 'Remover'; remover.setAttribute('aria-label', 'Remover grupo ' + (indice + 1));
+      const remover = doc.createElement('button'); remover.type = 'button'; remover.className = 'btn btn-secondary no-print'; remover.textContent = 'Remover'; remover.setAttribute('aria-label', 'Remover grupo ' + (indice + 1));
       remover.onclick = () => { linhas.splice(indice, 1); salvar(); render(); }; bloco.appendChild(remover); host.appendChild(bloco);
     });
+    aplicarTema();
     el('torasTotal').textContent = 'Total: ' + quantidade + (quantidade === 1 ? ' tora • ' : ' toras • ') + fmt(total) + ' m³';
   }
   function ler() { return [Number(el('toraDiametro').value), Number(el('toraComprimento').value), Number(el('toraQuantidade').value)]; }
@@ -85,7 +127,7 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
       el('toraDiametro').value = ''; preview(); el('toraDiametro').focus();
     } catch (e) { el('toraPreview').textContent = e.message; }
   });
-  abrir.addEventListener('click', () => { dialog.showModal(); el('toraDiametro').focus(); });
+  abrir.addEventListener('click', () => { aplicarTema(); dialog.showModal(); el('toraDiametro').focus(); });
   dialog.querySelector('[data-fechar]').onclick = () => dialog.close();
   dialog.querySelector('[data-copiar]').onclick = () => linhas.length ? copiar('torasExport') : el('toraAviso').textContent = 'Adicione uma tora à lista primeiro.';
   dialog.querySelector('[data-pdf]').onclick = () => {
