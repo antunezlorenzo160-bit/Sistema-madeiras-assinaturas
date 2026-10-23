@@ -16,7 +16,7 @@ with sync_playwright() as p:
  window.num4=n=>Number(n).toLocaleString('pt-BR',{minimumFractionDigits:4,maximumFractionDigits:4});window.num2=n=>Number(n).toFixed(2);window.numCm=n=>Number(n).toLocaleString('pt-BR');window.numM1=n=>Number(n).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1});window.numCompOrc=n=>Number(n).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:2});window.moeda=n=>'R$ '+Number(n).toFixed(2);
  window.modoMedida='m3';window.baseTotalTopo={};window.orcamento=[];window.resumoOrcOculto=false;window.destinoSelecionado=()=> 'carga';window.chaveBaseTotalTopo=()=> 'carga';window.itemPertenceModoCalculadoraV387=()=>true;window.atualizarIndicadorRegrasV376=()=>{};window.nomeGranelV385=x=>x.madeira;window.compOrcamento=x=>numCompOrc(x.comprimento)+' m';
  }''')
- for name in ['chaveAgrupamentoItem','agruparItensResumoCalculadora','fonteResumoAtual','classeSeparacaoGrupo','chaveBlocoResumoV598','organizarBlocosResumoV598','renderLancamentos','resolverBloco','cloneLimpoParaExportar','gerarPdfBloco']:
+ for name in ['chaveAgrupamentoItem','agruparItensResumoCalculadora','fonteResumoAtual','classeSeparacaoGrupo','chaveBlocoResumoV598','organizarBlocosResumoV598','atualizarVolumeAntesLancamento','renderLancamentos','resolverBloco','cloneLimpoParaExportar','gerarPdfBloco']:
   source=fn(name)
   if name=='renderLancamentos':source=source.split('// V377')[0]
   if name=='gerarPdfBloco':source=source.split('window.copiarBloco=')[0]
