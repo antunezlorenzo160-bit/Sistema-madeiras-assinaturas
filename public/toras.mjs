@@ -33,7 +33,7 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
     </form>
     <p id="toraAviso" role="status">Lista salva somente neste dispositivo. Não movimenta estoque ou pedidos.</p>
     <div class="export-actions"><button type="button" class="btn btn-secondary" data-copiar>Copiar lista</button><button type="button" class="btn btn-primary" data-pdf>Gerar PDF</button><button type="button" class="btn btn-secondary" data-limpar>Limpar lista</button></div>
-    <div id="torasExport"><h3>Resumo da cubagem de toras</h3><p>Método: cilindro pelo diâmetro, sem desconto de casca.</p><p>Volume = π × (diâmetro em metros)² ÷ 4 × comprimento × quantidade.</p><div id="torasLinhas"></div><p id="torasTotal"></p></div>`;
+    <div id="torasExport"><h3>Resumo da cubagem de toras</h3><p>Método: cilindro pelo diâmetro, sem desconto de casca.</p><p>Volume = π × (diâmetro em metros)² ÷ 4 × comprimento × quantidade.</p><div id="torasIdentificacao"></div><div id="torasLinhas"></div><p id="torasTotal"></p></div>`;
   doc.body.appendChild(dialog);
   const el = id => dialog.querySelector('#' + id);
   // O modal está fora de <main>. Copiar a aparência dos controles reais
@@ -85,6 +85,32 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
       try { volumeToras(l.diametro, l.comprimento, l.quantidade); return typeof l.especie === 'string'; } catch { return false; }
     });
   } catch { el('toraAviso').textContent = 'Não foi possível recuperar a lista deste dispositivo.'; }
+  const identificacaoKey = 'cubagem_toras_identificacao_v1';
+  let identificacao = null;
+  try { identificacao = JSON.parse(storage.getItem(identificacaoKey) || 'null'); } catch {}
+  if (!identificacao || typeof identificacao !== 'object' || Array.isArray(identificacao)) {
+    // Listas antigas guardavam os campos em cada linha: recuperar o último
+    // preenchimento de cada campo sem alterar os lançamentos existentes.
+    const ultimo = campo => [...linhas].reverse().find(l => typeof l[campo] === 'string' && l[campo].trim())?.[campo] || '';
+    identificacao = { maoObra: ultimo('maoObra'), cliente: ultimo('cliente') };
+  }
+  el('toraMaoObra').value = typeof identificacao.maoObra === 'string' ? identificacao.maoObra : '';
+  el('toraCliente').value = typeof identificacao.cliente === 'string' ? identificacao.cliente : '';
+  function preencherIdentificacao(destino) {
+    for (const [rotulo, id] of [['Mão de obra', 'toraMaoObra'], ['Cliente', 'toraCliente']]) {
+      const valor = el(id).value.trim();
+      if (valor) { const p = doc.createElement('div'); p.textContent = rotulo + ': ' + valor; destino.appendChild(p); }
+    }
+  }
+  function atualizarIdentificacao() {
+    const destino = el('torasIdentificacao'); destino.replaceChildren(); preencherIdentificacao(destino);
+  }
+  for (const id of ['toraMaoObra', 'toraCliente']) el(id).addEventListener('input', () => {
+    atualizarIdentificacao();
+    try { storage.setItem(identificacaoKey, JSON.stringify({ maoObra: el('toraMaoObra').value, cliente: el('toraCliente').value })); }
+    catch { el('toraAviso').textContent = 'Não foi possível salvar a identificação. Exporte a lista antes de fechar o sistema.'; }
+  });
+  atualizarIdentificacao();
   function salvar() {
     try {
       storage.setItem(key, JSON.stringify(linhas));
@@ -118,12 +144,7 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
       const acoes = doc.createElement('td'); acoes.className = 'no-print';
       const remover = doc.createElement('button'); remover.type = 'button'; remover.className = 'btn btn-secondary no-print'; remover.textContent = 'Remover'; remover.setAttribute('aria-label', 'Remover grupo ' + (indice + 1));
       remover.onclick = () => { linhas.splice(indice, 1); salvar(); render(); }; acoes.appendChild(remover); tr.appendChild(acoes); corpo.appendChild(tr);
-      const detalhes = [['Mão de obra', l.maoObra], ['Cliente', l.cliente]].filter(([, valor]) => typeof valor === 'string' && valor.trim());
-      if (detalhes.length) {
-        const nota = doc.createElement('tr'); const td = doc.createElement('td'); td.colSpan = 6;
-        td.style.cssText = 'padding:4px 5px 10px;border-bottom:1px solid;overflow-wrap:anywhere';
-        td.textContent = detalhes.map(([rotulo, valor]) => rotulo + ': ' + valor).join(' • '); nota.appendChild(td); corpo.appendChild(nota);
-      }
+
     });
     aplicarTema();
     el('torasTotal').textContent = 'Total: ' + quantidade + (quantidade === 1 ? ' tora • ' : ' toras • ') + fmt(total) + ' m³';
@@ -138,7 +159,7 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
     event.preventDefault();
     try {
       const [diametro, comprimento, quantidade] = ler(); volumeToras(diametro, comprimento, quantidade);
-      linhas.push({ maoObra: el('toraMaoObra').value.trim(), cliente: el('toraCliente').value.trim(), especie: el('toraEspecie').value.trim(), diametro, comprimento, quantidade }); salvar(); render();
+      linhas.push({ especie: el('toraEspecie').value.trim(), diametro, comprimento, quantidade }); salvar(); render();
       el('toraDiametro').value = ''; preview(); el('toraDiametro').focus();
     } catch (e) { el('toraPreview').textContent = e.message; }
   });
@@ -149,11 +170,9 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
     // Na mensagem, a espécie fica acima da tabela para caber no celular.
     const resumo = doc.createElement('div');
     const titulo = doc.createElement('h3'); titulo.textContent = 'Cubagem de toras'; resumo.appendChild(titulo);
+    preencherIdentificacao(resumo);
     for (const l of linhas) {
       const h = doc.createElement('h4'); h.textContent = l.especie || 'Espécie não informada'; resumo.appendChild(h);
-      for (const [rotulo, valor] of [['Mão de obra', l.maoObra], ['Cliente', l.cliente]]) {
-        if (typeof valor === 'string' && valor.trim()) { const p = doc.createElement('div'); p.textContent = rotulo + ': ' + valor; resumo.appendChild(p); }
-      }
       const v = volumeToras(l.diametro, l.comprimento, l.quantidade);
       const tabela = doc.createElement('table');
       for (const valores of [['Qtd', 'D.cm', 'C.m', 'm³/tora', 'm³ total'], [String(l.quantidade), fmt(l.diametro, 2), fmt(l.comprimento, 2), fmt(v.unitario), fmt(v.total)]]) {

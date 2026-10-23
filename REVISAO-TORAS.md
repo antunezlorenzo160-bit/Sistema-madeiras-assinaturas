@@ -9,3 +9,5 @@ Verificação: npm test (12 testes, incluindo unidade, quantidade, medidas invá
 Exemplo: diâmetro 40 cm, comprimento 3 m, quantidade 2 → 0,3770 m³ por tora; 0,7540 m³ total. Cálculos não arredondam antes da soma.
 
 Resumo em tabela: espécie, quantidade, diâmetro da ponta fina em cm, comprimento em m, volume individual e volume total. Campos opcionais acompanham cada lançamento. Rolagem horizontal no celular; tabela integral no PDF, sem ações. A cópia usa tabelas compactas por espécie para preservar números sem dividir colunas longas no WhatsApp. Os registros e o formato de armazenamento continuam os mesmos.
+
+Identificação única do resumo: mão de obra e cliente ficam no cabeçalho da lista, cópia e PDF, sem repetição por tora. Alterações nos campos atualizam o cabeçalho imediatamente; campos vazios são omitidos. A identificação persiste separadamente no mesmo armazenamento local delimitado pela empresa. Na primeira abertura de listas antigas, recupera o último preenchimento não vazio de cada campo sem alterar as linhas existentes.

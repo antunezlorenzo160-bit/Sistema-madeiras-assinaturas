@@ -27,8 +27,10 @@ with sync_playwright() as p:
  page.click('[data-copiar]');text=page.evaluate('window.copied')
  assert '0,3770' in text and '40,00' in text
  assert page.locator('#torasLinhas thead th').all_text_contents()==['Espécie','Qtd.','Diâmetro (cm)','Comp. (m)','m³/tora','m³ total','Ação']
- assert page.locator('#torasLinhas tbody tr').count()==4
- assert 'Mão de obra: Equipe teste' in text and 'Cliente: Cliente teste' in text
+ assert page.locator('#torasLinhas tbody tr').count()==2
+ assert text.count('Mão de obra: Equipe teste')==1 and text.count('Cliente: Cliente teste')==1
+ assert page.locator('#torasIdentificacao').inner_text().count('Equipe teste')==1
+ assert 'Cliente teste' not in page.locator('#torasLinhas').inner_text()
  assert page.locator('#torasLinhas tbody tr').first.locator('td').all_text_contents()[1:6]==['2','40,00','3,00','0,3770','0,7540']
  assert 'Total: 3 toras • 0,9503 m³' in text and 'Remover' not in text
  page.click('[data-pdf]');assert 'Total: 3 toras • 0,9503 m³' in page.evaluate('window.pdfRequest.text')
@@ -36,10 +38,15 @@ with sync_playwright() as p:
  assert 'ponta fina' not in page.evaluate('window.pdfRequest.html').lower()
  assert 'Volume = π' in page.evaluate('window.pdfRequest.text')
  assert '<table' in page.evaluate('window.pdfRequest.html') and 'Cliente teste' in page.evaluate('window.pdfRequest.html')
- # Restore the list from company-scoped storage after reopening the component.
+ # Restore the list and shared identification after reopening the component.
  page.evaluate("document.getElementById('cubagemToras').remove();start()")
  page.click('#btnCubagemToras')
  assert page.locator('#torasTotal').inner_text()=='Total: 3 toras • 0,9503 m³'
+ assert page.locator('#toraCliente').input_value()=='Cliente teste'
+ page.fill('#toraCliente','Cliente alterado')
+ assert page.locator('#torasIdentificacao').inner_text().count('Cliente alterado')==1
+ page.fill('#toraMaoObra','')
+ assert 'Mão de obra' not in page.locator('#torasIdentificacao').inner_text()
  page.locator('#torasLinhas button').first.click()
  assert page.locator('#torasTotal').inner_text()=='Total: 1 tora • 0,1963 m³'
  # Invalid values cannot add a record through form submission.
