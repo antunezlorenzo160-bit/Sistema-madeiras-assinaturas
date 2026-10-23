@@ -1,0 +1,13 @@
+Funcionamento offline — prévia, sem publicação em produção
+
+Problema confirmado no código da versão pública: o HTML pode estar no cache do Chrome enquanto os módulos Firebase e a validação obrigatória da empresa ainda dependem da rede. A interface tem fila offline, mas isso não basta para inicializar o sistema. Algumas operações também aguardavam indefinidamente confirmação do Firestore.
+
+Mudanças:
+- Service worker guarda somente a página, o módulo de toras e os três módulos Firebase de versão fixa. Não guarda funções de servidor, respostas de API nem URLs de assinatura. Requer primeira abertura com internet e instalação bem-sucedida.
+- Cache persistente do Firestore mantém o documento de vínculo já verificado. Abertura offline exige sessão Firebase restaurada, UID autorizado e vínculo ativo da mesma empresa no cache. Falta de sessão/vínculo impede abertura. Online continua exigindo validações no servidor; recusa online nunca usa cache como alternativa. Reconexão revalida vínculo.
+- Gravações, exclusões e lotes offline salvam a fila delimitada pela empresa e devolvem controle à interface sem esperar o servidor. Mesclas em lote preservam campos de uma criação pendente. Atualização parcial por batch.update não suportada offline recebe erro explícito. As regras do Firestore continuam protegendo o envio posterior.
+- Pedidos guardados passam a ser recuperados do armazenamento local na abertura, com leitura do cache legado, e são incluídos na persistência local. Sem republicar automaticamente registros ausentes no servidor.
+
+Como testar: abrir a prévia com internet, marcar Manter conectado, entrar e aguardar sincronização; depois ativar modo avião, recarregar, navegar, lançar e conferir indicação de pendência; voltar à internet e conferir sincronização. Não é possível primeiro login offline. Links/assinaturas públicas e confirmação de novos preços continuam exigindo internet.
+
+Verificação automatizada: Chromium executa funções reais de validação de sessão/vínculo e fila sem rede; testa sessão ausente, vínculo inativo/empresa diferente, recusa online sem fallback, lote offline sem esperar servidor, mesclas persistidas e rejeição de caminhos de outra empresa. Outro teste Chromium instala o service worker real com recursos locais simulados, bloqueia a rede, recarrega e usa os módulos/dados preservados; confirma exclusão de API/assinaturas do cache. Testes de assinatura/PDF, carregamento em montagem, desempenho, cubagem e preços passaram, além de 14 testes Node. Scripts do HTML externo e template passaram análise sintática. Firebase e credenciais reais não foram usados nos testes; a validação completa no celular segue necessária antes da publicação.

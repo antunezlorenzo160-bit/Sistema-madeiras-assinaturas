@@ -30,10 +30,10 @@ with sync_playwright() as p:
  page.evaluate("document.getElementById('estoque').style.display='block'")
  page.wait_for_function('document.getElementById("est1Qtd").textContent==="1510"')
  page.evaluate('''() => {
- window.STORAGE={madeiras:'madeiras',lancamentos:'lancamentos',movimentos:'movimentos',orcamento:'orcamento'};
+ window.STORAGE={madeiras:'madeiras',lancamentos:'lancamentos',movimentos:'movimentos',orcamento:'orcamento',orcamentosGuardados:'orcamentosGuardados'};
  window.lancamentos=[{id:'L'}];window.carregamentos=[{id:'L',cargaStatus:'montagem'}];
  const expensive={toJSON(){throw Error('Unchanged collections must not be serialized for a Carga launch')}};
- window.madeiras=expensive;window.movimentos=expensive;window.orcamento=expensive;
+ window.madeiras=expensive;window.movimentos=expensive;window.orcamento=expensive;window.orcamentosGuardados=expensive;
  window.estoque1Lancamentos=expensive;window.estoque2Lancamentos=expensive;
  window.writes=[];window.__v456Local={setItem:(key,value)=>writes.push({key,value})};window.broadcasts=0;window.__smSyncSummaryTabsV606=()=>broadcasts++;
  }''')
@@ -44,8 +44,8 @@ with sync_playwright() as p:
  assert json.loads(writes[1]['value'])[0]['cargaStatus']=='montagem'
  assert page.evaluate('broadcasts')==1
  # Other paths keep the original full-save default.
- page.evaluate('''() => {madeiras=[];movimentos=[];orcamento=[];estoque1Lancamentos=[];estoque2Lancamentos=[];writes=[];saveData()}''')
- assert len(page.evaluate('writes'))==7
+ page.evaluate('''() => {madeiras=[];movimentos=[];orcamento=[];orcamentosGuardados=[];estoque1Lancamentos=[];estoque2Lancamentos=[];writes=[];saveData()}''')
+ assert len(page.evaluate('writes'))==8
  assert not errors,errors
  browser.close()
 print('PASS: hidden table stays empty; navigation refreshes latest totals; saves serialize only changed Carga data; default full save preserved. 4 hidden refresh requests: %.2f ms'%timing)
