@@ -26,13 +26,15 @@ with sync_playwright() as p:
  assert page.locator('#torasTotal').inner_text()=='Total: 3 toras • 0,9503 m³'
  page.click('[data-copiar]');text=page.evaluate('window.copied')
  assert '0,3770' in text and '40,00' in text
- assert page.locator('#torasLinhas thead th').all_text_contents()==['Espécie','Qtd.','Ponta fina (cm)','Comp. (m)','m³/tora','m³ total','Ação']
+ assert page.locator('#torasLinhas thead th').all_text_contents()==['Espécie','Qtd.','Diâmetro (cm)','Comp. (m)','m³/tora','m³ total','Ação']
  assert page.locator('#torasLinhas tbody tr').count()==4
  assert 'Mão de obra: Equipe teste' in text and 'Cliente: Cliente teste' in text
  assert page.locator('#torasLinhas tbody tr').first.locator('td').all_text_contents()[1:6]==['2','40,00','3,00','0,3770','0,7540']
  assert 'Total: 3 toras • 0,9503 m³' in text and 'Remover' not in text
  page.click('[data-pdf]');assert 'Total: 3 toras • 0,9503 m³' in page.evaluate('window.pdfRequest.text')
  assert 'Ação' not in page.evaluate('window.pdfRequest.html') and 'Remover' not in page.evaluate('window.pdfRequest.html')
+ assert 'ponta fina' not in page.evaluate('window.pdfRequest.html').lower()
+ assert 'Volume = π' in page.evaluate('window.pdfRequest.text')
  assert '<table' in page.evaluate('window.pdfRequest.html') and 'Cliente teste' in page.evaluate('window.pdfRequest.html')
  # Restore the list from company-scoped storage after reopening the component.
  page.evaluate("document.getElementById('cubagemToras').remove();start()")

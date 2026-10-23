@@ -18,12 +18,13 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
   dialog.setAttribute('aria-labelledby', 'tituloCubagemToras');
   dialog.style.cssText = 'box-sizing:border-box;width:min(680px,96vw);max-height:92dvh;overflow:auto;padding:18px;border:1px solid #888;border-radius:14px;background:var(--card,#fff);color:var(--text,#111)';
   dialog.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><h2 id="tituloCubagemToras">Cubagem de toras</h2><button type="button" class="btn btn-secondary" data-fechar aria-label="Fechar cubagem de toras">Fechar</button></div>
+    <p>Diâmetro + comprimento. Volume cilíndrico, sem desconto de casca.</p>
     <form id="formToras">
       <label for="toraMaoObra">Mão de obra (opcional)</label><input id="toraMaoObra" maxlength="100" autocomplete="off">
       <label for="toraCliente">Nome do cliente (opcional)</label><input id="toraCliente" maxlength="100" autocomplete="name">
       <label for="toraEspecie">Espécie / identificação (opcional)</label><input id="toraEspecie" maxlength="100" autocomplete="off">
       <div class="grid3">
-        <div><label for="toraDiametro">Diâmetro da ponta fina (cm)</label><input id="toraDiametro" type="number" min="0.01" step="any" inputmode="decimal" required></div>
+        <div><label for="toraDiametro">Diâmetro (cm)</label><input id="toraDiametro" type="number" min="0.01" step="any" inputmode="decimal" required></div>
         <div><label for="toraComprimento">Comprimento (m)</label><input id="toraComprimento" type="number" min="0.01" step="any" inputmode="decimal" required></div>
         <div><label for="toraQuantidade">Quantidade de toras</label><input id="toraQuantidade" type="number" min="1" step="1" inputmode="numeric" value="1" required></div>
       </div>
@@ -32,7 +33,7 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
     </form>
     <p id="toraAviso" role="status">Lista salva somente neste dispositivo. Não movimenta estoque ou pedidos.</p>
     <div class="export-actions"><button type="button" class="btn btn-secondary" data-copiar>Copiar lista</button><button type="button" class="btn btn-primary" data-pdf>Gerar PDF</button><button type="button" class="btn btn-secondary" data-limpar>Limpar lista</button></div>
-    <div id="torasExport"><h3>Resumo da cubagem de toras</h3><div id="torasLinhas"></div><p id="torasTotal"></p></div>`;
+    <div id="torasExport"><h3>Resumo da cubagem de toras</h3><p>Método: cilindro pelo diâmetro, sem desconto de casca.</p><p>Volume = π × (diâmetro em metros)² ÷ 4 × comprimento × quantidade.</p><div id="torasLinhas"></div><p id="torasTotal"></p></div>`;
   doc.body.appendChild(dialog);
   const el = id => dialog.querySelector('#' + id);
   // O modal está fora de <main>. Copiar a aparência dos controles reais
@@ -96,7 +97,7 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
     const tabela = doc.createElement('table'); tabela.style.cssText = 'width:100%;border-collapse:collapse;font-size:12px;line-height:1.4';
     tabela.setAttribute('aria-label', 'Resumo dos lançamentos de toras');
     const cabecalho = tabela.createTHead().insertRow();
-    for (const [indice, texto] of ['Espécie', 'Qtd.', 'Ponta fina (cm)', 'Comp. (m)', 'm³/tora', 'm³ total', 'Ação'].entries()) {
+    for (const [indice, texto] of ['Espécie', 'Qtd.', 'Diâmetro (cm)', 'Comp. (m)', 'm³/tora', 'm³ total', 'Ação'].entries()) {
       const th = doc.createElement('th'); th.scope = 'col'; th.textContent = texto;
       th.style.cssText = 'padding:7px 5px;border-bottom:1px solid;text-align:'+ (indice ? 'right' : 'left');
       if (indice === 6) th.className = 'no-print';
@@ -147,7 +148,7 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
     if (!linhas.length) { el('toraAviso').textContent = 'Adicione uma tora à lista primeiro.'; return; }
     // Na mensagem, a espécie fica acima da tabela para caber no celular.
     const resumo = doc.createElement('div');
-    const titulo = doc.createElement('h3'); titulo.textContent = 'Cubagem de toras — ponta fina'; resumo.appendChild(titulo);
+    const titulo = doc.createElement('h3'); titulo.textContent = 'Cubagem de toras'; resumo.appendChild(titulo);
     for (const l of linhas) {
       const h = doc.createElement('h4'); h.textContent = l.especie || 'Espécie não informada'; resumo.appendChild(h);
       for (const [rotulo, valor] of [['Mão de obra', l.maoObra], ['Cliente', l.cliente]]) {
@@ -167,7 +168,7 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
     if (!linhas.length) { el('toraAviso').textContent = 'Adicione uma tora à lista primeiro.'; return; }
     // O gerador clona o resumo antes de imprimir; retirar o modal da camada
     // superior permite que a área de impressão apareça no Chrome/Android.
-    pdf('torasExport', 'Cubagem de toras — ponta fina');
+    pdf('torasExport', 'Cubagem de toras');
     dialog.close();
     doc.defaultView.addEventListener('afterprint', () => { if (dialog.isConnected && !dialog.open) dialog.showModal(); }, { once: true });
   };
