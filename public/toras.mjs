@@ -95,20 +95,18 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
 
   estiloToras.textContent += `
     @media screen and (max-width:600px){
-      #cubagemToras{padding:12px!important}
+      #cubagemToras{padding:10px!important}
       #cubagemToras .toras-tabela-wrap{overflow:visible!important}
-      #cubagemToras .toras-resumo-tabela,#cubagemToras .toras-resumo-tabela tbody{display:block;width:100%;min-width:0}
-      #cubagemToras .toras-resumo-tabela thead{display:none}
-      #cubagemToras .toras-resumo-tabela tr{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));position:relative;gap:5px 3px;padding:8px 0;border-bottom:1px solid var(--line,#888)}
-      #cubagemToras .toras-resumo-tabela td{display:block;min-width:0!important;padding:2px!important;border:0!important;white-space:normal!important;overflow-wrap:anywhere;font-size:11px;line-height:1.25}
-      #cubagemToras .toras-resumo-tabela td.tora-especie{grid-column:1/-1;font-weight:700;font-size:12px;padding-right:30px!important;text-align:left!important}
-      #cubagemToras .toras-resumo-tabela td.tora-medida::before,#cubagemToras .toras-resumo-tabela td.tora-financeiro::before{content:attr(data-label);display:block;font-size:9px;font-weight:600;margin-bottom:3px}
-      #cubagemToras .toras-resumo-tabela td.tora-financeiro{grid-column:span 2;font-size:12px}
-      #cubagemToras .toras-resumo-tabela td.tora-financeiro:nth-child(8){grid-column:span 3}
-      #cubagemToras .toras-resumo-tabela td.tora-acoes{position:absolute;right:0;top:5px}
-      #cubagemToras .tora-acoes button{font-size:0!important;padding:3px 7px!important;min-height:26px!important;min-width:26px!important}
-      #cubagemToras .tora-acoes button::after{content:'×';font-size:18px;line-height:1}
-      #cubagemToras #torasTotal{font-size:13px;line-height:1.5;overflow-wrap:anywhere}
+      #cubagemToras .toras-resumo-tabela{display:table!important;width:100%!important;min-width:0!important;table-layout:fixed;font-size:clamp(8px,2.2vw,10px)!important;line-height:1.3!important}
+      #cubagemToras .toras-resumo-tabela thead{display:table-header-group!important}
+      #cubagemToras .toras-resumo-tabela tbody{display:table-row-group!important}
+      #cubagemToras .toras-resumo-tabela tr{display:table-row!important}
+      #cubagemToras .toras-resumo-tabela th,#cubagemToras .toras-resumo-tabela td{display:table-cell!important;min-width:0!important;padding:5px 1px!important;border-bottom:1px solid!important;white-space:normal!important;overflow-wrap:anywhere;font-size:inherit!important;vertical-align:middle}
+      #cubagemToras .toras-resumo-tabela th{font-size:0!important}
+      #cubagemToras .toras-resumo-tabela th::before{content:attr(data-curto);font-size:clamp(8px,2.2vw,10px)}
+      #cubagemToras .tora-acoes button{display:block;font-size:0!important;padding:0!important;min-height:22px!important;min-width:18px!important;width:18px!important;height:22px!important;margin:0 auto!important}
+      #cubagemToras .tora-acoes button::after{content:'×';font-size:14px;line-height:1}
+      #cubagemToras #torasTotal{font-size:12px;line-height:1.5;overflow-wrap:anywhere}
     }`;
   doc.head.appendChild(estiloToras);
   let temaPendente = false;
@@ -227,7 +225,10 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
     const cabecalho = tabela.createTHead().insertRow();
     for (const [indice, texto] of ['Espécie', 'Qtd.', 'Diâmetro (cm)', 'Comp. (m)', 'm³/tora', 'm³ total', ...(comValores ? ['R$/m³', 'Valor (R$)'] : []), 'Ação'].entries()) {
       const th = doc.createElement('th'); th.scope = 'col'; th.textContent = texto;
-      th.style.cssText = 'padding:7px 5px;border-bottom:1px solid;text-align:'+ (indice ? 'right' : 'left');
+      th.dataset.curto = ['Espécie', 'Qtd', 'D.cm', 'C.m', 'm³/un', 'm³', ...(comValores ? ['R$/m³', 'R$'] : []), ''][indice];
+      const pesos = comValores ? [18,5,9,9,12,12,12,16,7] : [24,7,12,12,17,17,7];
+      th.style.width = (pesos[indice] / pesos.reduce((a,b)=>a+b,0)*100) + '%';
+      th.style.cssText += 'padding:7px 5px;border-bottom:1px solid;text-align:'+ (indice ? 'right' : 'left');
       if (texto === 'Ação') th.className = 'no-print';
       cabecalho.appendChild(th);
     }

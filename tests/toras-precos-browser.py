@@ -39,6 +39,8 @@ with sync_playwright() as p:
  # Even small phone screens fit the summary without horizontal scrolling.
  for width in [320,360,390]:
   page.set_viewport_size({'width':width,'height':844})
+  assert page.locator('.toras-resumo-tabela tr').first.evaluate('(el)=>getComputedStyle(el).display')=='table-row'
+  assert page.locator('.toras-resumo-tabela thead').evaluate('(el)=>getComputedStyle(el).display')=='table-header-group'
   assert page.locator('.toras-tabela-wrap').evaluate('(el)=>el.scrollWidth<=el.clientWidth+1')
   assert page.locator('#cubagemToras').evaluate('(el)=>el.scrollWidth<=el.clientWidth+1')
  page.locator('#torasTotal').scroll_into_view_if_needed()
