@@ -13,10 +13,11 @@ with sync_playwright() as p:
  page.set_content('<button id="btnCubagemToras">Toras</button>')
  page.evaluate('() => {'+copy+module+''';window.cache={};window.messages=[];window.alert=x=>messages.push(x);
  Object.defineProperty(navigator,'clipboard',{value:{writeText:async t=>window.copied=t}});
- window.start=()=>iniciarCubagemToras({storage:{getItem:k=>cache[k],setItem:(k,v)=>cache[k]=v},copiar:copiarBloco,pdf:(id,title)=>window.pdfRequest={text:textoExportacao(id),title}});start();}''')
+ window.start=()=>iniciarCubagemToras({storage:{getItem:k=>cache[k],setItem:(k,v)=>cache[k]=v},copiar:copiarBloco,pdf:(id,title)=>window.pdfRequest={text:textoExportacao(id),html:cloneLimpoParaExportar(id).outerHTML,title}});start();}''')
  page.click('#btnCubagemToras')
  page.fill('#toraDiametro','40');page.fill('#toraComprimento','3');page.fill('#toraQuantidade','2')
  assert '0,7540 m³' in page.locator('#toraPreview').inner_text()
+ page.fill('#toraMaoObra','Equipe teste');page.fill('#toraCliente','Cliente teste')
  page.fill('#toraEspecie','<img src=x onerror=alert(1)>')
  page.click('#formToras button[type=submit]')
  assert page.locator('#torasTotal').inner_text()=='Total: 2 toras • 0,7540 m³'
@@ -24,9 +25,15 @@ with sync_playwright() as p:
  page.fill('#toraDiametro','25');page.fill('#toraComprimento','4');page.fill('#toraQuantidade','1');page.fill('#toraEspecie','Garapeira');page.click('#formToras button[type=submit]')
  assert page.locator('#torasTotal').inner_text()=='Total: 3 toras • 0,9503 m³'
  page.click('[data-copiar]');text=page.evaluate('window.copied')
- assert 'Volume por tora: 0,3770 m³' in text and 'Ponta fina: 40,00 cm' in text
+ assert '0,3770' in text and '40,00' in text
+ assert page.locator('#torasLinhas thead th').all_text_contents()==['Espécie','Qtd.','Ponta fina (cm)','Comp. (m)','m³/tora','m³ total','Ação']
+ assert page.locator('#torasLinhas tbody tr').count()==4
+ assert 'Mão de obra: Equipe teste' in text and 'Cliente: Cliente teste' in text
+ assert page.locator('#torasLinhas tbody tr').first.locator('td').all_text_contents()[1:6]==['2','40,00','3,00','0,3770','0,7540']
  assert 'Total: 3 toras • 0,9503 m³' in text and 'Remover' not in text
- page.click('[data-pdf]');assert page.evaluate('window.pdfRequest.text')==text
+ page.click('[data-pdf]');assert 'Total: 3 toras • 0,9503 m³' in page.evaluate('window.pdfRequest.text')
+ assert 'Ação' not in page.evaluate('window.pdfRequest.html') and 'Remover' not in page.evaluate('window.pdfRequest.html')
+ assert '<table' in page.evaluate('window.pdfRequest.html') and 'Cliente teste' in page.evaluate('window.pdfRequest.html')
  # Restore the list from company-scoped storage after reopening the component.
  page.evaluate("document.getElementById('cubagemToras').remove();start()")
  page.click('#btnCubagemToras')

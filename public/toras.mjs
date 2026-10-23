@@ -60,13 +60,13 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
       copiarEstilo(origem, button, [...fonte, 'background-color', 'background-image', 'border-color', 'border-style', 'border-width', 'border-radius', 'padding', 'box-shadow']);
       button.style.cursor = 'pointer';
     });
-    dialog.querySelectorAll('#torasLinhas > div').forEach(bloco => {
+    dialog.querySelectorAll('#torasLinhas th, #torasLinhas td').forEach(bloco => {
       const origem = card && doc.defaultView.getComputedStyle(card);
       if (origem) bloco.style.borderColor = origem.borderColor;
     });
   }
   const estiloToras = doc.createElement('style');
-  estiloToras.textContent = '#cubagemToras .export-actions{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}#cubagemToras .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}#cubagemToras input{min-width:0}#cubagemToras::backdrop{background:rgb(0 0 0 / 55%)}@media(max-width:600px){#cubagemToras .grid3{grid-template-columns:1fr}}';
+  estiloToras.textContent = '@media print{#torasExport .toras-tabela-wrap{overflow:visible!important}#torasExport tr{break-inside:avoid}}#cubagemToras .export-actions{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}#cubagemToras .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}#cubagemToras input{min-width:0}#cubagemToras::backdrop{background:rgb(0 0 0 / 55%)}@media(max-width:600px){#cubagemToras .grid3{grid-template-columns:1fr}}';
   doc.head.appendChild(estiloToras);
   let temaPendente = false;
   const observarTema = new doc.defaultView.MutationObserver(() => {
@@ -93,22 +93,37 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
   }
   function render() {
     const host = el('torasLinhas'); host.replaceChildren();
+    const wrap = doc.createElement('div'); wrap.className = 'toras-tabela-wrap'; wrap.style.overflowX = 'auto';
+    const tabela = doc.createElement('table'); tabela.style.cssText = 'width:100%;border-collapse:collapse;font-size:12px;line-height:1.4';
+    tabela.setAttribute('aria-label', 'Resumo dos lançamentos de toras');
+    const cabecalho = tabela.createTHead().insertRow();
+    for (const [indice, texto] of ['Espécie', 'Qtd.', 'Ponta fina (cm)', 'Comp. (m)', 'm³/tora', 'm³ total', 'Ação'].entries()) {
+      const th = doc.createElement('th'); th.scope = 'col'; th.textContent = texto;
+      th.style.cssText = 'padding:7px 5px;border-bottom:1px solid;text-align:'+ (indice ? 'right' : 'left');
+      if (indice === 6) th.className = 'no-print';
+      cabecalho.appendChild(th);
+    }
+    const corpo = tabela.createTBody(); wrap.appendChild(tabela); host.appendChild(wrap);
     let total = 0, quantidade = 0;
     linhas.forEach((l, indice) => {
       const { unitario, total: volume } = volumeToras(l.diametro, l.comprimento, l.quantidade);
       total += volume; quantidade += l.quantidade;
-      const bloco = doc.createElement('div'); bloco.style.cssText = 'padding:10px 0;border-bottom:1px solid #888;break-inside:avoid';
-      const titulo = doc.createElement('strong'); titulo.textContent = (indice + 1) + '. ' + (l.especie || 'Espécie não informada'); bloco.appendChild(titulo);
-      for (const [rotulo, valor] of [['Mão de obra', l.maoObra], ['Cliente', l.cliente]]) {
-        if (typeof valor === 'string' && valor.trim()) {
-          const detalhe = doc.createElement('div'); detalhe.textContent = rotulo + ': ' + valor; bloco.appendChild(detalhe);
-        }
-      }
-      for (const texto of ['Ponta fina: ' + fmt(l.diametro, 2) + ' cm • Comprimento: ' + fmt(l.comprimento, 2) + ' m', 'Quantidade: ' + l.quantidade + (l.quantidade === 1 ? ' tora' : ' toras'), 'Volume por tora: ' + fmt(unitario) + ' m³', 'Volume do grupo: ' + fmt(volume) + ' m³']) {
-        const p = doc.createElement('div'); p.textContent = texto; bloco.appendChild(p);
-      }
+      const tr = doc.createElement('tr');
+      const valores = [l.especie || 'Espécie não informada', String(l.quantidade), fmt(l.diametro, 2), fmt(l.comprimento, 2), fmt(unitario), fmt(volume)];
+      valores.forEach((valor, coluna) => {
+        const td = doc.createElement('td'); td.textContent = valor;
+        td.style.cssText = 'padding:7px 5px;border-bottom:1px solid;'+(coluna ? 'text-align:right;white-space:nowrap' : 'min-width:85px;overflow-wrap:anywhere');
+        tr.appendChild(td);
+      });
+      const acoes = doc.createElement('td'); acoes.className = 'no-print';
       const remover = doc.createElement('button'); remover.type = 'button'; remover.className = 'btn btn-secondary no-print'; remover.textContent = 'Remover'; remover.setAttribute('aria-label', 'Remover grupo ' + (indice + 1));
-      remover.onclick = () => { linhas.splice(indice, 1); salvar(); render(); }; bloco.appendChild(remover); host.appendChild(bloco);
+      remover.onclick = () => { linhas.splice(indice, 1); salvar(); render(); }; acoes.appendChild(remover); tr.appendChild(acoes); corpo.appendChild(tr);
+      const detalhes = [['Mão de obra', l.maoObra], ['Cliente', l.cliente]].filter(([, valor]) => typeof valor === 'string' && valor.trim());
+      if (detalhes.length) {
+        const nota = doc.createElement('tr'); const td = doc.createElement('td'); td.colSpan = 6;
+        td.style.cssText = 'padding:4px 5px 10px;border-bottom:1px solid;overflow-wrap:anywhere';
+        td.textContent = detalhes.map(([rotulo, valor]) => rotulo + ': ' + valor).join(' • '); nota.appendChild(td); corpo.appendChild(nota);
+      }
     });
     aplicarTema();
     el('torasTotal').textContent = 'Total: ' + quantidade + (quantidade === 1 ? ' tora • ' : ' toras • ') + fmt(total) + ' m³';
@@ -129,7 +144,26 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
   });
   abrir.addEventListener('click', () => { aplicarTema(); dialog.showModal(); el('toraDiametro').focus(); });
   dialog.querySelector('[data-fechar]').onclick = () => dialog.close();
-  dialog.querySelector('[data-copiar]').onclick = () => linhas.length ? copiar('torasExport') : el('toraAviso').textContent = 'Adicione uma tora à lista primeiro.';
+  dialog.querySelector('[data-copiar]').onclick = async () => {
+    if (!linhas.length) { el('toraAviso').textContent = 'Adicione uma tora à lista primeiro.'; return; }
+    // Na mensagem, a espécie fica acima da tabela para caber no celular.
+    const resumo = doc.createElement('div');
+    const titulo = doc.createElement('h3'); titulo.textContent = 'Cubagem de toras — ponta fina'; resumo.appendChild(titulo);
+    for (const l of linhas) {
+      const h = doc.createElement('h4'); h.textContent = l.especie || 'Espécie não informada'; resumo.appendChild(h);
+      for (const [rotulo, valor] of [['Mão de obra', l.maoObra], ['Cliente', l.cliente]]) {
+        if (typeof valor === 'string' && valor.trim()) { const p = doc.createElement('div'); p.textContent = rotulo + ': ' + valor; resumo.appendChild(p); }
+      }
+      const v = volumeToras(l.diametro, l.comprimento, l.quantidade);
+      const tabela = doc.createElement('table');
+      for (const valores of [['Qtd', 'D.cm', 'C.m', 'm³/tora', 'm³ total'], [String(l.quantidade), fmt(l.diametro, 2), fmt(l.comprimento, 2), fmt(v.unitario), fmt(v.total)]]) {
+        const tr = tabela.insertRow(); for (const valor of valores) tr.insertCell().textContent = valor;
+      }
+      resumo.appendChild(tabela);
+    }
+    const total = doc.createElement('p'); total.textContent = el('torasTotal').textContent; resumo.appendChild(total);
+    await copiar(resumo);
+  };
   dialog.querySelector('[data-pdf]').onclick = () => {
     if (!linhas.length) { el('toraAviso').textContent = 'Adicione uma tora à lista primeiro.'; return; }
     // O gerador clona o resumo antes de imprimir; retirar o modal da camada

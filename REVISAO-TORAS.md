@@ -7,3 +7,5 @@ Mostra volume individual e total; permite adicionar grupos, remover, limpar com 
 Verificação: npm test (12 testes, incluindo unidade, quantidade, medidas inválidas e overflow); python tests/toras-browser.py (formulário móvel, volumes, identificação como texto, resumo copiado, solicitação de PDF, recuperação local, remoção e limpeza); python tests/copia-browser.py; análise sintática dos scripts do template. A abertura do serviço de impressão Android precisa da conferência na prévia pelo usuário.
 
 Exemplo: diâmetro 40 cm, comprimento 3 m, quantidade 2 → 0,3770 m³ por tora; 0,7540 m³ total. Cálculos não arredondam antes da soma.
+
+Resumo em tabela: espécie, quantidade, diâmetro da ponta fina em cm, comprimento em m, volume individual e volume total. Campos opcionais acompanham cada lançamento. Rolagem horizontal no celular; tabela integral no PDF, sem ações. A cópia usa tabelas compactas por espécie para preservar números sem dividir colunas longas no WhatsApp. Os registros e o formato de armazenamento continuam os mesmos.
