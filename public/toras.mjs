@@ -18,7 +18,6 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
   dialog.setAttribute('aria-labelledby', 'tituloCubagemToras');
   dialog.style.cssText = 'box-sizing:border-box;width:min(680px,96vw);max-height:92dvh;overflow:auto;padding:18px;border:1px solid #888;border-radius:14px;background:var(--card,#fff);color:var(--text,#111)';
   dialog.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><h2 id="tituloCubagemToras">Cubagem de toras</h2><button type="button" class="btn btn-secondary" data-fechar aria-label="Fechar cubagem de toras">Fechar</button></div>
-    <p>Diâmetro da ponta fina + comprimento. Volume cilíndrico, sem desconto de casca.</p>
     <form id="formToras">
       <label for="toraMaoObra">Mão de obra (opcional)</label><input id="toraMaoObra" maxlength="100" autocomplete="off">
       <label for="toraCliente">Nome do cliente (opcional)</label><input id="toraCliente" maxlength="100" autocomplete="name">
@@ -33,7 +32,7 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
     </form>
     <p id="toraAviso" role="status">Lista salva somente neste dispositivo. Não movimenta estoque ou pedidos.</p>
     <div class="export-actions"><button type="button" class="btn btn-secondary" data-copiar>Copiar lista</button><button type="button" class="btn btn-primary" data-pdf>Gerar PDF</button><button type="button" class="btn btn-secondary" data-limpar>Limpar lista</button></div>
-    <div id="torasExport"><h3>Resumo da cubagem de toras</h3><p>Método: cilindro pelo diâmetro da ponta fina, sem desconto de casca.</p><p>Volume = π × (diâmetro em metros)² ÷ 4 × comprimento × quantidade.</p><div id="torasLinhas"></div><p id="torasTotal"></p></div>`;
+    <div id="torasExport"><h3>Resumo da cubagem de toras</h3><div id="torasLinhas"></div><p id="torasTotal"></p></div>`;
   doc.body.appendChild(dialog);
   const el = id => dialog.querySelector('#' + id);
   // O modal está fora de <main>. Copiar a aparência dos controles reais
