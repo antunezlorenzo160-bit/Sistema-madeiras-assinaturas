@@ -25,7 +25,7 @@ class Handler(BaseHTTPRequestHandler):
   elif self.path=='/toras.mjs':body='export const ready=true';mime='application/javascript'
   else:
    body='''<p id="state">starting</p><script type="module">
- let auth=null,db=null,sdk=null,authSdk=null,mainApp=null,appSdk=null,probeDb=null;
+ let etapaEntradaOffline='',auth=null,db=null,sdk=null,authSdk=null,mainApp=null,appSdk=null,probeDb=null;
  const config={apiKey:'fixture-key',projectId:'offline-fixture',appId:'fixture',authDomain:'localhost'};
  '''+prepare.replace('https://www.gstatic.com/firebasejs/12.2.1/',origin+'/sdk/')+'''
  try{await prepare();await auth.authStateReady();window.runtime=()=>({auth,db,sdk,authSdk});document.getElementById('state').textContent=auth.currentUser?'restored '+auth.currentUser.uid:'no session';}catch(e){document.getElementById('state').textContent=e.message}

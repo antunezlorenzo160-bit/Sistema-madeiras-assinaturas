@@ -1,9 +1,9 @@
 // Only cache application assets. Never cache APIs, signatures, tokens or company data here.
-const CACHE = 'sm-offline-20261023-3';
+const CACHE = 'sm-offline-20261023-4';
 const SDK = 'https://www.gstatic.com/firebasejs/12.2.1/';
 const CORE = ['/', '/toras.mjs', ...['firebase-app.js', 'firebase-auth.js', 'firebase-firestore.js'].map(file => SDK + file)];
 self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)));
+  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
@@ -15,7 +15,8 @@ self.addEventListener('fetch', event => {
   const request = event.request, url = new URL(request.url);
   if (request.method !== 'GET') return;
   const local = url.origin === self.location.origin;
-  const navigation = local && request.mode === 'navigate' && ['/', '/index.html'].includes(url.pathname) && !url.search;
+  const parametrosPermitidos = [...url.searchParams.keys()].every(key => key === 'atualizacao');
+  const navigation = local && request.mode === 'navigate' && ['/', '/index.html'].includes(url.pathname) && parametrosPermitidos;
   const module = local && url.pathname === '/toras.mjs' && !url.search;
   const sdk = url.href.startsWith(SDK) && url.pathname.endsWith('.js') && !url.search;
   if (!navigation && !module && !sdk) return;
