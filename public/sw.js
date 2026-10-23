@@ -1,5 +1,5 @@
 // Only cache application assets. Never cache APIs, signatures, tokens or company data here.
-const CACHE = 'sm-offline-20261023-2';
+const CACHE = 'sm-offline-20261023-3';
 const SDK = 'https://www.gstatic.com/firebasejs/12.2.1/';
 const CORE = ['/', '/toras.mjs', ...['firebase-app.js', 'firebase-auth.js', 'firebase-firestore.js'].map(file => SDK + file)];
 self.addEventListener('install', event => {

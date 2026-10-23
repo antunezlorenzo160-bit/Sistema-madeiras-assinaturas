@@ -25,7 +25,7 @@ try:
   page.click('#add');assert page.locator('#count').inner_text()=='1'
   page.evaluate("fetch('/.netlify/functions/assinatura-entrega').then(r=>r.text())")
   page.evaluate("fetch('/?assinar=fixture-only').then(r=>r.text())")
-  keys=page.evaluate("async()=>{const cache=await caches.open('sm-offline-20261023-2');return (await cache.keys()).map(r=>r.url)}")
+  keys=page.evaluate("async()=>{const cache=await caches.open('sm-offline-20261023-3');return (await cache.keys()).map(r=>r.url)}")
   assert len(keys)==5,keys
   assert all('assinar' not in k and '.netlify/functions' not in k for k in keys)
   context.set_offline(True);page.reload();page.wait_for_function("document.getElementById('count').textContent==='1'")
