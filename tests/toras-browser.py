@@ -28,12 +28,14 @@ with sync_playwright() as p:
  assert '0,3770' in text and '40,00' in text
  assert page.locator('#torasLinhas thead th').all_text_contents()==['Espécie','Qtd.','Diâmetro (cm)','Comp. (m)','m³/tora','m³ total','Ação']
  assert page.locator('#torasLinhas tbody tr').count()==2
- assert text.count('Mão de obra: Equipe teste')==1 and text.count('Cliente: Cliente teste')==1
+ assert text.count('Equipe teste')==1 and 'Mão de obra:' not in text and text.count('Cliente: Cliente teste')==1
  assert page.locator('#torasIdentificacao').inner_text().count('Equipe teste')==1
  assert 'Cliente teste' not in page.locator('#torasLinhas').inner_text()
  assert page.locator('#torasLinhas tbody tr').first.locator('td').all_text_contents()[1:6]==['2','40,00','3,00','0,3770','0,7540']
  assert 'Total: 3 toras • 0,9503 m³' in text and 'Remover' not in text
  page.click('[data-pdf]');assert 'Total: 3 toras • 0,9503 m³' in page.evaluate('window.pdfRequest.text')
+ assert 'Mão de obra:' not in page.evaluate('window.pdfRequest.text')
+ assert page.evaluate('window.pdfRequest.text').count('Equipe teste')==1
  assert 'Ação' not in page.evaluate('window.pdfRequest.html') and 'Remover' not in page.evaluate('window.pdfRequest.html')
  assert 'ponta fina' not in page.evaluate('window.pdfRequest.html').lower()
  assert 'Volume = π' in page.evaluate('window.pdfRequest.text')

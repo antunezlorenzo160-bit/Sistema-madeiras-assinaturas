@@ -97,9 +97,9 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
   el('toraMaoObra').value = typeof identificacao.maoObra === 'string' ? identificacao.maoObra : '';
   el('toraCliente').value = typeof identificacao.cliente === 'string' ? identificacao.cliente : '';
   function preencherIdentificacao(destino) {
-    for (const [rotulo, id] of [['Mão de obra', 'toraMaoObra'], ['Cliente', 'toraCliente']]) {
+    for (const [rotulo, id] of [['', 'toraMaoObra'], ['Cliente', 'toraCliente']]) {
       const valor = el(id).value.trim();
-      if (valor) { const p = doc.createElement('div'); p.textContent = rotulo + ': ' + valor; destino.appendChild(p); }
+      if (valor) { const p = doc.createElement('div'); p.textContent = rotulo ? rotulo + ': ' + valor : valor; destino.appendChild(p); }
     }
   }
   function atualizarIdentificacao() {
