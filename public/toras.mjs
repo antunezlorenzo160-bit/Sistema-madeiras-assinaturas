@@ -92,6 +92,24 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
   }
   const estiloToras = doc.createElement('style');
   estiloToras.textContent = '@media print{#torasExport .toras-tabela-wrap{overflow:visible!important}#torasExport tr{break-inside:avoid}}#cubagemToras .export-actions{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}#cubagemToras .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}#cubagemToras input{min-width:0}#cubagemToras::backdrop{background:rgb(0 0 0 / 55%)}@media(max-width:600px){#cubagemToras .grid3{grid-template-columns:1fr}}';
+
+  estiloToras.textContent += `
+    @media screen and (max-width:600px){
+      #cubagemToras{padding:12px!important}
+      #cubagemToras .toras-tabela-wrap{overflow:visible!important}
+      #cubagemToras .toras-resumo-tabela,#cubagemToras .toras-resumo-tabela tbody{display:block;width:100%;min-width:0}
+      #cubagemToras .toras-resumo-tabela thead{display:none}
+      #cubagemToras .toras-resumo-tabela tr{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));position:relative;gap:5px 3px;padding:8px 0;border-bottom:1px solid var(--line,#888)}
+      #cubagemToras .toras-resumo-tabela td{display:block;min-width:0!important;padding:2px!important;border:0!important;white-space:normal!important;overflow-wrap:anywhere;font-size:11px;line-height:1.25}
+      #cubagemToras .toras-resumo-tabela td.tora-especie{grid-column:1/-1;font-weight:700;font-size:12px;padding-right:30px!important;text-align:left!important}
+      #cubagemToras .toras-resumo-tabela td.tora-medida::before,#cubagemToras .toras-resumo-tabela td.tora-financeiro::before{content:attr(data-label);display:block;font-size:9px;font-weight:600;margin-bottom:3px}
+      #cubagemToras .toras-resumo-tabela td.tora-financeiro{grid-column:span 2;font-size:12px}
+      #cubagemToras .toras-resumo-tabela td.tora-financeiro:nth-child(8){grid-column:span 3}
+      #cubagemToras .toras-resumo-tabela td.tora-acoes{position:absolute;right:0;top:5px}
+      #cubagemToras .tora-acoes button{font-size:0!important;padding:3px 7px!important;min-height:26px!important;min-width:26px!important}
+      #cubagemToras .tora-acoes button::after{content:'×';font-size:18px;line-height:1}
+      #cubagemToras #torasTotal{font-size:13px;line-height:1.5;overflow-wrap:anywhere}
+    }`;
   doc.head.appendChild(estiloToras);
   let temaPendente = false;
   const observarTema = new doc.defaultView.MutationObserver(() => {
@@ -203,6 +221,7 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
     const host = el('torasLinhas'); host.replaceChildren();
     const wrap = doc.createElement('div'); wrap.className = 'toras-tabela-wrap'; wrap.style.overflowX = 'auto';
     const tabela = doc.createElement('table'); tabela.style.cssText = 'width:100%;border-collapse:collapse;font-size:12px;line-height:1.4';
+    tabela.className = 'toras-resumo-tabela';
     tabela.setAttribute('aria-label', 'Resumo dos lançamentos de toras');
     const comValores = linhas.some(l => typeof l.precoMaoObra === 'number');
     const cabecalho = tabela.createTHead().insertRow();
@@ -223,10 +242,12 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
       const valores = [l.especie || 'Espécie não informada', String(l.quantidade), fmt(l.diametro, 2), fmt(l.comprimento, 2), fmt(unitario), fmt(volume), ...(comValores ? [valor === null ? '—' : fmt(l.precoMaoObra, 2), valor === null ? '—' : fmt(valor, 2)] : [])];
       valores.forEach((valor, coluna) => {
         const td = doc.createElement('td'); td.textContent = valor;
+        td.dataset.label = ['Espécie', 'Qtd.', 'Diâm.cm', 'Comp.m', 'm³/tora', 'm³ total', 'R$/m³', 'Valor R$'][coluna];
+        td.className = coluna === 0 ? 'tora-especie' : (coluna >= 6 ? 'tora-financeiro' : 'tora-medida');
         td.style.cssText = 'padding:7px 5px;border-bottom:1px solid;'+(coluna ? 'text-align:right;white-space:nowrap' : 'min-width:85px;overflow-wrap:anywhere');
         tr.appendChild(td);
       });
-      const acoes = doc.createElement('td'); acoes.className = 'no-print';
+      const acoes = doc.createElement('td'); acoes.className = 'no-print tora-acoes';
       const remover = doc.createElement('button'); remover.type = 'button'; remover.className = 'btn btn-secondary no-print'; remover.textContent = 'Remover'; remover.setAttribute('aria-label', 'Remover grupo ' + (indice + 1));
       remover.onclick = () => { linhas.splice(indice, 1); salvar(); render(); }; acoes.appendChild(remover); tr.appendChild(acoes); corpo.appendChild(tr);
 

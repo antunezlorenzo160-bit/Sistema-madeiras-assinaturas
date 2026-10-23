@@ -36,6 +36,17 @@ with sync_playwright() as p:
  page.uncheck('#toraCobrar');launch('Toras próprias',25,4)
  assert rows.nth(3).locator('td').all_text_contents()[6:8]==['—','—']
  assert '144,12' in page.locator('#torasTotal').inner_text()
+ # Even small phone screens fit the summary without horizontal scrolling.
+ for width in [320,360,390]:
+  page.set_viewport_size({'width':width,'height':844})
+  assert page.locator('.toras-tabela-wrap').evaluate('(el)=>el.scrollWidth<=el.clientWidth+1')
+  assert page.locator('#cubagemToras').evaluate('(el)=>el.scrollWidth<=el.clientWidth+1')
+ page.locator('#torasTotal').scroll_into_view_if_needed()
+ (root/'review').mkdir(exist_ok=True)
+ page.screenshot(path=str(root/'review/toras-resumo-compacto.png'),full_page=True)
+ page.emulate_media(media='print')
+ assert page.locator('.toras-resumo-tabela').evaluate('(el)=>getComputedStyle(el).display')=='table'
+ page.emulate_media(media='screen')
  page.click('[data-copiar]');assert '144,12' in page.evaluate('copied') and '75,40' in page.evaluate('copied')
  page.click('[data-pdf]');assert '144,12' in page.evaluate('pdfText')
  page.evaluate("document.getElementById('cubagemToras').remove();start();receber(server)")
