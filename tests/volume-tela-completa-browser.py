@@ -5,6 +5,7 @@ from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
 from threading import Thread
 from playwright.sync_api import sync_playwright
 root=Path(__file__).resolve().parents[1];s=(root/'public/index.html').read_text();t=json.loads(re.search(r'const TEMPLATE=(".*?");\nlet credentials',s,re.S)[1])
+t=t.replace('parent.__v456Ready({',"window.__abrirCalculadoraTeste=()=>pcAbrirDestinoTelaCompleta('calculadora');parent.__v456Ready({")
 class Handler(BaseHTTPRequestHandler):
  def log_message(self,*args):pass
  def do_GET(self):
@@ -32,11 +33,13 @@ try:
   frame=page.frame_locator('iframe');frame.locator('#largura').wait_for(state='attached');page.wait_for_timeout(1500)
   f=page.frames[1]
   assert not errors, errors
+  f.evaluate('__abrirCalculadoraTeste()')
   f.evaluate("document.querySelectorAll('section.tab').forEach(s=>s.classList.toggle('active',s.id==='calculadora'));document.getElementById('espessura').value='2.5';document.getElementById('comprimento').value='3';document.getElementById('quantidade').value='1'")
   f.evaluate("document.getElementById('largura').value='25';document.getElementById('comprimento').value='3,5';document.getElementById('comprimento').dispatchEvent(new Event('input',{bubbles:true}))")
   assert f.evaluate("document.getElementById('comprimento').value")=='3.5'
   assert frame.locator('#volumeAntesLancamento').count()==0
   assert frame.locator('#sumVolumeTopo').inner_text()=='0,0219 m³'
+  assert frame.locator('#comprimento').evaluate("el=>{const c=el.getBoundingClientRect(),s=document.getElementById('servicosM3Lancamento').getBoundingClientRect();return c.right<=s.left&&c.top<s.bottom&&s.top<c.bottom}")
   browser.close()
 finally:server.shutdown()
 
