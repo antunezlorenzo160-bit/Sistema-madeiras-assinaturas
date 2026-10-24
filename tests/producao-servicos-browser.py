@@ -17,9 +17,9 @@ with sync_playwright() as p:
  ]}];}''')
  for name in names:page.evaluate('()=>{'+fn(name)+';window.'+name+'='+name+';}')
  before=page.evaluate('JSON.stringify(orcamentosGuardados)');page.evaluate('renderTelaProducao()')
- assert page.locator('#listaProducaoCompartilhada .prod-servicos').all_text_contents()==['Serviços: Aplainado','Serviços: Endireitado','Serviços: Endireitado + Aplainado','Serviços: Serviço antigo <img src=x>']
+ assert page.locator('#listaProducaoCompartilhada .prod-servicos').all_text_contents()==['Aplainar','Endireitar','Endireitar + Aplainar','Serviço antigo <img src=x>']
  page.evaluate("document.getElementById('direcionada').innerHTML=producaoDirecionadaHtml(orcamentosGuardados[0])")
- assert page.locator('#direcionada .prod-servicos').all_text_contents()==['Serviços: Aplainado','Serviços: Endireitado','Serviços: Endireitado + Aplainado','Serviços: Serviço antigo <img src=x>']
+ assert page.locator('#direcionada .prod-servicos').all_text_contents()==['Aplainar','Endireitar','Endireitar + Aplainar','Serviço antigo <img src=x>']
  assert page.locator('img').count()==0
  assert page.evaluate('JSON.stringify(orcamentosGuardados)')==before
  (root/'review').mkdir(exist_ok=True);page.screenshot(path=str(root/'review/producao-servicos.png'),full_page=True)
