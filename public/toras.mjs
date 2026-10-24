@@ -70,6 +70,10 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
   };
   function aplicarTema() {
     const card = doc.querySelector('#calculadora .card');
+    // A camada opaca impede que os controles da calculadora apareçam pelo tema translúcido.
+    const corTexto = doc.defaultView.getComputedStyle(card || doc.body).color.match(/[\d.]+/g) || [];
+    const textoClaro = corTexto.length >= 3 && (Number(corTexto[0]) * .299 + Number(corTexto[1]) * .587 + Number(corTexto[2]) * .114) > 140;
+    dialog.style.setProperty('--toras-fundo-solido', textoClaro ? '#0b1912' : '#ffffff');
     const fonte = ['font-family', 'font-size', 'font-weight', 'line-height', 'color'];
     copiarEstilo(card, dialog, [...fonte, 'background-color', 'background-image', 'border-color', 'border-style', 'border-width', 'border-radius', 'box-shadow']);
     dialog.querySelectorAll('input:not([type=checkbox])').forEach(input => {
@@ -91,7 +95,7 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
     });
   }
   const estiloToras = doc.createElement('style');
-  estiloToras.textContent = '@media print{#torasExport .toras-tabela-wrap{overflow:visible!important}#torasExport tr{break-inside:avoid}}#cubagemToras .export-actions{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}#cubagemToras .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}#cubagemToras input{min-width:0}#cubagemToras::backdrop{background:rgb(0 0 0 / 55%)}@media(max-width:600px){#cubagemToras .grid3{grid-template-columns:1fr}}';
+  estiloToras.textContent = '@media print{#torasExport .toras-tabela-wrap{overflow:visible!important}#torasExport tr{break-inside:avoid}}#cubagemToras .export-actions{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}#cubagemToras .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}#cubagemToras input{min-width:0}#cubagemToras::backdrop{background:var(--toras-fundo-solido,#0b1912)}@media screen{#cubagemToras{position:fixed!important;inset:0!important;margin:0!important;width:100%!important;max-width:none!important;height:100dvh!important;max-height:100dvh!important;border:0!important;border-radius:0!important;overflow-y:auto!important;overscroll-behavior:contain}}@media(max-width:600px){#cubagemToras .grid3{grid-template-columns:1fr}}';
 
   estiloToras.textContent += `
     @media screen and (max-width:600px){

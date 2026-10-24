@@ -15,6 +15,8 @@ with sync_playwright() as p:
  Object.defineProperty(navigator,'clipboard',{value:{writeText:async t=>window.copied=t}});
  window.start=()=>iniciarCubagemToras({storage:{getItem:k=>cache[k],setItem:(k,v)=>cache[k]=v},copiar:copiarBloco,pdf:(id,title)=>window.pdfRequest={text:textoExportacao(id),html:cloneLimpoParaExportar(id).outerHTML,title}});start();}''')
  page.click('#btnCubagemToras')
+ assert page.locator('#cubagemToras').evaluate('(el)=>{const r=el.getBoundingClientRect();return r.x===0&&r.y===0&&Math.abs(r.width-innerWidth)<1&&Math.abs(r.height-innerHeight)<1}')
+ assert page.locator('#cubagemToras').evaluate("el=>getComputedStyle(el,'::backdrop').backgroundColor")== 'rgb(255, 255, 255)'
  page.fill('#toraDiametro','40');page.fill('#toraComprimento','3');page.fill('#toraQuantidade','2')
  assert '0,7540 m³' in page.locator('#toraPreview').inner_text()
  page.fill('#toraMaoObra','Equipe teste');page.fill('#toraCliente','Cliente teste')
