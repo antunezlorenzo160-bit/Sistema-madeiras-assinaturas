@@ -48,8 +48,12 @@ try:
   f.wait_for_function('__estadoPacotes().contador===17')
   assert frame.locator('#pacotesAdicionar').input_value()==''
   assert frame.locator('#pacotesAdicionar').evaluate('(el)=>el.getBoundingClientRect().width')==64
+  f.evaluate("document.getElementById('largura').focus();document.getElementById('largura').blur();document.getElementById('comprimento').focus();document.getElementById('comprimento').blur()")
+  assert f.evaluate('__estadoPacotes().contador')==17
+  f.evaluate("document.getElementById('largura').value='10.0';document.getElementById('largura').dispatchEvent(new Event('input',{bubbles:true}))")
+  assert f.evaluate('__estadoPacotes().contador')==17
   state=f.evaluate('__estadoPacotes()');assert state['itens']==17 and abs(state['area']-30.6)<.00001,state
-  f.evaluate("document.getElementById('largura').value='15';document.getElementById('largura').dispatchEvent(new Event('change',{bubbles:true}))")
+  f.evaluate("document.getElementById('largura').value='15';document.getElementById('largura').dispatchEvent(new Event('input',{bubbles:true}))")
   assert f.evaluate('__estadoPacotes().contador')==0
   assert f.evaluate('__estadoPacotes().itens')==17
   f.evaluate("document.getElementById('pacotesAdicionar').focus();document.getElementById('pacotesAdicionar').value='2';document.getElementById('btnLancar').click()")
@@ -60,6 +64,9 @@ try:
   assert f.evaluate('__estadoPacotes().itens')==18
   frame.locator('#btnLancar').evaluate('(el)=>el.click()')
   f.wait_for_function('__estadoPacotes().contador===2')
+  assert f.evaluate('__estadoPacotes().itens')==19
+  f.evaluate("document.getElementById('comprimento').value='4';document.getElementById('comprimento').dispatchEvent(new Event('input',{bubbles:true}))")
+  assert f.evaluate('__estadoPacotes().contador')==0
   assert f.evaluate('__estadoPacotes().itens')==19
   assert not errors,errors
   browser.close()
