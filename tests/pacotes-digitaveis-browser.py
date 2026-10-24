@@ -76,6 +76,13 @@ try:
   f.wait_for_function('__estadoPacotes().contador===16')
   f.evaluate("document.getElementById('largura').value='15';document.getElementById('largura').dispatchEvent(new Event('input',{bubbles:true}))")
   assert f.evaluate('__estadoPacotes().contador')==2
+  f.evaluate("document.getElementById('largura').focus();document.getElementById('largura').value='15..';document.getElementById('largura').dispatchEvent(new Event('input',{bubbles:true}))")
+  f.wait_for_function('__estadoPacotes().itens===19')
+  page.wait_for_timeout(200)
+  assert f.evaluate('document.activeElement.tagName')=='INPUT'
+  f.evaluate('document.activeElement.blur()')
+  page.wait_for_timeout(150)
+  assert f.evaluate('document.activeElement.tagName')!='INPUT'
   assert not errors,errors
   browser.close()
 finally:server.shutdown()
