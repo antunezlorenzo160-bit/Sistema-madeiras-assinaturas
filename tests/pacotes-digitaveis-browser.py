@@ -86,6 +86,16 @@ try:
   f.wait_for_function('__estadoPacotes().itens===19')
   page.wait_for_timeout(200)
   assert f.evaluate('document.activeElement.tagName')=='INPUT'
+  f.wait_for_function("!document.getElementById('btnLancar').disabled")
+  antes=f.evaluate('__estadoPacotes()')
+  f.evaluate("window.__batidasPacotes=0;window.__timerPacotes=setInterval(()=>window.__batidasPacotes++,10);document.getElementById('pacotesAdicionar').focus();document.getElementById('pacotesAdicionar').value='200';document.getElementById('btnLancar').click()")
+  f.wait_for_function("!document.getElementById('btnLancar').disabled",timeout=60000)
+  depois=f.evaluate('__estadoPacotes()')
+  assert depois['itens']==antes['itens']+200,(antes,depois)
+  assert depois['contador']==antes['contador']+200,(antes,depois)
+  assert f.evaluate('window.__batidasPacotes')>5
+  f.evaluate('clearInterval(window.__timerPacotes)')
+  assert frame.locator('#pacotesAdicionar').input_value()==''
   assert not errors,errors
   browser.close()
 finally:server.shutdown()
