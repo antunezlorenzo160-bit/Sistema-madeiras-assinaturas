@@ -26,6 +26,16 @@ with sync_playwright() as p:
  page.fill('#largura','');assert '1,0000 m³' in page.locator('#sumVolumeTopo').inner_text()
  page.fill('#largura','-25');page.fill('#espessura','-4');assert '1,0000 m³' in page.locator('#sumVolumeTopo').inner_text()
  page.evaluate("modoMedida='m2'");page.fill('#largura','25');assert '2,00 m²' in page.locator('#sumVolumeTopo').inner_text()
+ # Repeated packages keep the accumulated total above and one package below.
+ page.fill('#largura','10');page.fill('#comprimento','3');page.fill('#quantidade','6')
+ for total in ['1,80','3,60','16,20','14,40']:
+  page.evaluate('(total)=>{$("sumVolumeTopo").dataset.volumeLancado=total+" m²";preview()}',total)
+  assert page.locator('#sumVolumeTopo').inner_text()==total+' m²'
+  assert page.locator('#previewTotal').inner_text()=='1,80 m²'
+ page.evaluate('$("sumVolumeTopo").dataset.volumeLancado="0,00 m²";preview()')
+ assert page.locator('#sumVolumeTopo').inner_text()=='1,80 m²'
+ page.evaluate('$("sumVolumeTopo").dataset.volumeLancado="1,0000 m³"')
+ page.fill('#comprimento','4')
  page.evaluate("modoMedida='linear';preview()");assert '4,00 m' in page.locator('#sumVolumeTopo').inner_text()
  page.evaluate("modoMedida='granel'");page.fill('#volumeGranelV384','1.25');assert '1,2500 m³' in page.locator('#sumVolumeTopo').inner_text()
  page.evaluate("modoMedida='m3fechado'");page.fill('#volumeFechadoV387','2.5');assert '2,5000 m³' in page.locator('#sumVolumeTopo').inner_text()
