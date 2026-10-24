@@ -39,20 +39,18 @@ try:
   assert frame.locator('#volumeAntesLancamento').count()==0
   assert frame.locator('#sumVolumeTopo').inner_text()=='0,0219 m³'
   f.evaluate('__testePacotes()')
+  assert frame.locator('#miniNumeroPacotesM2').evaluate('(el)=>el.tagName')=='STRONG'
   f.evaluate("document.querySelectorAll('section.tab').forEach(s=>s.classList.toggle('active',s.id==='calculadora'));document.body.classList.add('tema-vidro')")
-  assert frame.locator('#miniContadorPacotes').evaluate('(el)=>el.getBoundingClientRect().width')==64
-  assert frame.locator('#miniContadorPacotes').evaluate('(el)=>getComputedStyle(el).pointerEvents')=='auto'
-  assert frame.locator('#miniNumeroPacotesM2').evaluate('(el)=>el.getBoundingClientRect().width')<=64
 
-  f.evaluate("document.getElementById('miniNumeroPacotesM2').focus();document.getElementById('miniNumeroPacotesM2').value='7';document.getElementById('miniNumeroPacotesM2').dispatchEvent(new Event('change',{bubbles:true}))")
+  f.evaluate("document.getElementById('pacotesAdicionar').focus();document.getElementById('pacotesAdicionar').value='7';document.getElementById('btnAdicionarPacotesDigitados').click()")
   f.wait_for_function('__estadoPacotes().contador===7')
-  f.evaluate("document.getElementById('miniNumeroPacotesM2').focus();document.getElementById('miniNumeroPacotesM2').value='10';document.getElementById('miniNumeroPacotesM2').dispatchEvent(new Event('change',{bubbles:true}))")
+  f.evaluate("document.getElementById('pacotesAdicionar').focus();document.getElementById('pacotesAdicionar').value='10';document.getElementById('btnAdicionarPacotesDigitados').click()")
   f.wait_for_function('__estadoPacotes().contador===17')
   state=f.evaluate('__estadoPacotes()');assert state['itens']==17 and abs(state['area']-30.6)<.00001,state
   f.evaluate("document.getElementById('largura').value='15';document.getElementById('largura').dispatchEvent(new Event('change',{bubbles:true}))")
   assert f.evaluate('__estadoPacotes().contador')==0
   assert f.evaluate('__estadoPacotes().itens')==17
-  f.evaluate("document.getElementById('miniNumeroPacotesM2').focus();document.getElementById('miniNumeroPacotesM2').value='2';document.getElementById('miniNumeroPacotesM2').dispatchEvent(new Event('change',{bubbles:true}))")
+  f.evaluate("document.getElementById('pacotesAdicionar').focus();document.getElementById('pacotesAdicionar').value='2';document.getElementById('btnAdicionarPacotesDigitados').click()")
   f.wait_for_function('__estadoPacotes().contador===2')
   assert f.evaluate('__estadoPacotes().itens')==19
   frame.locator('#btnPacoteMenos').evaluate('(el)=>el.click()')
