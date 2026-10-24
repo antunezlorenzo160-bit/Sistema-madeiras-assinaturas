@@ -39,6 +39,10 @@ try:
   assert frame.locator('#volumeAntesLancamento').count()==0
   assert frame.locator('#sumVolumeTopo').inner_text()=='0,0219 m³'
   f.evaluate('__testLinear()')
+  page.wait_for_timeout(200)
+  assert frame.locator('#btnVerdeOuCorrigirV260').is_hidden()
+  assert 'Enc.' in frame.locator('#servicosM3Lancamento').inner_text()
+  assert 'Friz.' in frame.locator('#servicosM3Lancamento').inner_text()
   assert frame.locator('#quantidade').is_visible()
   assert frame.locator('#quantidade').evaluate("el=>{const q=el.getBoundingClientRect(),c=document.getElementById('comprimento').getBoundingClientRect();return Math.abs(q.width-c.width)<1&&q.top>c.bottom&&Math.abs(q.left-c.left)<1}")
   assert frame.locator('#previewVolume').inner_text()=='4,00 m'
