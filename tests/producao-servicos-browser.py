@@ -5,7 +5,7 @@ from playwright.sync_api import sync_playwright
 root=Path(__file__).resolve().parents[1];s=(root/'public/index.html').read_text();t=json.loads(re.search(r'const TEMPLATE=(".*?");\nlet credentials',s,re.S)[1])
 def fn(name):
  a=t.index('function '+name+'(');m=re.search(r'^function |^async function ',t[a+10:],re.M);return t[a:a+10+m.start()]
-names=['escProd','servicosProducaoTexto','servicosProducaoHtml','pedidoProducaoDados','renderTelaProducao','numeroProd','specsMaterialUsado','baixaCalculadaMaterial','producaoDirecionadaHtml']
+names=['escProd','servicosProducaoTexto','servicosProducaoHtml','podeEditarObservacaoProducao','estadoObservacaoProducao','observacaoProducaoHtml','pedidoProducaoDados','renderTelaProducao','numeroProd','specsMaterialUsado','baixaCalculadaMaterial','producaoDirecionadaHtml']
 with sync_playwright() as p:
  browser=p.chromium.launch(executable_path='/usr/bin/chromium',args=['--no-sandbox']);page=browser.new_page(viewport={'width':390,'height':844});page.route('**/*',lambda r:r.abort());page.set_content('<div id="listaProducaoCompartilhada"></div><div id="direcionada"></div>')
  page.evaluate('''() => {window.statusProducaoPedido=()=>'';window.iniciarCaixinhasMaterialUsado=()=>{};window.limparQuebrasLiteraisProducaoV624=()=>{};window.linhaProducaoCalcJaUsada=()=>false;window.num2=String;window.orcamentosGuardados=[{id:'pedido',status:'confirmado',cliente:'Teste',itens:[
