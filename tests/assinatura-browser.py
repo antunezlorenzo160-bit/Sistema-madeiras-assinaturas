@@ -15,12 +15,17 @@ with sync_playwright() as p:
  page=browser.new_page(viewport={'width':390,'height':844},device_scale_factor=2)
  payloads=[]
  def api(route):
+  if route.request.post_data_json.get('action')=='preview':
+   route.fulfill(status=200,content_type='application/json',body=json.dumps({'pedido':{'cliente':'Cliente teste','dataEntrega':'2026-10-24','itens':[{'madeira':'Cedrinho <script>','tipoMedida':'m2','quantidade':60,'pacotes':10,'largura':10,'comprimento':3,'volume':18,'valor':2160}],'total':2160,'desconto':0},'alreadySigned':False}));return
   payloads.append(route.request.post_data_json)
   route.fulfill(status=200,content_type='application/json',body='{"ok":true,"alreadySigned":false}')
  page.route('**/*',lambda route:route.abort())
  page.route('http://local.test/**',lambda route:route.fulfill(content_type='text/html',body=html))
  page.route('**/.netlify/functions/assinatura-entrega',api)
  page.goto('http://local.test/?assinar='+'a'*43)
+ page.wait_for_function("document.getElementById('assinatura-resumo-conteudo').textContent.includes('10 pk')")
+ assert '2.160,00' in page.locator('#assinatura-resumo-conteudo').inner_text()
+ assert page.locator('#assinatura-resumo-conteudo script').count()==0
  page.locator('#assinatura-nome-publico-v683').fill('Recebedor de teste')
  assert page.locator('#assinatura-codigo-publico-v683').count()==0
  page.locator('#assinatura-enviar-v683').click()

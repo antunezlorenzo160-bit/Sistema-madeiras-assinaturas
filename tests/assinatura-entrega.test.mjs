@@ -62,3 +62,12 @@ test('new and reopened invitations stay on the request site instead of the produ
   if(previousPrimeUrl===undefined)delete process.env.DEPLOY_PRIME_URL;else process.env.DEPLOY_PRIME_URL=previousPrimeUrl;
  }
 });
+
+test('preview uses only the token-bound order and returns selected customer-facing fields',async()=>{
+ const records=setup();records.set(paths.order,{status:'entregue',cliente:'Cliente',telefone:'private',desconto:10,itens:[{madeira:'Pinus',tipoMedida:'m2',quantidade:6,contadoComoPacote:true,volume:1.8,valor:100,custo:25}],segredo:'internal'});
+ const r=await submit({action:'preview',token,orderId:'other'});assert.equal(r.status,200);const data=await r.json();
+ assert.equal(data.pedido.cliente,'Cliente');assert.equal(data.pedido.total,90);assert.equal(data.pedido.itens[0].pacotes,1);
+ assert.equal('telefone' in data.pedido,false);assert.equal('custo' in data.pedido.itens[0],false);assert.equal('segredo' in data.pedido,false);
+ assert.equal((await submit({action:'preview',token:'b'.repeat(43)})).status,404);
+ records.set(paths.invite,{...records.get(paths.invite),empresaId:'other'});assert.equal((await submit({action:'preview'})).status,404);
+});

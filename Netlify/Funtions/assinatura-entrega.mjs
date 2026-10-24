@@ -133,6 +133,28 @@ async function signDelivery({ db, token, recipientName, signatureImage }) {
   return { ok: true, alreadySigned: Boolean(outcome.alreadySigned) };
 }
 
+async function previewDelivery({db,token}){
+ if(typeof token!=='string'||!/^[A-Za-z0-9_-]{40,60}$/.test(token))throw new ApiError(404,'Link inválido ou já utilizado.');
+ const index=await db.doc(`${TOKEN_INDEX}/${digest(token)}`).get();
+ if(!index.exists)throw new ApiError(404,'Link inválido ou já utilizado.');
+ const {empresaId,inviteId}=index.data();
+ if(typeof empresaId!=='string'||typeof inviteId!=='string')throw new ApiError(404,'Link inválido.');
+ const convite=await db.doc(`empresas/${empresaId}/dados/${COLLECTION}/registros/${inviteId}`).get();
+ const inv=convite.data();
+ if(!convite.exists||inv.empresaId!==empresaId||typeof inv.orderId!=='string'||!['pending','signed'].includes(inv.status))throw new ApiError(404,'Link inválido ou já utilizado.');
+ const registro=await db.doc(`empresas/${empresaId}/dados/${ORDER_COLLECTION}/registros/${inv.orderId}`).get();
+ if(!registro.exists||registro.data().status!=='entregue')throw new ApiError(409,'O pedido não está marcado como entregue.');
+ const pedido=registro.data(),numero=v=>Number.isFinite(Number(v))?Number(v):0,texto=v=>String(v||'').slice(0,180);
+ const itens=(Array.isArray(pedido.itens)?pedido.itens:[]).map(x=>({
+  madeira:texto(x.madeira||x.especie),produto:texto(x.produto),tipoMedida:texto(x.tipoMedida||'m3'),
+  quantidade:numero(x.quantidade),pacotes:numero(x.pacotes)||(x.contadoComoPacote===true?1:0),
+  largura:numero(x.largura),espessura:numero(x.espessura),comprimento:numero(x.comprimento),volume:numero(x.volume),valor:numero(x.valor),
+  endireitamento:x.endireitamento===true,aplainamento:x.aplainamento===true
+ }));
+ const subtotal=itens.reduce((s,x)=>s+x.valor,0),desconto=subtotal*numero(pedido.desconto)/100;
+ return {pedido:{cliente:texto(pedido.cliente),dataEntrega:texto(pedido.dataEntrega),itens,subtotal,desconto,total:subtotal-desconto},alreadySigned:inv.status==='signed'};
+}
+
 export default async function handler(req) {
   if (req.method !== 'POST') return json(405, { error: 'Método não permitido.' });
   try {
@@ -143,6 +165,7 @@ export default async function handler(req) {
       if (typeof input.orderId !== 'string') throw new ApiError(400, 'Pedido inválido.');
       return json(200, await createInvite({ db, key, uid: member.uid, empresaId: member.empresaId, orderId: input.orderId, siteUrl: new URL(req.url).origin }));
     }
+    if(input.action==='preview')return json(200,await previewDelivery({db,token:input.token}));
     if (input.action === 'sign') {
       return json(200, await signDelivery({ db, token: input.token, recipientName: input.recipientName, signatureImage: input.signatureImage }));
     }
