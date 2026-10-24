@@ -8,7 +8,7 @@ a=t.index('function atualizarVolumeAntesLancamento(');b=t.index('// V351',a);fun
 a=t.index("['largura','comprimento'].forEach");b=t.index('// Ao tocar nos campos',a);events=t[a:b]
 with sync_playwright() as p:
  browser=p.chromium.launch(executable_path='/usr/bin/chromium',args=['--no-sandbox']);page=browser.new_page(viewport={'width':390,'height':844})
- page.set_content('<div id="sumVolumeTopo" data-volume-lancado="1,0000 m³">1,0000 m³</div>'+''.join('<input id="'+id+'" type="text" value="'+value+'">' for id,value in [('quantidade','1'),('largura',''),('comprimento','3'),('espessura','2.5'),('precoM3','0'),('volumeGranelV384',''),('granelLargura',''),('granelComprimento',''),('granelAltura',''),('volumeFechadoV387','')])+''.join('<input type="checkbox" id="'+id+'">'for id in ['chkEndireitamento','chkAplainamento'])+''.join('<span id="'+id+'"></span>'for id in ['previewVolume','previewTotal','previewValor','precoFechadoV387','precoGranelV384']))
+ page.set_content('<div id="sumVolumeTopo" data-volume-lancado="1,0000 m³">1,0000 m³</div>'+''.join('<input id="'+id+'" type="text" value="'+value+'">' for id,value in [('quantidade','1'),('largura',''),('comprimento','3'),('espessura','2.5'),('precoM3','0'),('volumeGranelV384',''),('granelLargura',''),('granelComprimento',''),('granelAltura',''),('volumeFechadoV387','')])+''.join('<input type="checkbox" id="'+id+'">'for id in ['chkEndireitamento','chkAplainamento','chkVerdeFechado'])+''.join('<span id="'+id+'"></span>'for id in ['previewVolume','previewTotal','previewValor','precoFechadoV387','precoGranelV384']))
  page.evaluate('''() => {window.$=id=>document.getElementById(id);window.modoMedida='m3';window.madeiras=[];window.servicosM3={};window.lancamentos=[];window.num4=v=>v.toFixed(4).replace('.',',');window.num2=v=>v.toFixed(2).replace('.',',');window.moeda=String;window.volume=(l,e,c,q)=>(l/100)*(e/100)*c*q;window.areaM2=(l,c,q)=>(l/100)*c*q;window.regraLinearSelecionadaV381=()=>null;}''')
  page.evaluate('() => {'+functions+"function atualizarPrecoBitolaCalculadora(){calcPreview()}\n"+events+";window.preview=calcPreview;preview();}")
  page.fill('#largura','25');assert page.locator('#sumVolumeTopo').inner_text()=='0,0188 m³'
@@ -36,7 +36,7 @@ with sync_playwright() as p:
  assert page.locator('#sumVolumeTopo').inner_text()=='1,80 m²'
  page.evaluate('$("sumVolumeTopo").dataset.volumeLancado="1,0000 m³"')
  page.fill('#comprimento','4')
- page.evaluate("modoMedida='linear';preview()");assert '4,00 m' in page.locator('#sumVolumeTopo').inner_text()
+ page.evaluate("modoMedida='linear';preview()");assert '24,00 m' in page.locator('#sumVolumeTopo').inner_text()
  page.evaluate("modoMedida='granel'");page.fill('#volumeGranelV384','1.25');assert '1,2500 m³' in page.locator('#sumVolumeTopo').inner_text()
  page.evaluate("modoMedida='m3fechado'");page.fill('#volumeFechadoV387','2.5');assert '2,5000 m³' in page.locator('#sumVolumeTopo').inner_text()
  assert page.locator('#sumVolumeTopo').get_attribute('data-volume-lancado')=='1,0000 m³'
