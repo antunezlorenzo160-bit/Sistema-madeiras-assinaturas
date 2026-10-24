@@ -48,6 +48,7 @@ try:
   f.wait_for_function('__estadoPacotes().contador===17')
   assert frame.locator('#pacotesAdicionar').input_value()==''
   assert frame.locator('#pacotesAdicionar').evaluate('(el)=>el.getBoundingClientRect().width')==64
+  assert frame.locator('#comprimento').evaluate("el=>Math.abs(el.getBoundingClientRect().width-document.getElementById('largura').getBoundingClientRect().width)<1")
   assert frame.locator('#pacotesAdicionar').evaluate("el=>{const a=el.getBoundingClientRect(),b=document.getElementById('comprimento').getBoundingClientRect();return a.left>b.left&&a.right<=b.right&&a.top>=b.top&&a.bottom<=b.bottom}")
   f.evaluate("document.getElementById('largura').focus();document.getElementById('largura').blur();document.getElementById('comprimento').focus();document.getElementById('comprimento').blur()")
   assert f.evaluate('__estadoPacotes().contador')==17
