@@ -44,6 +44,7 @@ try:
   assert 'Enc.' in frame.locator('#servicosM3Lancamento').inner_text()
   assert 'Friz.' in frame.locator('#servicosM3Lancamento').inner_text()
   assert frame.locator('#quantidade').is_visible()
+  assert frame.locator('#quantidade').evaluate("el=>{const q=el.getBoundingClientRect(),s=document.getElementById('servicosM3Lancamento').getBoundingClientRect();return q.left<s.left&&q.top<s.bottom&&q.bottom>s.top}")
   assert frame.locator('#quantidade').evaluate("el=>{const q=el.getBoundingClientRect(),c=document.getElementById('comprimento').getBoundingClientRect();return Math.abs(q.width-c.width)<1&&q.top>c.bottom&&Math.abs(q.left-c.left)<1}")
   assert frame.locator('#previewVolume').inner_text()=='4,00 m'
   assert frame.locator('#previewTotal').inner_text()=='92,00 m'
