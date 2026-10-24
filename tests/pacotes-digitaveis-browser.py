@@ -68,6 +68,12 @@ try:
   f.evaluate("document.getElementById('comprimento').value='4';document.getElementById('comprimento').dispatchEvent(new Event('input',{bubbles:true}))")
   assert f.evaluate('__estadoPacotes().contador')==0
   assert f.evaluate('__estadoPacotes().itens')==19
+  f.evaluate("document.getElementById('largura').value='10';document.getElementById('comprimento').value='3';document.getElementById('comprimento').dispatchEvent(new Event('input',{bubbles:true}))")
+  assert f.evaluate('__estadoPacotes().contador')==17
+  frame.locator('#btnPacoteMenos').evaluate('(el)=>el.click()')
+  f.wait_for_function('__estadoPacotes().contador===16')
+  f.evaluate("document.getElementById('largura').value='15';document.getElementById('largura').dispatchEvent(new Event('input',{bubbles:true}))")
+  assert f.evaluate('__estadoPacotes().contador')==2
   assert not errors,errors
   browser.close()
 finally:server.shutdown()
