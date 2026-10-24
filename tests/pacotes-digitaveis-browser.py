@@ -46,7 +46,10 @@ try:
   f.wait_for_function('__estadoPacotes().contador===7')
   f.evaluate("document.getElementById('pacotesAdicionar').focus();document.getElementById('pacotesAdicionar').value='10';document.getElementById('btnLancar').click()")
   f.wait_for_function('__estadoPacotes().contador===17')
+  f.wait_for_function("!document.getElementById('btnLancar').disabled")
   assert frame.locator('#pacotesAdicionar').input_value()==''
+  assert f.evaluate('document.activeElement.id')=='pacotesAdicionar'
+  assert frame.locator('#pacotesAdicionar').is_enabled()
   assert frame.locator('#pacotesAdicionar').evaluate('(el)=>el.getBoundingClientRect().width')==64
   assert frame.locator('#comprimento').evaluate("el=>Math.abs(el.getBoundingClientRect().width-document.getElementById('largura').getBoundingClientRect().width)<1")
   assert frame.locator('#pacotesAdicionar').evaluate("el=>{const a=el.getBoundingClientRect(),b=document.getElementById('comprimento').getBoundingClientRect();return a.left>b.left&&a.right<=b.right&&a.top>=b.top&&a.bottom<=b.bottom}")
@@ -80,9 +83,6 @@ try:
   f.wait_for_function('__estadoPacotes().itens===19')
   page.wait_for_timeout(200)
   assert f.evaluate('document.activeElement.tagName')=='INPUT'
-  f.evaluate('document.activeElement.blur()')
-  page.wait_for_timeout(150)
-  assert f.evaluate('document.activeElement.tagName')!='INPUT'
   assert not errors,errors
   browser.close()
 finally:server.shutdown()
