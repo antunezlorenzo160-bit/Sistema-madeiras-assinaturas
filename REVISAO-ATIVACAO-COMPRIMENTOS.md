@@ -1,0 +1,7 @@
+Ativação do balanceamento por comprimento
+
+No Cadastro m³ de cada madeira, o bloco Balanceamento de venda por comprimento oferece botão “Balanceamento ativado/desativado”. Salvar cadastro confirma a opção. A desativação preserva faixas, referências e exceções, mas omite a regra das validações de lançamento, guardar orçamento, confirmar compra, indicadores e consumo de exceções. Reativar reutiliza a configuração preservada. Não modifica o controle por largura.
+
+O campo controleVendaComprimentosAtivo é salvo com o cadastro na coleção de madeiras já delimitada pela empresa. Cadastros sem esse campo mantêm comportamento anterior (ativado). Edição carrega também regras desativadas; captura de referências não é refeita simplesmente por desativar/reativar. Assinaturas de sincronização e cache dos indicadores incluem a opção e as regras, permitindo que mudanças recebidas atualizem a tela.
+
+Verificação: Chromium com o template completo e Firebase simulado edita uma madeira legada, desativa, salva e reabre sem perder faixas/referência/exceção, depois reativa. Uma venda desbalanceada real é bloqueada quando ativa, permitida quando desativada e novamente bloqueada ao reativar. Também valida a mudança de assinatura para sincronização. Regressão da tela completa de cálculo do volume e análise sintática dos scripts aprovadas. Nenhum cadastro real foi alterado nos testes; publicação continua somente na prévia.
