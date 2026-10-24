@@ -22,7 +22,7 @@ with sync_playwright() as p:
  page.route('**/.netlify/functions/assinatura-entrega',api)
  page.goto('http://local.test/?assinar='+'a'*43)
  page.locator('#assinatura-nome-publico-v683').fill('Recebedor de teste')
- page.locator('#assinatura-codigo-publico-v683').fill('12345678')
+ assert page.locator('#assinatura-codigo-publico-v683').count()==0
  page.locator('#assinatura-enviar-v683').click()
  assert not payloads
  assert 'Desenhe' in page.locator('#assinatura-status-publico-v683').inner_text()

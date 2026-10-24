@@ -27,7 +27,7 @@ test('saves image, name and timestamp together in the correct order; prevents ov
  const order=records.get(paths.order);assert.equal(order.assinaturaImagem,fixture.signatureImage);assert.equal(order.assinaturaStatus,'assinado');assert.equal(order.assinadoPor,fixture.recipientName);assert.ok(order.assinadoEm>0);
  const again=await submit({recipientName:'Outro recebedor'});assert.equal((await again.json()).alreadySigned,true);assert.equal(records.get(paths.order).assinadoPor,fixture.recipientName);
 });
-test('invalid code cannot save an image',async()=>{const records=setup();assert.equal((await submit({code:'99999999'})).status,400);assert.equal(records.get(paths.order).assinaturaImagem,undefined);assert.equal(records.get(paths.invite).attempts,1);});
+test('name and drawn signature work without a separate code, including existing invitations',async()=>{const records=setup();assert.equal((await submit({code:undefined})).status,200);assert.equal(records.get(paths.order).assinaturaCodigoVerificado,false);assert.equal(records.get(paths.order).assinaturaMetodo,'link_nome_assinatura');});
 test('missing image cannot mark order signed',async()=>{const records=setup();assert.equal((await submit({signatureImage:undefined})).status,400);assert.equal(records.get(paths.invite).status,'pending');});
 test('wrong token and undelivered orders cannot be signed',async()=>{const records=setup();assert.equal((await submit({token:'b'.repeat(43)})).status,404);records.set(paths.order,{status:'confirmado'});assert.equal((await submit({})).status,409);assert.equal(records.get(paths.order).assinaturaImagem,undefined);});
 
@@ -53,7 +53,7 @@ test('new and reopened invitations stay on the request site instead of the produ
   const first=await create('https://deploy-preview-1--example.netlify.app');
   const reopened=await create('https://deploy-preview-1--example.netlify.app');
   assert.equal(new URL(first.link).origin,'https://deploy-preview-1--example.netlify.app');
-  assert.equal(reopened.link,first.link);assert.equal(reopened.code,first.code);
+  assert.equal(reopened.link,first.link);assert.equal('code' in reopened,false);assert.equal('code' in first,false);
   const production=await create('https://production.example');
   assert.equal(new URL(production.link).origin,'https://production.example');
   assert.equal(new URL(production.link).search,new URL(first.link).search);
