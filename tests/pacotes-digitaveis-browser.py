@@ -7,6 +7,7 @@ from playwright.sync_api import sync_playwright
 root=Path(__file__).resolve().parents[1];s=(root/'public/index.html').read_text();t=json.loads(re.search(r'const TEMPLATE=(".*?");\nlet credentials',s,re.S)[1])
 t=t.replace('parent.__v456Ready({',"window.__testePacotes=()=>{pcAbrirDestinoTelaCompleta('calculadora');modoMedida='m2';madeiras=[{id:'teste',nome:'Teste',tipoCadastro:'m2',preco:120}];aplicarModoMedida();$('calcMadeira').value='teste';document.getElementById('largura').value='10';$('comprimento').value='3';$('quantidade').value='6';document.querySelector('input[name=destinoLancamento][value=orcamento]').checked=true;destinoAtual='orcamento';contadorPacotes=0;contadorPacotesLigado=true;orcamento=[];medidaContadorPacotes='';atualizarPainelPacotes();};window.__estadoPacotes=()=>({contador:contadorPacotes,itens:orcamento.length,area:orcamento.reduce((s,x)=>s+x.volume,0)});parent.__v456Ready({")
 t=t.replace('function renderLancamentos(){\n  if(lotePacotesEmCurso)return;', 'function renderLancamentos(){\n  if(lotePacotesEmCurso)return;window.__desenhosPacotes=(window.__desenhosPacotes||0)+1;')
+t=t.replace('parent.__v456Ready({',"window.__prepararCargaPacotes=()=>{document.querySelector('input[name=destinoLancamento][value=carga]').checked=true;document.querySelector('input[name=estoqueCarga][value=estoque1]').checked=true;destinoAtual='carga';estoqueCargaAtual='estoque1';lancamentos=[];carregamentos=[];movimentos=[];estoque1Lancamentos=[{id:'stock',madeiraId:'teste',madeira:'Teste',tipoMedida:'m2',largura:15,comprimento:3,quantidade:5000,volume:2250,valor:270000,estadoMadeira:'seca'}];estoque2Lancamentos=[];contadorPacotes=0;medidaContadorPacotes='';};window.__estadoCargaPacotes=()=>({cargas:carregamentos.length,pecas:estoque1Lancamentos.reduce((s,x)=>s+x.quantidade,0),area:carregamentos.reduce((s,x)=>s+x.volume,0),contador:contadorPacotes});parent.__v456Ready({")
 class Handler(BaseHTTPRequestHandler):
  def log_message(self,*args):pass
  def do_GET(self):
@@ -88,14 +89,26 @@ try:
   assert f.evaluate('document.activeElement.tagName')=='INPUT'
   f.wait_for_function("!document.getElementById('btnLancar').disabled")
   antes=f.evaluate('__estadoPacotes()')
-  f.evaluate("window.__batidasPacotes=0;window.__timerPacotes=setInterval(()=>window.__batidasPacotes++,10);document.getElementById('pacotesAdicionar').focus();document.getElementById('pacotesAdicionar').value='200';document.getElementById('btnLancar').click()")
+  inicio_lote=f.evaluate('performance.now()')
+  f.evaluate("window.__batidasPacotes=0;window.__timerPacotes=setInterval(()=>window.__batidasPacotes++,10);document.getElementById('pacotesAdicionar').focus();document.getElementById('pacotesAdicionar').value='500';document.getElementById('btnLancar').click()")
   f.wait_for_function("!document.getElementById('btnLancar').disabled",timeout=60000)
   depois=f.evaluate('__estadoPacotes()')
-  assert depois['itens']==antes['itens']+200,(antes,depois)
-  assert depois['contador']==antes['contador']+200,(antes,depois)
-  assert f.evaluate('window.__batidasPacotes')>5
+  tempo_lote=f.evaluate('performance.now()')-inicio_lote
+  print('500 packages completed in',round(tempo_lote),'ms')
+  assert tempo_lote<5000,tempo_lote
+  assert depois['itens']==antes['itens']+500,(antes,depois)
+  assert depois['contador']==antes['contador']+500,(antes,depois)
+  assert f.evaluate('window.__batidasPacotes')>0
   f.evaluate('clearInterval(window.__timerPacotes)')
   assert frame.locator('#pacotesAdicionar').input_value()==''
+  f.evaluate('__prepararCargaPacotes()')
+  inicio_carga=f.evaluate('performance.now()')
+  f.evaluate("document.getElementById('pacotesAdicionar').value='500';document.getElementById('btnLancar').click()")
+  f.wait_for_function("!document.getElementById('btnLancar').disabled",timeout=60000)
+  carga=f.evaluate('__estadoCargaPacotes()')
+  assert carga['cargas']==500 and carga['pecas']==5000 and carga['contador']==500,carga
+  assert abs(carga['area']-1350)<.0001,carga
+  print('500 Carga packages completed in',round(f.evaluate('performance.now()')-inicio_carga),'ms')
   assert not errors,errors
   browser.close()
 finally:server.shutdown()
