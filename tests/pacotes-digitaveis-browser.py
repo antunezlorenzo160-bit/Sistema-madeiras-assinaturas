@@ -5,7 +5,7 @@ from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
 from threading import Thread
 from playwright.sync_api import sync_playwright
 root=Path(__file__).resolve().parents[1];s=(root/'public/index.html').read_text();t=json.loads(re.search(r'const TEMPLATE=(".*?");\nlet credentials',s,re.S)[1])
-t=t.replace('parent.__v456Ready({',"window.__testePacotes=()=>{modoMedida='m2';madeiras=[{id:'teste',nome:'Teste',tipoCadastro:'m2',preco:120}];aplicarModoMedida();$('calcMadeira').value='teste';document.getElementById('largura').value='10';$('comprimento').value='3';$('quantidade').value='6';document.querySelector('input[name=destinoLancamento][value=orcamento]').checked=true;destinoAtual='orcamento';contadorPacotes=0;contadorPacotesLigado=true;orcamento=[];medidaContadorPacotes='';atualizarPainelPacotes();};window.__estadoPacotes=()=>({contador:contadorPacotes,itens:orcamento.length,area:orcamento.reduce((s,x)=>s+x.volume,0)});parent.__v456Ready({")
+t=t.replace('parent.__v456Ready({',"window.__testePacotes=()=>{pcAbrirDestinoTelaCompleta('calculadora');modoMedida='m2';madeiras=[{id:'teste',nome:'Teste',tipoCadastro:'m2',preco:120}];aplicarModoMedida();$('calcMadeira').value='teste';document.getElementById('largura').value='10';$('comprimento').value='3';$('quantidade').value='6';document.querySelector('input[name=destinoLancamento][value=orcamento]').checked=true;destinoAtual='orcamento';contadorPacotes=0;contadorPacotesLigado=true;orcamento=[];medidaContadorPacotes='';atualizarPainelPacotes();};window.__estadoPacotes=()=>({contador:contadorPacotes,itens:orcamento.length,area:orcamento.reduce((s,x)=>s+x.volume,0)});parent.__v456Ready({")
 class Handler(BaseHTTPRequestHandler):
  def log_message(self,*args):pass
  def do_GET(self):
@@ -39,6 +39,11 @@ try:
   assert frame.locator('#volumeAntesLancamento').count()==0
   assert frame.locator('#sumVolumeTopo').inner_text()=='0,0219 m³'
   f.evaluate('__testePacotes()')
+  f.evaluate("document.querySelectorAll('section.tab').forEach(s=>s.classList.toggle('active',s.id==='calculadora'));document.body.classList.add('tema-vidro')")
+  assert frame.locator('#miniContadorPacotes').evaluate('(el)=>el.getBoundingClientRect().width')==64
+  assert frame.locator('#miniContadorPacotes').evaluate('(el)=>getComputedStyle(el).pointerEvents')=='auto'
+  assert frame.locator('#miniNumeroPacotesM2').evaluate('(el)=>el.getBoundingClientRect().width')<=64
+
   f.evaluate("document.getElementById('miniNumeroPacotesM2').focus();document.getElementById('miniNumeroPacotesM2').value='7';document.getElementById('miniNumeroPacotesM2').dispatchEvent(new Event('change',{bubbles:true}))")
   f.wait_for_function('__estadoPacotes().contador===7')
   f.evaluate("document.getElementById('miniNumeroPacotesM2').focus();document.getElementById('miniNumeroPacotesM2').value='10';document.getElementById('miniNumeroPacotesM2').dispatchEvent(new Event('change',{bubbles:true}))")
