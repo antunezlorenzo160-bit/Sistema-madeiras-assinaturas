@@ -6,6 +6,7 @@ from threading import Thread
 from playwright.sync_api import sync_playwright
 root=Path(__file__).resolve().parents[1];s=(root/'public/index.html').read_text();t=json.loads(re.search(r'const TEMPLATE=(".*?");\nlet credentials',s,re.S)[1])
 t=t.replace('parent.__v456Ready({',"window.__testePacotes=()=>{pcAbrirDestinoTelaCompleta('calculadora');modoMedida='m2';madeiras=[{id:'teste',nome:'Teste',tipoCadastro:'m2',preco:120}];aplicarModoMedida();$('calcMadeira').value='teste';document.getElementById('largura').value='10';$('comprimento').value='3';$('quantidade').value='6';document.querySelector('input[name=destinoLancamento][value=orcamento]').checked=true;destinoAtual='orcamento';contadorPacotes=0;contadorPacotesLigado=true;orcamento=[];medidaContadorPacotes='';atualizarPainelPacotes();};window.__estadoPacotes=()=>({contador:contadorPacotes,itens:orcamento.length,area:orcamento.reduce((s,x)=>s+x.volume,0)});parent.__v456Ready({")
+t=t.replace('function renderLancamentos(){\n  if(lotePacotesEmCurso)return;', 'function renderLancamentos(){\n  if(lotePacotesEmCurso)return;window.__desenhosPacotes=(window.__desenhosPacotes||0)+1;')
 class Handler(BaseHTTPRequestHandler):
  def log_message(self,*args):pass
  def do_GET(self):
@@ -44,9 +45,11 @@ try:
 
   f.evaluate("document.getElementById('pacotesAdicionar').focus();document.getElementById('pacotesAdicionar').value='7';document.getElementById('btnLancar').click()")
   f.wait_for_function('__estadoPacotes().contador===7')
+  f.evaluate('window.__desenhosPacotes=0')
   f.evaluate("document.getElementById('pacotesAdicionar').focus();document.getElementById('pacotesAdicionar').value='10';document.getElementById('btnLancar').click()")
   f.wait_for_function('__estadoPacotes().contador===17')
   f.wait_for_function("!document.getElementById('btnLancar').disabled")
+  assert f.evaluate('window.__desenhosPacotes')==1
   assert frame.locator('#pacotesAdicionar').input_value()==''
   assert f.evaluate('document.activeElement.id')=='pacotesAdicionar'
   assert frame.locator('#pacotesAdicionar').is_enabled()
