@@ -1,0 +1,116 @@
+"""Real complete template with mobile adapters and mocked Firebase; no production data access."""
+import json,re,sys
+from pathlib import Path
+from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
+from threading import Thread
+from playwright.sync_api import sync_playwright
+root=Path(__file__).resolve().parents[1];s=(root/'public/index.html').read_text();t=json.loads(re.search(r'const TEMPLATE=(".*?");\nlet credentials',s,re.S)[1])
+t=t.replace('parent.__v456Ready({',"window.__testePacotes=()=>{pcAbrirDestinoTelaCompleta('calculadora');modoMedida='m2';madeiras=[{id:'teste',nome:'Teste',tipoCadastro:'m2',preco:120}];aplicarModoMedida();$('calcMadeira').value='teste';document.getElementById('largura').value='10';$('comprimento').value='3';$('quantidade').value='6';document.querySelector('input[name=destinoLancamento][value=orcamento]').checked=true;destinoAtual='orcamento';contadorPacotes=0;contadorPacotesLigado=true;orcamento=[];medidaContadorPacotes='';atualizarPainelPacotes();};window.__estadoPacotes=()=>({contador:contadorPacotes,itens:orcamento.length,area:orcamento.reduce((s,x)=>s+x.volume,0)});parent.__v456Ready({")
+t=t.replace('function renderLancamentos(){\n  if(lotePacotesEmCurso)return;', 'function renderLancamentos(){\n  if(lotePacotesEmCurso)return;window.__desenhosPacotes=(window.__desenhosPacotes||0)+1;')
+t=t.replace('parent.__v456Ready({',"window.__prepararCargaPacotes=()=>{document.querySelector('input[name=destinoLancamento][value=carga]').checked=true;document.querySelector('input[name=estoqueCarga][value=estoque1]').checked=true;destinoAtual='carga';estoqueCargaAtual='estoque1';lancamentos=[];carregamentos=[];movimentos=[];estoque1Lancamentos=[{id:'stock',madeiraId:'teste',madeira:'Teste',tipoMedida:'m2',largura:15,comprimento:3,quantidade:5000,volume:2250,valor:270000,estadoMadeira:'seca'}];estoque2Lancamentos=[];contadorPacotes=0;medidaContadorPacotes='';};window.__estadoCargaPacotes=()=>({cargas:carregamentos.length,pecas:estoque1Lancamentos.reduce((s,x)=>s+x.quantidade,0),area:carregamentos.reduce((s,x)=>s+x.volume,0),contador:contadorPacotes});parent.__v456Ready({")
+class Handler(BaseHTTPRequestHandler):
+ def log_message(self,*args):pass
+ def do_GET(self):
+  if self.path=='/toras.mjs':body=(root/'public/toras.mjs').read_bytes();mime='application/javascript'
+  else:body=b'<div id="holder"></div>';mime='text/html'
+  self.send_response(200);self.send_header('Content-Type',mime);self.end_headers();self.wfile.write(body)
+server=ThreadingHTTPServer(('127.0.0.1',0),Handler);Thread(target=server.serve_forever,daemon=True).start()
+try:
+ with sync_playwright() as p:
+  browser=p.chromium.launch(executable_path='/usr/bin/chromium',args=['--no-sandbox']);page=browser.new_page(viewport={'width':390,'height':844});errors=[]
+  page.on('pageerror',lambda e:errors.append(str(e)))
+  page.route('https://**/*',lambda r:r.abort())
+  page.goto('http://127.0.0.1:'+str(server.server_port))
+  page.evaluate('''() => {
+  const ctx={empresaId:'mdeiras-oeste-pkwj3e',uid:'U'};window.__v456Context=()=>ctx;window.__v456TakeCredentials=()=>null;window.__v456Ready=()=>{};window.__v456Error=x=>console.error(x);window.__smDadosFirestoreV538=x=>x;
+  const auth={currentUser:{uid:'U'},authStateReady:async()=>{}};
+  const member={exists:()=>true,data:()=>({ativo:true,empresaId:ctx.empresaId})};
+  const snap={docs:[],size:0,exists:()=>false,data:()=>({}),metadata:{fromCache:false,hasPendingWrites:false},docChanges:()=>[]};
+  const ref=(db,...parts)=>({path:parts.join('/'),id:parts.at(-1)});
+  const sdk={initializeFirestore:()=>({}),collection:ref,doc:ref,setDoc:async()=>{},deleteDoc:async()=>{},getDocs:async()=>snap,getDocsFromServer:async()=>snap,getCountFromServer:async()=>({data:()=>({count:0})}),getDocFromServer:async r=>r.path.startsWith('membros/')?member:snap,getDocFromCache:async()=>member,writeBatch:()=>({set(){},delete(){},update(){},commit:async()=>{}}),onSnapshot:(ref,opts,cb)=>{if(typeof opts==='function')cb=opts;queueMicrotask(()=>cb(snap));return ()=>{}},waitForPendingWrites:async()=>{},serverTimestamp:()=>Date.now(),persistentLocalCache:()=>({}),persistentMultipleTabManager:()=>({}),memoryLocalCache:()=>({})};
+  window.__v470Runtime=()=>({app:{},auth,db:{},sdk,authSdk:{initializeAuth:()=>auth,inMemoryPersistence:{},signInWithEmailAndPassword:async()=>{},signOut:async()=>{},onAuthStateChanged:()=>()=>{}},appSdk:{initializeApp:()=>({})}});
+  const key='sm_v462_principal:'+ctx.empresaId+':';localStorage.setItem(key+'madeiras_db_v1',JSON.stringify([{id:'cedro',nome:'Cedrinho',especie:'Cedrinho',tipoCadastro:'m3',preco:0,bitolas:[]}]))
+  }''')
+  page.evaluate('(html)=>{const frame=document.createElement("iframe");frame.style="width:100%;height:900px";frame.srcdoc=html;document.body.appendChild(frame)}',t)
+  frame=page.frame_locator('iframe');frame.locator('#largura').wait_for(state='attached');page.wait_for_timeout(1500)
+  f=page.frames[1]
+  assert not errors, errors
+  f.evaluate("document.querySelectorAll('section.tab').forEach(s=>s.classList.toggle('active',s.id==='calculadora'));document.getElementById('espessura').value='2.5';document.getElementById('comprimento').value='3';document.getElementById('quantidade').value='1'")
+  f.evaluate("document.getElementById('largura').value='25';document.getElementById('comprimento').value='3,5';document.getElementById('comprimento').dispatchEvent(new Event('input',{bubbles:true}))")
+  assert f.evaluate("document.getElementById('comprimento').value")=='3.5'
+  assert frame.locator('#volumeAntesLancamento').count()==0
+  assert frame.locator('#sumVolumeTopo').inner_text()=='0,0219 m³'
+  f.evaluate('__testePacotes()')
+  assert frame.locator('#miniNumeroPacotesM2').evaluate('(el)=>el.tagName')=='STRONG'
+  f.evaluate("document.querySelectorAll('section.tab').forEach(s=>s.classList.toggle('active',s.id==='calculadora'));document.body.classList.add('tema-vidro')")
+
+  f.evaluate("document.getElementById('pacotesAdicionar').focus();document.getElementById('pacotesAdicionar').value='7';document.getElementById('btnLancar').click()")
+  f.wait_for_function('__estadoPacotes().contador===7')
+  f.evaluate('window.__desenhosPacotes=0')
+  f.evaluate("document.getElementById('pacotesAdicionar').focus();document.getElementById('pacotesAdicionar').value='10';document.getElementById('btnLancar').click()")
+  f.wait_for_function('__estadoPacotes().contador===17')
+  f.wait_for_function("!document.getElementById('btnLancar').disabled")
+  assert f.evaluate('window.__desenhosPacotes')==1
+  assert frame.locator('#pacotesAdicionar').input_value()==''
+  assert f.evaluate('document.activeElement.id')=='pacotesAdicionar'
+  assert frame.locator('#pacotesAdicionar').is_enabled()
+  assert frame.locator('#pacotesAdicionar').evaluate('(el)=>el.getBoundingClientRect().width')==64
+  assert frame.locator('#comprimento').evaluate("el=>Math.abs(el.getBoundingClientRect().width-document.getElementById('largura').getBoundingClientRect().width)<1")
+  assert frame.locator('#pacotesAdicionar').evaluate("el=>{const a=el.getBoundingClientRect(),b=document.getElementById('comprimento').getBoundingClientRect();return a.left>b.left&&a.right<=b.right&&a.top>=b.top&&a.bottom<=b.bottom}")
+  f.evaluate("document.getElementById('largura').focus();document.getElementById('largura').blur();document.getElementById('comprimento').focus();document.getElementById('comprimento').blur()")
+  assert f.evaluate('__estadoPacotes().contador')==17
+  f.evaluate("document.getElementById('largura').value='10.0';document.getElementById('largura').dispatchEvent(new Event('input',{bubbles:true}))")
+  assert f.evaluate('__estadoPacotes().contador')==17
+  state=f.evaluate('__estadoPacotes()');assert state['itens']==17 and abs(state['area']-30.6)<.00001,state
+  f.evaluate("document.getElementById('largura').value='15';document.getElementById('largura').dispatchEvent(new Event('input',{bubbles:true}))")
+  assert f.evaluate('__estadoPacotes().contador')==0
+  assert f.evaluate('__estadoPacotes().itens')==17
+  f.evaluate("document.getElementById('pacotesAdicionar').focus();document.getElementById('pacotesAdicionar').value='2';document.getElementById('btnLancar').click()")
+  f.wait_for_function('__estadoPacotes().contador===2')
+  assert f.evaluate('__estadoPacotes().itens')==19
+  frame.locator('#btnPacoteMenos').evaluate('(el)=>el.click()')
+  f.wait_for_function('__estadoPacotes().contador===1')
+  assert f.evaluate('__estadoPacotes().itens')==18
+  frame.locator('#btnLancar').evaluate('(el)=>el.click()')
+  f.wait_for_function('__estadoPacotes().contador===2')
+  assert f.evaluate('__estadoPacotes().itens')==19
+  f.evaluate("document.getElementById('comprimento').value='4';document.getElementById('comprimento').dispatchEvent(new Event('input',{bubbles:true}))")
+  assert f.evaluate('__estadoPacotes().contador')==0
+  assert f.evaluate('__estadoPacotes().itens')==19
+  f.evaluate("document.getElementById('largura').value='10';document.getElementById('comprimento').value='3';document.getElementById('comprimento').dispatchEvent(new Event('input',{bubbles:true}))")
+  assert f.evaluate('__estadoPacotes().contador')==17
+  frame.locator('#btnPacoteMenos').evaluate('(el)=>el.click()')
+  f.wait_for_function('__estadoPacotes().contador===16')
+  f.evaluate("document.getElementById('largura').value='15';document.getElementById('largura').dispatchEvent(new Event('input',{bubbles:true}))")
+  assert f.evaluate('__estadoPacotes().contador')==2
+  f.evaluate("document.getElementById('largura').focus();document.getElementById('largura').value='15..';document.getElementById('largura').dispatchEvent(new Event('input',{bubbles:true}))")
+  f.wait_for_function('__estadoPacotes().itens===19')
+  page.wait_for_timeout(200)
+  assert f.evaluate('document.activeElement.tagName')=='INPUT'
+  f.wait_for_function("!document.getElementById('btnLancar').disabled")
+  antes=f.evaluate('__estadoPacotes()')
+  inicio_lote=f.evaluate('performance.now()')
+  f.evaluate("window.__batidasPacotes=0;window.__timerPacotes=setInterval(()=>window.__batidasPacotes++,10);document.getElementById('pacotesAdicionar').focus();document.getElementById('pacotesAdicionar').value='500';document.getElementById('btnLancar').click()")
+  f.wait_for_function("!document.getElementById('btnLancar').disabled",timeout=60000)
+  depois=f.evaluate('__estadoPacotes()')
+  tempo_lote=f.evaluate('performance.now()')-inicio_lote
+  print('500 packages completed in',round(tempo_lote),'ms')
+  assert tempo_lote<5000,tempo_lote
+  assert depois['itens']==antes['itens']+500,(antes,depois)
+  assert depois['contador']==antes['contador']+500,(antes,depois)
+  assert f.evaluate('window.__batidasPacotes')>0
+  f.evaluate('clearInterval(window.__timerPacotes)')
+  assert frame.locator('#pacotesAdicionar').input_value()==''
+  f.evaluate('__prepararCargaPacotes()')
+  inicio_carga=f.evaluate('performance.now()')
+  f.evaluate("document.getElementById('pacotesAdicionar').value='500';document.getElementById('btnLancar').click()")
+  f.wait_for_function("!document.getElementById('btnLancar').disabled",timeout=60000)
+  carga=f.evaluate('__estadoCargaPacotes()')
+  assert carga['cargas']==500 and carga['pecas']==5000 and carga['contador']==500,carga
+  assert abs(carga['area']-1350)<.0001,carga
+  print('500 Carga packages completed in',round(f.evaluate('performance.now()')-inicio_carga),'ms')
+  assert not errors,errors
+  browser.close()
+finally:server.shutdown()
+
+print('PASS: typed packages add 7+10 records, correct area, dimension change resets count without deleting records, new dimension and -1 correction work')

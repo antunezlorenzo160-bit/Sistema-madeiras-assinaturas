@@ -1,4 +1,5 @@
-import { createHash, createHmac, randomBytes, timingSafeEqual, createCipheriv, createDecipheriv } from 'node:crypto';
+import { validateSignatureImage } from './assinatura-imagem.mjs';
+import { createHash, randomBytes, createCipheriv, createDecipheriv } from 'node:crypto';
 import { cert, getApps, initializeApp } from 'firebase-admin/app';
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -26,7 +27,6 @@ function services() {
 }
 
 function digest(value) { return createHash('sha256').update(value).digest('hex'); }
-function codeDigest(key, inviteId, code) { return createHmac('sha256', key).update(`${inviteId}:${code}`).digest('hex'); }
 function seal(key, value) {
   const iv = randomBytes(12), cipher = createCipheriv('aes-256-gcm', key, iv);
   const body = Buffer.concat([cipher.update(value, 'utf8'), cipher.final()]);
@@ -49,11 +49,6 @@ function refs(db, empresaId, orderId) {
     invitation: db.doc(`empresas/${empresaId}/dados/${COLLECTION}/registros/${inviteId}`),
   };
 }
-function makeCode() { return String(randomBytes(4).readUInt32BE(0) % 100000000).padStart(8, '0'); }
-function secureEqual(a, b) {
-  const aa = Buffer.from(String(a)); const bb = Buffer.from(String(b));
-  return aa.length === bb.length && timingSafeEqual(aa, bb);
-}
 async function authorizedCompany(auth, db, req) {
   const header = req.headers.get('authorization') || '';
   const match = header.match(/^Bearer\s+(.+)$/i);
@@ -68,10 +63,9 @@ async function authorizedCompany(auth, db, req) {
   }
   return { uid: decoded.uid, empresaId: data.empresaId };
 }
-async function createInvite({ db, key, uid, empresaId, orderId }) {
+async function createInvite({ db, key, uid, empresaId, orderId, siteUrl }) {
   if (!/^[A-Za-z0-9_-]{1,180}$/.test(orderId)) throw new ApiError(400, 'Identificador do pedido inválido.');
   const { inviteId, order, invitation } = refs(db, empresaId, orderId);
-  const siteUrl = process.env.DEPLOY_PRIME_URL || process.env.URL;
   if (!siteUrl || !/^https:\/\//.test(siteUrl)) throw new ApiError(503, 'Endereço do site não configurado no servidor.');
   const tokenIndexCollection = db.collection(TOKEN_INDEX);
   const now = Date.now();
@@ -85,33 +79,32 @@ async function createInvite({ db, key, uid, empresaId, orderId }) {
     if (inviteSnap.exists && inviteSnap.data().status === 'pending') {
       const inv = inviteSnap.data();
       const token = unseal(key, inv.tokenCipher);
-      const code = unseal(key, inv.codeCipher);
       const tokenRef = tokenIndexCollection.doc(digest(token));
       const tokenSnap = await tx.get(tokenRef);
       if (!tokenSnap.exists) tx.set(tokenRef, { empresaId, inviteId, status: 'pending', createdAt: now });
       if (current.status !== 'entregue' || current.assinaturaStatus !== 'pendente') {
         tx.update(order, { status: 'entregue', entregueEm: Number(current.entregueEm || now), assinaturaStatus: 'pendente', assinaturaConviteId: inviteId, atualizadoEm: now });
       }
-      return { token, code, entregueEm: Number(current.entregueEm || now) };
+      return { token, entregueEm: Number(current.entregueEm || now) };
     }
     const token = randomBytes(32).toString('base64url');
-    const code = makeCode();
     const tokenRef = tokenIndexCollection.doc(digest(token));
     tx.create(invitation, {
-      orderId, empresaId, status: 'pending', codeHash: codeDigest(key, inviteId, code),
-      codeCipher: seal(key, code), tokenCipher: seal(key, token), attempts: 0,
+      orderId, empresaId, status: 'pending',
+      tokenCipher: seal(key, token), attempts: 0,
       createdAt: now, createdBy: uid,
     });
     tx.create(tokenRef, { empresaId, inviteId, status: 'pending', createdAt: now });
     tx.update(order, { status: 'entregue', entregueEm: now, assinaturaStatus: 'pendente', assinaturaConviteId: inviteId, atualizadoEm: now });
-    return { token, code, entregueEm: now };
+    return { token, entregueEm: now };
   });
-  return { link: `${siteUrl}/?assinar=${encodeURIComponent(result.token)}`, code: result.code, entregueEm: result.entregueEm };
+  return { link: `${siteUrl}/?assinar=${encodeURIComponent(result.token)}`, entregueEm: result.entregueEm };
 }
-async function signDelivery({ db, key, token, code, recipientName }) {
+async function signDelivery({ db, token, recipientName, signatureImage }) {
   if (typeof token !== 'string' || !/^[A-Za-z0-9_-]{40,60}$/.test(token)) throw new ApiError(404, 'Link inválido ou já utilizado.');
   if (typeof recipientName !== 'string' || recipientName.trim().length < 2 || recipientName.trim().length > 120) throw new ApiError(400, 'Informe seu nome completo.');
-  if (typeof code !== 'string' || !/^\d{8}$/.test(code)) throw new ApiError(400, 'Digite o código de 8 números recebido.');
+  try { validateSignatureImage(signatureImage); }
+  catch (error) { throw new ApiError(400, error.message); }
   const tokenHash = digest(token);
   const tokenRef = db.doc(`${TOKEN_INDEX}/${tokenHash}`);
   const tokenSnap = await tokenRef.get();
@@ -129,21 +122,10 @@ async function signDelivery({ db, key, token, code, recipientName }) {
     const inv = inviteSnap.data();
     if (inv.status === 'signed') return { alreadySigned: true };
     if (inv.status !== 'pending') return { error: new ApiError(404, 'Link inválido ou já utilizado.') };
-    const coolUntil = Number(inv.coolUntil || 0);
-    if (coolUntil > now) return { error: new ApiError(429, 'Muitas tentativas. Aguarde um minuto e tente novamente.'), retryAfter: Math.ceil((coolUntil-now)/1000) };
-    const expected = codeDigest(key, inviteId, code);
-    if (!secureEqual(expected, inv.codeHash)) {
-      const tentativasAnteriores = coolUntil && coolUntil <= now ? 0 : Number(inv.attempts || 0);
-      const attempts = tentativasAnteriores + 1;
-      const update = { attempts, lastAttemptAt: now, updatedAt: now };
-      if (attempts % 5 === 0) update.coolUntil = now + 60_000;
-      tx.update(inviteRef, update);
-      return { error: new ApiError(400, 'Código incorreto. Confira o código e tente novamente.') };
-    }
     const orderSnap = await tx.get(orderRef);
     if (!orderSnap.exists || orderSnap.data().status !== 'entregue') return { error: new ApiError(409, 'O pedido não está marcado como entregue.') };
     tx.update(inviteRef, { status: 'signed', signedName: recipientName.trim(), signedAt: now, updatedAt: now });
-    tx.update(orderRef, { assinaturaStatus: 'assinado', assinadoPor: recipientName.trim(), assinadoEm: now, assinaturaCodigoVerificado: true, atualizadoEm: now });
+    tx.update(orderRef, { assinaturaStatus: 'assinado', assinadoPor: recipientName.trim(), assinadoEm: now, assinaturaCodigoVerificado: false, assinaturaMetodo: 'link_nome_assinatura', assinaturaImagem: signatureImage, atualizadoEm: now });
     tx.update(tokenRef, { status: 'signed', signedAt: now });
     return { alreadySigned: false };
   });
@@ -159,10 +141,10 @@ export default async function handler(req) {
     if (input.action === 'create') {
       const member = await authorizedCompany(auth, db, req);
       if (typeof input.orderId !== 'string') throw new ApiError(400, 'Pedido inválido.');
-      return json(200, await createInvite({ db, key, uid: member.uid, empresaId: member.empresaId, orderId: input.orderId }));
+      return json(200, await createInvite({ db, key, uid: member.uid, empresaId: member.empresaId, orderId: input.orderId, siteUrl: new URL(req.url).origin }));
     }
     if (input.action === 'sign') {
-      return json(200, await signDelivery({ db, key, token: input.token, code: input.code, recipientName: input.recipientName }));
+      return json(200, await signDelivery({ db, token: input.token, recipientName: input.recipientName, signatureImage: input.signatureImage }));
     }
     throw new ApiError(400, 'Ação inválida.');
   } catch (error) {
