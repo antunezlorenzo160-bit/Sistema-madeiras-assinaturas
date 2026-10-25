@@ -6,13 +6,24 @@ const auth=initializeAuth(app,{persistence:[browserLocalPersistence,inMemoryPers
 let state={plans:[],companies:[],subscriptions:[]},image='';
 const money=v=>(v/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 function status(text,error=false){$('status').textContent=text;$('status').classList.toggle('error',error);}
-async function api(data){
-  const token=await auth.currentUser.getIdToken();
-  const response=await fetch('/.netlify/functions/platform-admin',{method:data?'POST':'GET',headers:{Authorization:'Bearer '+token,...(data?{'Content-Type':'application/json'}:{})},...(data?{body:JSON.stringify(data)}:{})});
-  const result=await response.json().catch(()=>({}));
-  if(!response.ok)throw Error(result.error||'Não foi possível acessar a plataforma.');
-  return result;
+function withDeadline(task, milliseconds=20000, onTimeout=()=>{}){
+  let timer;
+  const timeout=new Promise((resolve,reject)=>{timer=setTimeout(()=>{onTimeout();reject(Error('A verificação demorou demais. Confira a conexão e tente entrar novamente.'));},milliseconds);});
+  return Promise.race([Promise.resolve().then(task),timeout]).finally(()=>clearTimeout(timer));
 }
+async function api(data){
+  const user=auth.currentUser;
+  if(!user)throw Error('Entre com sua conta para continuar.');
+  const controller=new AbortController();
+  return withDeadline(async()=>{
+    const token=await user.getIdToken();
+    const response=await fetch('/.netlify/functions/platform-admin',{method:data?'POST':'GET',headers:{Authorization:'Bearer '+token,...(data?{'Content-Type':'application/json'}:{})},...(data?{body:JSON.stringify(data)}:{}),signal:controller.signal});
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok)throw Error(result.error||'Não foi possível acessar a plataforma.');
+    return result;
+  },20000,()=>controller.abort());
+}
+
 function record(host,title,detail,value){
   const row=document.createElement('div');row.className='record';
   const text=document.createElement('div'),name=document.createElement('strong'),small=document.createElement('small');
@@ -51,17 +62,38 @@ async function refresh(){state=await api();render();}
 function page(name){document.querySelectorAll('[data-panel]').forEach(p=>p.hidden=p.dataset.panel!==name);document.querySelectorAll('[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===name));$('page-title').textContent=document.querySelector(`[data-page="${name}"]`).textContent;status('');}
 document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>page(b.dataset.page));
 document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>page(b.dataset.open));
+let opening=null;
+function openAdministration(user){
+  if(opening?.uid===user.uid)return opening.promise;
+  $('app').hidden=true;$('login').hidden=false;$('verify').hidden=true;
+  $('login-status').textContent='Verificando acesso…';
+  const promise=(async()=>{
+    try{
+      // Refresh claims even when this account is already signed in on another tab.
+      await withDeadline(()=>user.getIdToken(true));
+      await refresh();
+      if(auth.currentUser?.uid!==user.uid)return false;
+      $('login').hidden=true;$('app').hidden=false;return true;
+    }catch(error){
+      if(auth.currentUser?.uid===user.uid){$('login-status').textContent=error.message;$('verify').hidden=user.emailVerified;}
+      return false;
+    }
+  })().finally(()=>{if(opening?.promise===promise)opening=null;});
+  opening={uid:user.uid,promise};return promise;
+}
 $('login-form').onsubmit=async event=>{
   event.preventDefault();const button=event.submitter;button.disabled=true;$('login-status').textContent='Verificando acesso…';
   const password=$('password').value;$('password').value='';
-  try{await signInWithEmailAndPassword(auth,$('email').value.trim(),password);}catch{$('login-status').textContent='Não foi possível entrar. Confira sua conta e a senha.';}
+  try{
+    const credential=await withDeadline(()=>signInWithEmailAndPassword(auth,$('email').value.trim(),password));
+    // Firebase need not emit another state-change event for the same user.
+    await openAdministration(credential.user);
+  }catch(error){$('login-status').textContent=error.code?'Não foi possível entrar. Confira sua conta e a senha.':error.message;}
   finally{button.disabled=false;}
 };
-onAuthStateChanged(auth,async user=>{
+onAuthStateChanged(auth,user=>{
+  if(user){openAdministration(user);return;}
   $('app').hidden=true;$('login').hidden=false;$('verify').hidden=true;
-  if(!user)return;
-  try{await refresh();$('login').hidden=true;$('app').hidden=false;}
-  catch(error){$('login-status').textContent=error.message;$('verify').hidden=user.emailVerified;}
 });
 $('verify').onclick=async()=>{try{await sendEmailVerification(auth.currentUser);$('login-status').textContent='Confirme o link recebido no seu e-mail. Depois saia e entre novamente.';}catch{$('login-status').textContent='Não foi possível enviar a confirmação. Tente novamente mais tarde.';}};
 $('logout').onclick=()=>signOut(auth);
