@@ -6,22 +6,25 @@ import { testCheckout } from './lib/mercadopago.mjs';
 const ids = value => typeof value === 'string' && /^[A-Za-z0-9_-]{1,120}$/.test(value);
 export default async function handler(req) {
   if (!['GET','POST'].includes(req.method)) return json(405,{error:'Método não permitido.'});
+  let stage='authentication';
   try {
     const {db,uid} = await authenticate(req);
     const root = db.collection('plataforma_admin');
     if (req.method === 'GET') {
+      const read=(name,promise)=>promise.catch(error=>{error.stage=name;throw error;});
       const [plans,companies,subscriptions,watermark,charges] = await Promise.all([
-        root.doc('billing').collection('plans').limit(200).get(),
-        root.doc('billing').collection('companies').limit(200).get(),
-        root.doc('billing').collection('subscriptions').limit(200).get(),
-        root.doc('pdf_watermark').get(),
-        root.doc('billing').collection('charges').limit(100).get(),
+        read('plans',root.doc('billing').collection('plans').limit(200).get()),
+        read('companies',root.doc('billing').collection('companies').limit(200).get()),
+        read('subscriptions',root.doc('billing').collection('subscriptions').limit(200).get()),
+        read('watermark',root.doc('pdf_watermark').get()),
+        read('charges',root.doc('billing').collection('charges').limit(100).get()),
       ]);
       const list = snap => snap.docs.map(d=>({...d.data(),id:d.id}));
       return json(200,{plans:list(plans),companies:list(companies),subscriptions:list(subscriptions),charges:list(charges),
         watermark:watermark.exists?watermark.data():{widthMm:180,opacity:.04,image:''},
         methods:METHODS.map(id=>({id,status:process.env.MERCADO_PAGO_TEST_ACCESS_TOKEN?'test_available':'not_connected'})),provider:'mercadopago',testConfigured:Boolean(process.env.MERCADO_PAGO_TEST_ACCESS_TOKEN),livePayments:false});
     }
+    stage='operation';
     const text = await req.text();
     if (text.length > 400000) throw new PlatformError(413,'Arquivo muito grande.');
     let input; try { input = JSON.parse(text); } catch { throw new PlatformError(400,'Pedido inválido.'); }
@@ -63,5 +66,5 @@ export default async function handler(req) {
     batch.set(root.doc('audit').collection('events').doc(randomUUID()),{action:input.action,target:ref.path,uid,at:Date.now()});
     await batch.commit();
     return json(200,{ok:true,id:ref.id});
-  } catch(error) { return failure(error); }
+  } catch(error) { if(!error.stage)error.stage=stage;return failure(error); }
 }

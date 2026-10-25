@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { isPlatformAdmin, validatePlan, validateWatermark } from '../Netlify/Funtions/lib/platform.mjs';
+import { isPlatformAdmin, validatePlan, validateWatermark, platformFailure } from '../Netlify/Funtions/lib/platform.mjs';
 
 test('company admin claims never grant platform access; only configured owner with verified email does',()=>{
   const email='antunezlorenzo160@gmail.com';
@@ -22,4 +22,13 @@ test('watermark validates ranges and rejects SVG and disguised images',()=>{
   assert.throws(()=>validateWatermark({widthMm:180,opacity:0}));
   assert.throws(()=>validateWatermark({widthMm:180,opacity:.04,image:'data:image/svg+xml;base64,PHN2Zz4='}));
   assert.throws(()=>validateWatermark({widthMm:180,opacity:.04,image:'data:image/png;base64,PHNjcmlwdD4='}));
+});
+
+test('server failures report safe configuration causes without exposing raw credentials',()=>{
+  const denied=platformFailure({code:7,stage:'plans',message:'sensitive provider details'});
+  assert.equal(denied.status,503);assert.equal(denied.body.supportCode,'FIRESTORE_PERMISSION_DENIED');
+  assert.equal(denied.body.stage,'leitura dos planos');
+  assert(!JSON.stringify(denied).includes('sensitive'));
+  const unknown=platformFailure({code:'unknown',message:'secret'});
+  assert.equal(unknown.status,500);assert(!JSON.stringify(unknown).includes('secret'));
 });

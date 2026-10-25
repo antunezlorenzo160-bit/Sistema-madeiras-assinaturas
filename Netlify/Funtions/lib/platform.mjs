@@ -2,6 +2,30 @@ export const METHODS = Object.freeze(['pix', 'boleto', 'credit_card', 'debit_car
 export class PlatformError extends Error {
   constructor(status, message) { super(message); this.status = status; }
 }
+export function platformFailure(error) {
+  if (error instanceof PlatformError) return {status:error.status,body:{error:error.message}};
+  const code=String(error.code ?? '').toLowerCase();
+  let message='O servidor encontrou uma falha ao carregar a plataforma.',supportCode='PLATFORM_INTERNAL';
+  if (['7','permission-denied','permission_denied'].includes(code)) {
+    message='O servidor não tem permissão para acessar os dados da plataforma no Firebase. É preciso revisar a permissão da conta de serviço.';
+    supportCode='FIRESTORE_PERMISSION_DENIED';
+  } else if (['16','unauthenticated'].includes(code) || code.includes('invalid-credential') || code.includes('service-account')) {
+    message='A credencial do servidor não foi aceita pelo Firebase. É preciso revisar a conta de serviço no Netlify.';
+    supportCode='FIREBASE_SERVER_CREDENTIAL';
+  } else if (['9','failed-precondition','failed_precondition'].includes(code)) {
+    message='O Firebase informou que falta uma configuração do banco para carregar a plataforma.';
+    supportCode='FIRESTORE_CONFIGURATION';
+  } else if (['4','14','deadline-exceeded','unavailable'].includes(code)) {
+    message='O servidor não conseguiu alcançar o Firebase. Tente novamente em alguns instantes.';
+    supportCode='FIRESTORE_UNAVAILABLE';
+  } else if (code.startsWith('app/')) {
+    message='A inicialização do servidor Firebase falhou. É preciso revisar a configuração no Netlify.';
+    supportCode='FIREBASE_INITIALIZATION';
+  }
+  const stages={configuration:'configuração do servidor',authentication:'verificação da conta',plans:'leitura dos planos',companies:'leitura das empresas',subscriptions:'leitura das assinaturas',watermark:'leitura da marca d’água',charges:'leitura das cobranças',operation:'gravação dos dados'};
+  const stage=stages[error.stage];
+  return {status:supportCode==='PLATFORM_INTERNAL'?500:503,body:{error:message+' Código: '+supportCode+(stage?' • '+stage:''),supportCode,...(stage?{stage}:{})}};
+}
 export function isPlatformAdmin(decoded, configuredUid, ownerEmail) {
   if (configuredUid) return decoded?.uid === configuredUid;
   return Boolean(ownerEmail && decoded?.email_verified === true &&
