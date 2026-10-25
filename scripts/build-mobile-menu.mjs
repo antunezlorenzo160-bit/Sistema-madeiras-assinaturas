@@ -1,0 +1,25 @@
+import { readFileSync, writeFileSync } from 'node:fs';
+
+// The legacy application lives in a JSON string. Inject inside its iframe so
+// the menu works on every tab without changing the login or signature pages.
+const root = new URL('../', import.meta.url);
+const file = new URL('public/index.html', root);
+let html = readFileSync(file, 'utf8');
+const marker = 'const TEMPLATE=';
+const start = html.indexOf(marker) + marker.length;
+if (start < marker.length || html[start] !== '"') throw new Error('Aplicação não encontrada.');
+let end = start + 1;
+for (; end < html.length; end++) {
+  if (html[end] === '\\') { end++; continue; }
+  if (html[end] === '"') { end++; break; }
+}
+let app = JSON.parse(html.slice(start, end));
+const css = readFileSync(new URL('ui/mobile-menu.css', root), 'utf8');
+const js = readFileSync(new URL('ui/mobile-menu.js', root), 'utf8');
+const injection = `<style id="mobile-menu-styles">${css}</style><script id="mobile-menu-script">${js}</script>`;
+app = app.replace(/<style id="mobile-menu-styles">[\s\S]*?<\/script>/, '');
+if (!app.includes('</body>')) throw new Error('Fim da aplicação não encontrado.');
+app = app.replace('</body>', injection + '</body>');
+html = html.slice(0, start) + JSON.stringify(app).replaceAll('</', '<\\/') + html.slice(end);
+writeFileSync(file, html);
+console.log('Menu retrátil preparado somente para celular.');
