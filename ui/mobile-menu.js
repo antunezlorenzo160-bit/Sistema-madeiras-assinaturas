@@ -18,7 +18,7 @@
     document.body.classList.toggle('mobile-menu-open', opened);
     toggle.setAttribute('aria-expanded', String(opened));
     toggle.setAttribute('aria-label', opened ? 'Fechar menu' : 'Abrir menu');
-    toggle.textContent = opened ? '✕ Fechar' : '☰ Menu';
+    toggle.textContent = '☰';
     if (opened) close.focus({ preventScroll: true });
     else if (restoreFocus && mobile.matches) toggle.focus({ preventScroll: true });
   }
