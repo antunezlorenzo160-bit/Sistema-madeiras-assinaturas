@@ -1,6 +1,8 @@
 (() => {
+  function initialize() {
   const menu = document.getElementById('menuLateralV525');
-  if (!menu || document.getElementById('mobileMenuToggle')) return;
+  if (!menu) return false;
+  if (document.getElementById('mobileMenuToggle')) return true;
   const mobile = window.matchMedia('(max-width:760px)');
   const toggle = document.createElement('button');
   toggle.id = 'mobileMenuToggle'; toggle.type = 'button';
@@ -48,4 +50,14 @@
   mobile.addEventListener('change', () => setOpen(false));
   document.body.classList.add('mobile-menu-ready');
   setOpen(false);
+  return true;
+  }
+  // The main module creates navigation after Firebase has initialized.
+  // Classic scripts can run earlier, so wait for the real menu to exist.
+  if (!initialize()) {
+    const startup = new MutationObserver(() => {
+      if (initialize()) startup.disconnect();
+    });
+    startup.observe(document.body, { childList: true, subtree: true });
+  }
 })();
