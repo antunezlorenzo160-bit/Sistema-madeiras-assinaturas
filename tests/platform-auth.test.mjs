@@ -10,7 +10,7 @@ test('server denies tenant admins and unverified owners before exposing platform
   const context=vm.createContext({isPlatformAdmin,PlatformError,OWNER_EMAIL:'antunezlorenzo160@gmail.com',Response,
     process:{env:{FIREBASE_SERVICE_ACCOUNT_JSON:JSON.stringify({project_id:'estoque-madeiras-cc4d7'})}},
     cert:x=>x,getApps:()=>[{}],initializeApp:()=>{},getFirestore:()=>db,
-    getAuth:()=>({verifyIdToken:async(token,checkRevoked)=>{checks++;assert.equal(checkRevoked,true);return identity;}})});
+    getAuth:()=>({verifyIdToken:async(token,checkRevoked)=>{checks++;assert.equal(checkRevoked,undefined);return identity;}})});
   const source=readFileSync(new URL('../Netlify/Funtions/lib/platform-auth.mjs',import.meta.url),'utf8')
     .replace(/^import .*;\n/gm,'').replace(/^export \{.*\};\n/gm,'').replace(/export (async )?function /g,'$1function ');
   vm.runInContext(source,context);const authenticate=vm.runInContext('authenticate',context);

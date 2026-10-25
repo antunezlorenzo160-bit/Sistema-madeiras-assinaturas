@@ -18,7 +18,7 @@ export async function authenticate(req, admin = true) {
   if (account.project_id !== 'estoque-madeiras-cc4d7') throw new PlatformError(503,'Projeto do servidor inválido.');
   if (!getApps().length) initializeApp({credential:cert(account),projectId:account.project_id});
   let decoded;
-  try { decoded = await getAuth().verifyIdToken(match[1], true); } catch { throw new PlatformError(401,'Sua sessão expirou. Entre novamente.'); }
+  try { decoded = await getAuth().verifyIdToken(match[1]); } catch { throw new PlatformError(401,'Sua sessão expirou. Entre novamente.'); }
   const owner = isPlatformAdmin(decoded,process.env.PLATFORM_ADMIN_UID,OWNER_EMAIL);
   if (admin && !owner && decoded.email?.toLowerCase() === OWNER_EMAIL && decoded.email_verified !== true) throw new PlatformError(403,'Confirme o e-mail da sua conta Firebase para acessar a plataforma.');
   if (admin && !owner) throw new PlatformError(403,'Esta área é exclusiva do proprietário da plataforma.');
