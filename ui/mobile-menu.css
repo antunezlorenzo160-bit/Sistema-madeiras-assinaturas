@@ -1,5 +1,20 @@
 #mobileMenuToggle,#mobileMenuBackdrop,#mobileMenuClose{display:none}
 @media screen and (max-width:760px){
+  /* Give the welcome header its own top row, independent of tab scroll/layout. */
+  html body.inicio-paisagem-v474 #homeShellV492{
+    display:grid!important;grid-template-columns:minmax(0,1fr)!important;
+    grid-template-rows:max-content minmax(0,1fr)!important;align-content:start!important;
+    gap:0!important;padding:0!important;margin:0!important;inset:0!important;
+  }
+  html body.inicio-paisagem-v474 #homeShellV492>header{
+    grid-row:1!important;grid-column:1!important;align-self:start!important;
+    position:relative!important;inset:auto!important;top:0!important;
+    margin:0!important;transform:none!important;width:100%!important;box-sizing:border-box!important;
+  }
+  html body.inicio-paisagem-v474 #homeShellV492>#homeScrollV492{
+    grid-row:2!important;grid-column:1!important;min-height:0!important;
+    margin:0!important;height:auto!important;box-sizing:border-box!important;
+  }
   body.mobile-menu-ready #mobileMenuToggle{
     display:flex!important;align-items:center;gap:8px;position:fixed!important;
     left:calc(12px + env(safe-area-inset-left,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));

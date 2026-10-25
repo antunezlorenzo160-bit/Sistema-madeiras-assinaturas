@@ -50,6 +50,12 @@ test('waits for asynchronous navigation, initializes once and closes across mobi
   toggle.events.click();
   document.events.keydown({ key: 'Escape', preventDefault() {} });
   assert.equal(toggle.attrs['aria-expanded'], 'false');
+  const homeScroll = { scrollTop: 340 }; nodes.set('homeScrollV492', homeScroll);
+  section.id = 'inicio'; observers[1].callback();
+  assert.equal(homeScroll.scrollTop, 0);
+  section.id = 'estoque'; observers[1].callback(); homeScroll.scrollTop = 210;
+  section.id = 'inicio'; observers[1].callback();
+  assert.equal(homeScroll.scrollTop, 0);
   toggle.events.click(); media.matches = false; media.changed();
   assert.equal(classes.has('mobile-menu-open'), false);
 });

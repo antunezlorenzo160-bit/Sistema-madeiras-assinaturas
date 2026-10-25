@@ -42,7 +42,13 @@
   let active = document.querySelector('section.tab.active')?.id;
   const observer = new MutationObserver(() => {
     const next = document.querySelector('section.tab.active')?.id;
-    if (next !== active) { active = next; setOpen(false); }
+    if (next !== active) {
+      active = next; setOpen(false);
+      if (next === 'inicio' && mobile.matches) {
+        const homeScroll = document.getElementById('homeScrollV492');
+        if (homeScroll) homeScroll.scrollTop = 0;
+      }
+    }
   });
   for (const section of document.querySelectorAll('section.tab')) {
     observer.observe(section, { attributes: true, attributeFilter: ['class'] });
