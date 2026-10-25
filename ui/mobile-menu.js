@@ -44,7 +44,7 @@
     const next = document.querySelector('section.tab.active')?.id;
     if (next !== active) {
       active = next; setOpen(false);
-      if (next === 'inicio' && mobile.matches) {
+      if (next === 'inicio') {
         const homeScroll = document.getElementById('homeScrollV492');
         if (homeScroll) homeScroll.scrollTop = 0;
       }

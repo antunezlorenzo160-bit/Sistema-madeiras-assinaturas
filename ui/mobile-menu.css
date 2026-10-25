@@ -1,11 +1,5 @@
-#mobileMenuToggle,#mobileMenuBackdrop,#mobileMenuClose{display:none}
-@media screen and (max-width:760px){
-  /* Home uses the same collapsed navigation as the other mobile tabs.
-     Keep the original shortcuts in the DOM: drawer buttons call their actions. */
-  html body.mobile-menu-ready #homeScrollV492 #inicio>.card>.inicio-grid-v464,
-  html body.mobile-menu-ready #homeScrollV492 #inicio>.card>.note{
-    display:none!important;
-  }
+/* Welcome layout is shared by PC and mobile; navigation visibility remains responsive. */
+@media screen{
   /* Give the welcome header its own top row, independent of tab scroll/layout. */
   html body.inicio-paisagem-v474 #homeShellV492{
     display:grid!important;grid-template-columns:minmax(0,1fr)!important;
@@ -20,6 +14,15 @@
   html body.inicio-paisagem-v474 #homeShellV492>#homeScrollV492{
     grid-row:2!important;grid-column:1!important;min-height:0!important;
     margin:0!important;height:auto!important;box-sizing:border-box!important;
+  }
+}
+#mobileMenuToggle,#mobileMenuBackdrop,#mobileMenuClose{display:none}
+@media screen and (max-width:760px){
+  /* Home uses the same collapsed navigation as the other mobile tabs.
+     Keep the original shortcuts in the DOM: drawer buttons call their actions. */
+  html body.mobile-menu-ready #homeScrollV492 #inicio>.card>.inicio-grid-v464,
+  html body.mobile-menu-ready #homeScrollV492 #inicio>.card>.note{
+    display:none!important;
   }
   body.mobile-menu-ready #mobileMenuToggle{
     display:flex!important;align-items:center;gap:8px;position:fixed!important;

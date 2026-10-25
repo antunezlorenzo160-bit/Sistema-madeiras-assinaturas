@@ -58,4 +58,8 @@ test('waits for asynchronous navigation, initializes once and closes across mobi
   assert.equal(homeScroll.scrollTop, 0);
   toggle.events.click(); media.matches = false; media.changed();
   assert.equal(classes.has('mobile-menu-open'), false);
+  section.id = 'calculadora'; observers[1].callback(); homeScroll.scrollTop = 420;
+  section.id = 'inicio'; observers[1].callback();
+  assert.equal(homeScroll.scrollTop, 0); // PC also returns home at the top.
+  assert.equal(toggle.attrs['aria-expanded'], 'false');
 });
