@@ -6,9 +6,10 @@ import { testCheckout } from './lib/mercadopago.mjs';
 const ids = value => typeof value === 'string' && /^[A-Za-z0-9_-]{1,120}$/.test(value);
 export default async function handler(req) {
   if (!['GET','POST'].includes(req.method)) return json(405,{error:'Método não permitido.'});
-  let stage='authentication';
+  let stage='authentication',ownerAuthorized=false;
   try {
     const {db,uid} = await authenticate(req);
+    ownerAuthorized=true;
     const root = db.collection('plataforma_admin');
     if (req.method === 'GET') {
       const read=(name,promise)=>promise.catch(error=>{error.stage=name;throw error;});
@@ -66,5 +67,5 @@ export default async function handler(req) {
     batch.set(root.doc('audit').collection('events').doc(randomUUID()),{action:input.action,target:ref.path,uid,at:Date.now()});
     await batch.commit();
     return json(200,{ok:true,id:ref.id});
-  } catch(error) { if(!error.stage)error.stage=stage;return failure(error); }
+  } catch(error) { if(!error.stage)error.stage=stage;return failure(error,ownerAuthorized); }
 }

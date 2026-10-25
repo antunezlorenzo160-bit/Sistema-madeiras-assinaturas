@@ -30,8 +30,8 @@ export async function authenticate(req, admin = true) {
   }
   return {db,uid:decoded.uid};
 }
-export function failure(error) {
-  const result=platformFailure(error);
+export function failure(error, ownerAuthorized=false) {
+  const result=platformFailure(error,{ownerAuthorized});
   if(!error.status)console.error('platform_request_failed',{supportCode:result.body.supportCode,stage:result.body.stage||'unknown',code:typeof error.code==='number'?error.code:undefined});
   return json(result.status,result.body);
 }

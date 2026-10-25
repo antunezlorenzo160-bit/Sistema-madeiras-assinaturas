@@ -2,7 +2,7 @@ export const METHODS = Object.freeze(['pix', 'boleto', 'credit_card', 'debit_car
 export class PlatformError extends Error {
   constructor(status, message) { super(message); this.status = status; }
 }
-export function platformFailure(error) {
+export function platformFailure(error, {ownerAuthorized=false}={}) {
   if (error instanceof PlatformError) return {status:error.status,body:{error:error.message}};
   const code=String(error.code ?? '').toLowerCase();
   let message='O servidor encontrou uma falha ao carregar a plataforma.',supportCode='PLATFORM_INTERNAL';
@@ -24,7 +24,16 @@ export function platformFailure(error) {
   }
   const stages={configuration:'configuração do servidor',authentication:'verificação da conta',plans:'leitura dos planos',companies:'leitura das empresas',subscriptions:'leitura das assinaturas',watermark:'leitura da marca d’água',charges:'leitura das cobranças',operation:'gravação dos dados'};
   const stage=stages[error.stage];
-  return {status:supportCode==='PLATFORM_INTERNAL'?500:503,body:{error:message+' Código: '+supportCode+(stage?' • '+stage:''),supportCode,...(stage?{stage}:{})}};
+  let diagnostic='';
+  if(ownerAuthorized && supportCode==='PLATFORM_INTERNAL') {
+    const raw=String(error.details || error.message || error.name || 'Erro sem detalhe');
+    const safe=/private[_ -]?key|client_secret|access_token|refresh_token|-----BEGIN|assertion=/i.test(raw)
+      ? 'Detalhe protegido. Verifique o registro da função no Netlify.'
+      : raw.replace(/Bearer\s+\S+/gi,'Bearer [oculto]').replace(/[A-Za-z0-9_+\/-]{48,}={0,2}/g,'[oculto]').slice(0,260);
+    const nativeCode=/^[A-Za-z0-9_./-]{1,64}$/.test(String(error.code??''))?String(error.code):'sem código';
+    diagnostic=(error.name==='TypeError'?'TypeError / ':'')+nativeCode+': '+safe;
+  }
+  return {status:supportCode==='PLATFORM_INTERNAL'?500:503,body:{error:message+' Código: '+supportCode+(stage?' • '+stage:'')+(diagnostic?' • Diagnóstico: '+diagnostic:''),supportCode,...(stage?{stage}:{})}};
 }
 export function isPlatformAdmin(decoded, configuredUid, ownerEmail) {
   if (configuredUid) return decoded?.uid === configuredUid;

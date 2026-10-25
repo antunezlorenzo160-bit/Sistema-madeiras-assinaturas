@@ -32,3 +32,11 @@ test('server failures report safe configuration causes without exposing raw cred
   const unknown=platformFailure({code:'unknown',message:'secret'});
   assert.equal(unknown.status,500);assert(!JSON.stringify(unknown).includes('secret'));
 });
+
+test('diagnostic details require verified owner and redact secret material',()=>{
+  const error={name:'TypeError',stage:'watermark',message:'Unexpected server operation'};
+  assert(!platformFailure(error).body.error.includes('Unexpected'));
+  assert(platformFailure(error,{ownerAuthorized:true}).body.error.includes('Unexpected server operation'));
+  const secret={stage:'watermark',message:'private_key: do-not-expose-this'};
+  assert(!platformFailure(secret,{ownerAuthorized:true}).body.error.includes('do-not-expose'));
+});
