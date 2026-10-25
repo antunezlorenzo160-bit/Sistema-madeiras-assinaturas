@@ -26,23 +26,43 @@ if (!app.includes('// PLATFORM_WATERMARK_BEGIN') && (!controls.test(app) || !old
 }
 app = app.replace(controls, '');
 const replacement = `// PLATFORM_WATERMARK_BEGIN
-const politicaMarcaAguaPdf = Object.freeze(${JSON.stringify(policy)});
+let politicaMarcaAguaPdf = Object.freeze(${JSON.stringify(policy)});
 function aplicarMarcaAguaPlataforma(){
  document.body.style.setProperty('--marca-agua-largura-v551',politicaMarcaAguaPdf.larguraMm+'mm');
  document.body.style.setProperty('--marca-agua-opacidade-v551',String(politicaMarcaAguaPdf.opacidade));
  for(const id of ['marcaAguaPdfV549','marcaAguaPdfV550','marcaAguaOrcamentoV552']){
   const imagem=document.getElementById(id);
-  if(imagem)imagem.src=logoPadraoV531;
+  if(imagem)imagem.src=politicaMarcaAguaPdf.image||logoPadraoV531;
  }
 }
 const estiloMarcaPlataforma=document.createElement('style');
 estiloMarcaPlataforma.id='marca-agua-plataforma';
-estiloMarcaPlataforma.textContent='@media print{html body #marcaAguaPdfV549,html body.custom-print #printAreaCustom #marcaAguaPdfV550,html body:not(.custom-print) #orcamento #orcAtualPainel #marcaAguaOrcamentoV552{width:'+politicaMarcaAguaPdf.larguraMm+'mm!important;opacity:'+politicaMarcaAguaPdf.opacidade+'!important}}';
+estiloMarcaPlataforma.textContent='@media print{html body #marcaAguaPdfV549,html body.custom-print #printAreaCustom #marcaAguaPdfV550,html body:not(.custom-print) #orcamento #orcAtualPainel #marcaAguaOrcamentoV552{width:var(--marca-agua-largura-v551)!important;opacity:var(--marca-agua-opacidade-v551)!important}}';
 document.head.appendChild(estiloMarcaPlataforma);
 window.addEventListener('beforeprint',aplicarMarcaAguaPlataforma);
 aplicarMarcaAguaPlataforma();
+async function carregarMarcaAguaPlataforma(){
+ const usuario=parent.__v470Runtime()?.auth?.currentUser;
+ if(!usuario||!navigator.onLine)return;
+ const controle=new AbortController(),timer=setTimeout(()=>controle.abort(),4000);
+ try{
+  const token=await usuario.getIdToken();
+  const resposta=await fetch('/.netlify/functions/platform-watermark',{headers:{Authorization:'Bearer '+token},signal:controle.signal});
+  if(!resposta.ok)return;
+  const dados=await resposta.json();
+  if(!Number.isFinite(dados.widthMm)||dados.widthMm<80||dados.widthMm>190||!Number.isFinite(dados.opacity)||dados.opacity<.01||dados.opacity>.15)return;
+  politicaMarcaAguaPdf=Object.freeze({larguraMm:dados.widthMm,opacidade:dados.opacity,image:typeof dados.image==='string'?dados.image:''});
+  aplicarMarcaAguaPlataforma();
+ }catch{}finally{clearTimeout(timer);}
+}
+const gerarPdfPlataformaOriginal=gerarPdfBloco;
+gerarPdfBloco=async function(...argumentos){await carregarMarcaAguaPlataforma();return gerarPdfPlataformaOriginal(...argumentos);};
+window.gerarPdfBloco=gerarPdfBloco;
+window.addEventListener('focus',()=>carregarMarcaAguaPlataforma());
+carregarMarcaAguaPlataforma();
 // PLATFORM_WATERMARK_END`;
 app = app.replace(newLogic.test(app) ? newLogic : oldLogic, () => replacement);
+app = app.replace('copiar:copiarBloco,pdf:gerarPdfBloco,', 'copiar:copiarBloco,pdf:(...args)=>gerarPdfBloco(...args),');
 html = html.slice(0, start) + JSON.stringify(app).replaceAll('</', '<\\/') + html.slice(end);
 writeFileSync(file, html);
 console.log('Marca d’água definida pela plataforma; controles das empresas removidos.');
