@@ -18,7 +18,7 @@ test('waits for asynchronous navigation, initializes once and closes across mobi
   }
   const section = { id: 'inicio' };
   let headerBottom = 80, menuTop, onResize;
-  const header = { getBoundingClientRect: () => ({ bottom: headerBottom }) };
+  const header = { getBoundingClientRect: () => ({ top: 0, bottom: headerBottom }) };
   const media = { matches: true, addEventListener(k, fn) { this.changed = fn; } };
   document = { body: { classList: { add(c) { classes.add(c); },
     toggle(c, b) { b ? classes.add(c) : classes.delete(c); } },
@@ -50,6 +50,7 @@ test('waits for asynchronous navigation, initializes once and closes across mobi
   for (const tab of ['inicio', 'calculadora', 'estoque', 'cadastro', 'orcamento', 'carregamentos', 'clientes', 'configuracoes']) {
     toggle.events.click(); assert.equal(toggle.attrs['aria-expanded'], 'true');
     section.id = tab; observers[1].callback();
+    assert.equal(menuTop, tab === 'inicio' ? '116px' : '8px');
     nodes.get('mobileMenuBackdrop').events.click();
     assert.equal(toggle.attrs['aria-expanded'], 'false');
   }

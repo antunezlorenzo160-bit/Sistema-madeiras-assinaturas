@@ -33,6 +33,12 @@
     box-shadow:none!important;opacity:.65;text-shadow:0 1px 3px #000b;
     font:400 26px/1 system-ui;cursor:pointer;
   }
+  /* Every non-home page shares this header, including its page-specific docks.
+     Keep a separate right column for the menu instead of floating over fields. */
+  html body.mobile-menu-ready:not(.inicio-ativo-v492) header{
+    padding-right:calc(60px + env(safe-area-inset-right,0px))!important;
+    min-height:56px!important;box-sizing:border-box!important;
+  }
   body.mobile-menu-ready #menuLateralV525{display:none!important}
   body.mobile-menu-ready.mobile-menu-open #menuLateralV525{
     display:block!important;position:fixed!important;inset:0 auto 0 0!important;

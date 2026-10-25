@@ -15,8 +15,10 @@
   function positionToggle() {
     const header = document.querySelector('header');
     if (!mobile.matches || !header?.getBoundingClientRect) return;
-    const bottom = header.getBoundingClientRect().bottom;
-    document.documentElement?.style.setProperty('--mobile-menu-top', Math.max(8, Math.round(bottom + 6)) + 'px');
+    const bounds = header.getBoundingClientRect();
+    const home = document.querySelector('section.tab.active')?.id === 'inicio';
+    const top = home ? bounds.bottom + 6 : bounds.top + 6;
+    document.documentElement?.style.setProperty('--mobile-menu-top', Math.max(8, Math.round(top)) + 'px');
   }
   const header = document.querySelector('header');
   if (header && typeof ResizeObserver !== 'undefined') new ResizeObserver(positionToggle).observe(header);
