@@ -50,4 +50,7 @@
   body.mobile-menu-ready #menuLateralV525 .inicio-atalho-v464 span{font-size:12px;color:#fff}
   body.mobile-menu-ready #mobileMenuClose{display:block;min-height:44px;margin:0 0 12px auto;padding:8px 12px;background:#163c29;color:#fff;border:1px solid #a9c6af;border-radius:8px}
 }
+@media screen and (min-width:761px){
+  html body header .tabs #estoqueTituloFixoV633{display:none!important}
+}
 @media print{#mobileMenuToggle,#mobileMenuBackdrop,#mobileMenuClose{display:none!important}}
