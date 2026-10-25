@@ -75,3 +75,22 @@ e conexões próprios.
 
 O teste usa dados simulados; não foram feitas consultas ao Firebase real durante
 a cota esgotada. Esta revisão não aumenta a cota do plano Spark e fica só na prévia.
+
+## Medições da sessão de 25/10 e próxima verificação
+
+Diagnóstico enviado pelo proprietário: 1.399 documentos na coleção de itens do
+orçamento e aproximadamente 2.090 documentos nas sete coleções principais.
+Duas medições com o mesmo `startedAt` e intervalo de 572 segundos não mostraram
+novas consultas explícitas, novos listeners ou novas alterações de documentos;
+mostraram eventos adicionais de cache/servidor. Isso não prova custo zero nem
+identifica a causa da retomada. O gráfico do projeto mostrou dois picos próximos
+ao uso e consumo baixo depois; não permite atribuição exata a um aparelho.
+
+A revisão encontrou exclusões lógicas: guardar/limpar o orçamento marca itens
+com `excluido:true`, enquanto a consulta recebe a coleção inteira antes de
+filtrar esses registros. Não sabemos ainda quantos dos 1.399 estão excluídos.
+O diagnóstico passa a contar `budgetDocuments.active`, `excluded` e
+`activeWithoutExplicitFalse` na resposta já recebida, sem nova consulta ou escrita.
+Essa evidência é necessária antes de adotar um filtro: `excluido == false` não
+inclui documentos antigos sem esse campo. Nenhum filtro, migração, exclusão ou
+alteração no fluxo do orçamento foi realizado nesta etapa.

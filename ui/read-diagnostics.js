@@ -32,6 +32,15 @@ function criarDiagnosticoLeiturasV700({clock=Date.now,cacheMode=()=> 'desconheci
           row.serverSnapshots++;
           row.maxDocumentsInSnapshot=Math.max(row.maxDocumentsInSnapshot,typeof snapshot.size==='number'?snapshot.size:typeof snapshot.exists==='function'&&snapshot.exists()?1:0);
           if(typeof snapshot.docChanges==='function')row.documentChanges+=snapshot.docChanges({includeMetadataChanges:false}).length;
+          if(row.collection==='sm2_orcamento_itens'&&Array.isArray(snapshot.docs)){
+            const counts={active:0,excluded:0,activeWithoutExplicitFalse:0};
+            for(const document of snapshot.docs){
+              const data=document.data();
+              if(data.excluido===true)counts.excluded++;
+              else{counts.active++;if(data.excluido!==false)counts.activeWithoutExplicitFalse++;}
+            }
+            row.budgetDocuments=counts;
+          }
         }
         callback(snapshot);
       };
@@ -40,7 +49,7 @@ function criarDiagnosticoLeiturasV700({clock=Date.now,cacheMode=()=> 'desconheci
       return stop;
     };
   }
-  function report(){return {version:'leituras-v700',startedAt:new Date(started).toISOString(),elapsedSeconds:Math.round((clock()-started)/1000),firestoreCache:cacheMode(),
+  function report(){return {version:'leituras-v701-budget-counts',startedAt:new Date(started).toISOString(),elapsedSeconds:Math.round((clock()-started)/1000),firestoreCache:cacheMode(),
     note:'Medições locais do aplicativo, não extrato de leituras cobradas. Callbacks podem compartilhar a mesma conexão do SDK. Não inclui versões antigas, outros aparelhos ou a API da administração.',
     collections:[...sources.values()].map(row=>({...row,requests:{...row.requests}})).sort((a,b)=>a.collection.localeCompare(b.collection))};}
   function mount(doc){

@@ -29,6 +29,18 @@ test('measurement counts calls without reading record contents or making additio
   assert.equal(calls,1);assert(!JSON.stringify(diag.report()).includes('private-company-id'));
   diag.stopAll();stop();assert.equal(stopped,1);assert.equal(diag.report().collections[0].activeListeners,0);
 });
+test('budget measurement separates excluded and legacy active items without more reads, writes or record disclosure',()=>{
+  const context=vm.createContext({});vm.runInContext(readFileSync(new URL('../ui/read-diagnostics.js',import.meta.url),'utf8'),context);
+  const diag=vm.runInContext('criarDiagnosticoLeiturasV700()',context);
+  let callback,calls=0,delivered=0;
+  diag.wrapSnapshot((ref,options,next)=>{calls++;callback=next;return()=>{};})({path:'empresas/private-id/dados/sm2_orcamento_itens/registros'},{},()=>delivered++);
+  const docs=[{excluido:true},{excluido:false},{},{excluido:null}].map(data=>({data:()=>({...data,cliente:'private-client',valor:999})}));
+  callback({metadata:{fromCache:false,hasPendingWrites:false},size:4,docs,docChanges:()=>docs});
+  const report=JSON.parse(JSON.stringify(diag.report()));assert.deepEqual(report.collections[0].budgetDocuments,{active:3,excluded:1,activeWithoutExplicitFalse:2});
+  assert.equal(calls,1);assert.equal(delivered,1);assert(!JSON.stringify(report).includes('private-client'));assert(!JSON.stringify(report).includes('private-id'));
+  callback({metadata:{fromCache:false,hasPendingWrites:false},size:0,docs:[],docChanges:()=>[]});
+  assert.equal(diag.report().collections[0].budgetDocuments.active,0);assert.equal(diag.report().collections[0].budgetDocuments.excluded,0);
+});
 test('metadata-only write confirmation refreshes cached snapshots and clears the pending guard',()=>{
   const callbacks=[],pending=new Set(),snapshots=new Map();let scheduled=0;
   const collections=[['madeiras','sm2_madeiras'],['est1','sm2_estoque1']];
