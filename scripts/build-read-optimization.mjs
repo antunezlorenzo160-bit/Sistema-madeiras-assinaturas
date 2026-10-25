@@ -1,6 +1,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { OWNER_EMAIL } from '../Netlify/Funtions/lib/platform-owner.mjs';
 export function buildReadOptimization(input=new URL('../public/index.html',import.meta.url)){
 const root=new URL('../',import.meta.url),file=input instanceof URL?input:pathToFileURL(resolve(input));
 let html=readFileSync(file,'utf8');
@@ -19,7 +20,7 @@ if(!app.includes('// READ_OPTIMIZATION_V700')){
   let sdk=match[0];
   for(const [name,alias]of [['getDocs','rawGetDocsV700'],['getDocsFromServer','rawGetDocsServerV700'],['getDocFromServer','rawGetDocServerV700'],['getCountFromServer','rawGetCountServerV700'],['onSnapshot','rawOnSnapshotV700']])sdk=sdk.replace(new RegExp('\\b'+name+'(?=,)'),name+': '+alias);
   const helper=readFileSync(new URL('ui/read-diagnostics.js',root),'utf8');
-  const setup=`\n// READ_OPTIMIZATION_V700\n${helper}\nconst diagnosticoLeiturasV700=criarDiagnosticoLeiturasV700({cacheMode:()=>parent.__smFirestoreCacheMode||'desconhecido'});
+  const setup=`\n// READ_OPTIMIZATION_V700\n${helper}\nconst diagnosticoLeiturasV700=criarDiagnosticoLeiturasV700({cacheMode:()=>parent.__smFirestoreCacheMode||'desconhecido',canMount:()=>{const user=parent.__v470Runtime()?.auth?.currentUser;return user?.emailVerified===true&&user.email?.toLowerCase()===${JSON.stringify(OWNER_EMAIL)};}});
 const getDocs=diagnosticoLeiturasV700.wrapRead('consultaComCache',rawGetDocsV700);
 const getDocsFromServer=diagnosticoLeiturasV700.wrapRead('consultaServidor',rawGetDocsServerV700);
 const getDocFromServer=diagnosticoLeiturasV700.wrapRead('documentoServidor',rawGetDocServerV700);

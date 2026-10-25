@@ -63,3 +63,20 @@ test('flushing one wood edit never requests the full wood catalog again',async()
   await vm.runInContext('sincronizarOfflineOps()',context);
   assert.equal(queue.length,0);assert.equal(writes,1);assert.equal(reads,0);assert.equal(scheduled,1);
 });
+
+test('diagnostic panel is hidden by default and is shown only for the verified platform owner',()=>{
+  const context=vm.createContext({});vm.runInContext(readFileSync(new URL('../ui/read-diagnostics.js',import.meta.url),'utf8'),context);
+  const create=vm.runInContext('criarDiagnosticoLeiturasV700',context);
+  let created=0,removed=0;
+  const node=()=>({style:{},append(){},addEventListener(){},setAttribute(){}});
+  const doc={getElementById:id=>id==='configInterface'?node():null,createElement:()=>{created++;return node();}};
+  create().mount(doc);assert.equal(created,0);
+  create({canMount:()=>false}).mount({...doc,getElementById:()=>({remove(){removed++;}})});assert.equal(removed,1);assert.equal(created,0);
+  const gate=app.match(/canMount:(\(\)=>\{const user=[^\n]+?;\})\}\);/);assert(gate,'owner display gate is included in built application');
+  let user;
+  const gateContext=vm.createContext({parent:{__v470Runtime:()=>({auth:{currentUser:user}})}});
+  const allowed=vm.runInContext('('+gate[1]+')',gateContext);
+  for(user of [null,{email:'client@example.com',emailVerified:true},{email:'antunezlorenzo160@gmail.com',emailVerified:false}])assert.equal(allowed(),false);
+  user={email:'antunezlorenzo160@gmail.com',emailVerified:true};assert.equal(allowed(),true);
+  create({canMount:allowed}).mount(doc);assert(created>0);
+});

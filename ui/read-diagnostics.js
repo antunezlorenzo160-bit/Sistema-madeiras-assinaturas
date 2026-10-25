@@ -1,4 +1,4 @@
-function criarDiagnosticoLeiturasV700({clock=Date.now,cacheMode=()=> 'desconhecido'}={}) {
+function criarDiagnosticoLeiturasV700({clock=Date.now,cacheMode=()=> 'desconhecido',canMount=()=>false}={}) {
   const started=clock(),sources=new Map(),stops=new Set();
   function source(ref){
     const parts=String(ref?.path||'desconhecido').split('/');
@@ -44,6 +44,7 @@ function criarDiagnosticoLeiturasV700({clock=Date.now,cacheMode=()=> 'desconheci
     note:'Medições locais do aplicativo, não extrato de leituras cobradas. Callbacks podem compartilhar a mesma conexão do SDK. Não inclui versões antigas, outros aparelhos ou a API da administração.',
     collections:[...sources.values()].map(row=>({...row,requests:{...row.requests}})).sort((a,b)=>a.collection.localeCompare(b.collection))};}
   function mount(doc){
+    if(canMount()!==true){doc.getElementById('diagnosticoLeiturasV700')?.remove();return;}
     const host=doc.getElementById('configInterface');if(!host||doc.getElementById('diagnosticoLeiturasV700'))return;
     const box=doc.createElement('details');box.id='diagnosticoLeiturasV700';box.className='card';
     const title=doc.createElement('summary');title.textContent='Diagnóstico de leituras do Firebase';
