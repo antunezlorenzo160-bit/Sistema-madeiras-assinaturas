@@ -8,7 +8,7 @@ export { PlatformError };
 export function json(status, data) {
   return new Response(JSON.stringify(data), {status, headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store',...(status===429?{'retry-after':'60'}:{})}});
 }
-export async function authenticate(req, admin = true) {
+export async function authenticate(req, admin = true, {requireMembership=true} = {}) {
   const match = (req.headers.get('authorization') || '').match(/^Bearer (.+)$/i);
   if (!match) throw new PlatformError(401,'Entre com sua conta para continuar.');
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
@@ -24,11 +24,11 @@ export async function authenticate(req, admin = true) {
   if (admin && !owner && decoded.email?.toLowerCase() === OWNER_EMAIL && decoded.email_verified !== true) throw new PlatformError(403,'Confirme o e-mail da sua conta Firebase para acessar a plataforma.');
   if (admin && !owner) throw new PlatformError(403,'Esta área é exclusiva do proprietário da plataforma.');
   const db = getFirestore();
-  if (!admin && !owner) {
+  if (!admin && !owner && requireMembership) {
     const member = await db.doc(`membros/${decoded.uid}`).get();
     if (!member.exists || member.data().ativo !== true || typeof member.data().empresaId !== 'string') throw new PlatformError(403,'Conta sem empresa ativa.');
   }
-  return {db,uid:decoded.uid};
+  return {db,uid:decoded.uid,email:decoded.email,emailVerified:decoded.email_verified===true};
 }
 export function failure(error, ownerAuthorized=false) {
   const result=platformFailure(error,{ownerAuthorized});

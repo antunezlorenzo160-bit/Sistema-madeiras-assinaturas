@@ -43,7 +43,7 @@ function render(){
   list('companies-list',state.companies,(host,c)=>record(host,c.name,c.empresaId));
   list('plans-list',state.plans,(host,p)=>record(host,p.name,p.interval==='monthly'?'Mensal':'Anual',money(p.amountCents)));
   const labels={trial:'Em teste',active:'Ativa',past_due:'Pendente',canceled:'Cancelada'};
-  list('subscriptions-list',state.subscriptions,(host,s)=>record(host,state.companies.find(c=>c.id===s.empresaId)?.name||s.empresaId,state.plans.find(p=>p.id===s.planId)?.name||s.planId,labels[s.status]||s.status));
+  list('subscriptions-list',state.subscriptions,(host,s)=>record(host,state.companies.find(c=>c.id===s.empresaId)?.name||s.empresaId,s.trialMode==='indefinite'?'Gratuito sem prazo definido':state.plans.find(p=>p.id===s.planId)?.name||s.planId,labels[s.status]||s.status));
   for(const [id,items]of [['subscription-company',state.companies],['subscription-plan',state.plans],['charge-company',state.companies]]){
     const select=$(id),current=select.value;select.replaceChildren(new Option('Selecione…',''));
     items.forEach(item=>select.add(new Option(item.name,item.id)));select.value=current;
@@ -118,3 +118,10 @@ $('charge-form').onsubmit=async event=>{
  try{await api({action:'charge.test',empresaId:$('charge-company').value});await refresh();status('Checkout de teste criado. Abra o link na lista abaixo. Nenhum pagamento foi confirmado.');}
  catch(error){status(error.message,true);}finally{button.disabled=!state.testConfigured;}
 };
+
+$('invite-form').onsubmit=async event=>{
+ event.preventDefault();const button=event.target.querySelector('button'),f=new FormData(event.target);button.disabled=true;status('Gerando convite…');
+ try{const result=await api({action:'invitation.create',name:f.get('name'),email:f.get('email')});$('invite-url').value=result.url;$('invite-result').hidden=false;$('invite-copy-status').textContent='';status('Convite pronto. Copie e envie ao responsável.');}
+ catch(error){status(error.message,true);}finally{button.disabled=false;}
+};
+$('invite-copy').onclick=async()=>{try{await navigator.clipboard.writeText($('invite-url').value);$('invite-copy-status').textContent='Link copiado.';}catch{$('invite-url').focus();$('invite-url').select();$('invite-copy-status').textContent='Selecione e copie o link acima.';}};

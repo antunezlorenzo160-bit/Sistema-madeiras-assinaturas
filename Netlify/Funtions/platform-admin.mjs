@@ -3,6 +3,7 @@ import { authenticate, failure, json, PlatformError } from './lib/platform-auth.
 import { METHODS, validatePlan, validateWatermark } from './lib/platform.mjs';
 import { testCheckout } from './lib/mercadopago.mjs';
 import { createReadBudget } from './lib/read-budget.mjs';
+import { createInvitation } from './lib/invitations.mjs';
 
 const ids = value => typeof value === 'string' && /^[A-Za-z0-9_-]{1,120}$/.test(value);
 const overviewReads = createReadBudget();
@@ -35,6 +36,13 @@ export default async function handler(req) {
     if (text.length > 400000) throw new PlatformError(413,'Arquivo muito grande.');
     let input; try { input = JSON.parse(text); } catch { throw new PlatformError(400,'Pedido inválido.'); }
     if (!input || typeof input !== 'object') throw new PlatformError(400,'Pedido inválido.');
+    if(input.action==='invitation.create'){
+      const base=process.env.DEPLOY_PRIME_URL||process.env.URL;
+      if(!base||!base.startsWith('https://'))throw new PlatformError(503,'URL da prévia não configurada.');
+      const result=await createInvitation(db,input,uid);
+      const url=new URL('/cadastro/',base);url.hash='convite='+result.token;
+      return json(200,{ok:true,url:url.href,empresaId:result.empresaId});
+    }
     if (input.action === 'charge.test') {
       if (!ids(input.empresaId)) throw new PlatformError(400,'Empresa inválida.');
       const subscription = await root.doc('billing').collection('subscriptions').doc(input.empresaId).get();
