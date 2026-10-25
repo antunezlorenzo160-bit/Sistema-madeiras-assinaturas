@@ -1,6 +1,8 @@
 [build]
+  command = "npm run build"
   publish = "public"
   functions = "Netlify/Funtions"
 
 [functions]
   node_bundler = "esbuild"
+
