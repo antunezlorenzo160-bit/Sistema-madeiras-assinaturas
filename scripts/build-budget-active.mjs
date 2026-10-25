@@ -17,6 +17,7 @@ export function buildBudgetActive(input=new URL('../public/index.html',import.me
     replace('onSnapshot(collection(db,nome),{includeMetadataChanges:true}', 'onSnapshot(consultaColecaoAtivaV704(nome),{includeMetadataChanges:true}');
     replace('\niniciarSincronismoTempoReal();','\nawait prepararOrcamentoAtivoV704();\niniciarSincronismoTempoReal();');
   }
+  app=app.replace(/const FILTRO_ORCAMENTO_V704=(?:true|false);/,'const FILTRO_ORCAMENTO_V704='+(configuration.enabled===true)+';');
   writeFileSync(file,html.slice(0,start)+JSON.stringify(app).replaceAll('</','<\\/')+html.slice(end));
   console.log('Filtro do orçamento preparado; ativação: '+(configuration.enabled===true?'habilitada':'aguardando regras publicadas'));
 }

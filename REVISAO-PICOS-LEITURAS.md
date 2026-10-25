@@ -140,3 +140,14 @@ preservação de dados e outras empresas, endpoint desabilitado, vínculo inativ
 tentativa de informar outra empresa, filtro seletivo e fallback completo.
 As regras foram revisadas a partir do texto fornecido; não foi executado emulator
 nem teste de regras no Firebase real. Nenhuma migração real foi executada pelo agente.
+
+## Ativação autorizada
+
+Após receber as regras, o proprietário autorizou expressamente a alteração no
+banco compartilhado e informou a conclusão da publicação (“Pronto”). O filtro
+foi habilitado na prévia em `config/budget-active.json`. A publicação das regras
+foi informada pelo proprietário; não há acesso do agente ao console para
+verificação independente. A primeira abertura online faz a preparação por empresa;
+pode haver uma última leitura completa pelo servidor nessa preparação. As próximas
+aberturas reutilizam a marca de versão e a consulta filtrada. A redução real ainda
+precisa ser confirmada pelo diagnóstico e pelo uso faturado após essa abertura.
