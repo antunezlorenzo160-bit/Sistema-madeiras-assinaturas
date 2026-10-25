@@ -1,5 +1,11 @@
 #mobileMenuToggle,#mobileMenuBackdrop,#mobileMenuClose{display:none}
 @media screen and (max-width:760px){
+  /* Home uses the same collapsed navigation as the other mobile tabs.
+     Keep the original shortcuts in the DOM: drawer buttons call their actions. */
+  html body.mobile-menu-ready #homeScrollV492 #inicio>.card>.inicio-grid-v464,
+  html body.mobile-menu-ready #homeScrollV492 #inicio>.card>.note{
+    display:none!important;
+  }
   /* Give the welcome header its own top row, independent of tab scroll/layout. */
   html body.inicio-paisagem-v474 #homeShellV492{
     display:grid!important;grid-template-columns:minmax(0,1fr)!important;
