@@ -1,5 +1,5 @@
 [build]
-  command = "node scripts/build-mobile-menu.mjs && node scripts/build-toras-sync.mjs && node scripts/build-watermark-policy.mjs && node scripts/build-read-optimization.mjs"
+  command = "node scripts/build-mobile-menu.mjs && node scripts/build-toras-sync.mjs && node scripts/build-watermark-policy.mjs && node scripts/build-read-optimization.mjs && node scripts/build-history-on-demand.mjs"
   publish = "public"
   functions = "Netlify/Funtions"
 

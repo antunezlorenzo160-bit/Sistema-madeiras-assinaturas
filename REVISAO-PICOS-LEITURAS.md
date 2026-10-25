@@ -18,19 +18,34 @@
    o perfil, mas não todos os acompanhamentos auxiliares. Agora os acompanhamentos
    instrumentados são encerrados juntos ao sair, incluindo clientes e cubagem.
 
+## Ajuste específico da abertura (V701)
+
+O problema pendente foi confirmado pelo usuário como pico na abertura; o pico com
+o sistema parado já havia sido resolvido. O histórico de movimentações sai da
+carga inicial e é observado somente na primeira abertura de Movimentações/Histórico.
+Depois disso, o acompanhamento permanece estável até o encerramento da sessão.
+Os dados locais do histórico são preservados antes de chegar a confirmação remota.
+A sincronização inicial não espera uma coleção que ainda não foi solicitada.
+Catálogo, estoques e demais dados usados nas validações mantêm o carregamento atual.
+
+Testes: nenhuma consulta a movimentos na abertura; uma única inscrição ao abrir
+o histórico; cache local preservado; resposta opcional do histórico não substitui
+uma resposta obrigatória de estoque/cadastro na barreira de sincronização.
+
 ## Fontes de consumo ainda a medir
 
-A abertura acompanha oito coleções completas, incluindo estoques e histórico
-de movimentos, além de acompanhamentos auxiliares. Uma carga inicial grande,
+Antes desta revisão, a abertura acompanhava oito coleções completas, incluindo
+estoques e histórico de movimentos, além de acompanhamentos auxiliares. O histórico
+agora fica sob demanda; as demais coleções continuam a ser medidas. Uma carga inicial grande,
 uma nova conexão cobrada ou várias versões/aparelhos podem elevar o consumo.
 Persistência e retomada de consultas influenciam a cobrança; receber uma fotografia
 grande no callback não prova que todos os seus documentos foram cobrados outra vez.
 Consultas idênticas também podem ser compartilhadas pelo SDK. Não atribuir as
 54 mil leituras do gráfico a uma única função sem medição.
 
-Não foi alterada a abrangência das consultas de estoque/histórico nesta etapa:
-uma mudança para paginação ou carregamento por tela precisa preservar validações
-de saldo, transferências e relatórios antes de ser adotada.
+Não foram limitadas ou paginadas as consultas de estoque: isso precisa preservar
+validações de saldo, transferências e relatórios antes de ser adotado. O histórico
+continua completo quando solicitado, sem corte de dados antigos.
 
 ## Diagnóstico local sem novas consultas
 
