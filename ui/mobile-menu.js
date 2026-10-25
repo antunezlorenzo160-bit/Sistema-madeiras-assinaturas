@@ -12,6 +12,15 @@
   const close = document.createElement('button');
   close.id = 'mobileMenuClose'; close.type = 'button'; close.textContent = 'Fechar menu ✕';
   menu.prepend(close); document.body.append(backdrop, toggle);
+  function positionToggle() {
+    const header = document.querySelector('header');
+    if (!mobile.matches || !header?.getBoundingClientRect) return;
+    const bottom = header.getBoundingClientRect().bottom;
+    document.documentElement?.style.setProperty('--mobile-menu-top', Math.max(8, Math.round(bottom + 6)) + 'px');
+  }
+  const header = document.querySelector('header');
+  if (header && typeof ResizeObserver !== 'undefined') new ResizeObserver(positionToggle).observe(header);
+  window.addEventListener?.('resize', positionToggle);
   let opened = false;
   function setOpen(value, restoreFocus = false) {
     opened = Boolean(value && mobile.matches);
@@ -44,6 +53,7 @@
     const next = document.querySelector('section.tab.active')?.id;
     if (next !== active) {
       active = next; setOpen(false);
+      positionToggle();
       if (next === 'inicio') {
         const homeScroll = document.getElementById('homeScrollV492');
         if (homeScroll) homeScroll.scrollTop = 0;
@@ -53,9 +63,10 @@
   for (const section of document.querySelectorAll('section.tab')) {
     observer.observe(section, { attributes: true, attributeFilter: ['class'] });
   }
-  mobile.addEventListener('change', () => setOpen(false));
+  mobile.addEventListener('change', () => { setOpen(false); positionToggle(); });
   document.body.classList.add('mobile-menu-ready');
   setOpen(false);
+  positionToggle();
   return true;
   }
   // The main module creates navigation after Firebase has initialized.

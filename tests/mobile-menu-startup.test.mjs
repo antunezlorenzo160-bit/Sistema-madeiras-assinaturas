@@ -17,15 +17,18 @@ test('waits for asynchronous navigation, initializes once and closes across mobi
       closest() { return this.tagName === 'button' ? this : null; } };
   }
   const section = { id: 'inicio' };
+  let headerBottom = 80, menuTop, onResize;
+  const header = { getBoundingClientRect: () => ({ bottom: headerBottom }) };
   const media = { matches: true, addEventListener(k, fn) { this.changed = fn; } };
   document = { body: { classList: { add(c) { classes.add(c); },
     toggle(c, b) { b ? classes.add(c) : classes.delete(c); } },
     append(...items) { items.forEach(e => nodes.set(e.id, e)); } },
     events: {}, createElement: element, getElementById: id => nodes.get(id),
-    querySelector: () => section, querySelectorAll: () => [section],
+    documentElement: { style: { setProperty(name, value) { menuTop = value; } } },
+    querySelector: selector => selector === 'header' ? header : section, querySelectorAll: () => [section],
     addEventListener(k, fn) { this.events[k] = fn; } };
   const source = readFileSync(new URL('../ui/mobile-menu.js', import.meta.url), 'utf8');
-  const context = vm.createContext({ document, window: { matchMedia: () => media },
+  const context = vm.createContext({ document, window: { matchMedia: () => media, addEventListener(name, fn) { if (name === 'resize') onResize = fn; } },
     MutationObserver: class {
       constructor(fn) { this.callback = fn; observers.push(this); }
       observe() {} disconnect() { this.disconnected = true; }
@@ -38,6 +41,9 @@ test('waits for asynchronous navigation, initializes once and closes across mobi
   assert.equal(observers[0].disconnected, true);
   const toggle = nodes.get('mobileMenuToggle');
   assert.equal(toggle.attrs['aria-expanded'], 'false');
+  assert.equal(toggle.textContent, '☰');
+  assert.equal(menuTop, '86px');
+  headerBottom = 110; onResize(); assert.equal(menuTop, '116px');
   vm.runInContext(source, context);
   assert.equal(nodes.get('mobileMenuToggle'), toggle);
   assert.equal(menu.children.length, 1);
