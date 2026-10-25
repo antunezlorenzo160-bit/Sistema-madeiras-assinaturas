@@ -94,3 +94,18 @@ O diagnóstico passa a contar `budgetDocuments.active`, `excluded` e
 Essa evidência é necessária antes de adotar um filtro: `excluido == false` não
 inclui documentos antigos sem esse campo. Nenhum filtro, migração, exclusão ou
 alteração no fluxo do orçamento foi realizado nesta etapa.
+
+
+## Compatibilidade antes de filtrar (V703)
+
+Nova medição confirmou 1 item ativo sem `excluido:false` e 1.398 excluídos.
+A prévia normaliza gravações integrais de itens do orçamento para um booleano
+explícito. Preserva `true` nas exclusões e não acrescenta `false` a patches sem
+o campo, para não reativar registros excluídos. A normalização é delimitada pelo
+caminho da empresa e funciona em gravações diretas, lotes e fila offline.
+
+O filtro NÃO está ativo: ainda é preciso conferir as regras publicadas, preparar
+compatibilidade para versões antigas e normalizar os registros legados. Uma
+consulta apenas por `excluido == false` omitiria itens antigos e novos itens
+gravados por uma versão anterior. Não foram executadas migrações no Firebase
+pelo agente. O proprietário foi solicitado a fornecer o texto das regras atuais.
