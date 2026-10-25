@@ -28,6 +28,7 @@ test('build is idempotent and applies normalization to online, queued and batch 
   copyFileSync(new URL('../public/index.html',import.meta.url),file);buildBudgetCompatibility(file);const html=readFileSync(file,'utf8');buildBudgetCompatibility(file);assert.equal(readFileSync(file,'utf8'),html);
   assert(html.includes('BUDGET_COMPATIBILITY_V703'));
   assert(html.includes('set(ref,dados,opcoes){dados=normalizarRegistroOrcamentoV703'));
-  assert(!html.includes('where(\'excluido\''));
+  if(html.includes('BUDGET_ACTIVE_V704'))assert(html.includes('FILTRO_ORCAMENTO_V704=false'));
+  else assert(!html.includes('where(\'excluido\''));
  }finally{rmSync(dir,{recursive:true,force:true});}
 });

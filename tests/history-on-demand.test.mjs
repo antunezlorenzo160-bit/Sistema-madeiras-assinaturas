@@ -22,7 +22,7 @@ function setup(){
     dadosEscutadosV428:snapshots,cadastroSyncRodando:false,reprocessarV428:false,agendamentoV428:null,
     setTimeout:()=>{scheduled++;return 1;},sincronizarSomenteCadastros(){},atualizarStatusSync(){},setBootStep(){},console,
     telemetriaLocalV429:{aberturas:0,eventosServidor:0,documentosPrimeiraResposta:0},falhaObservadorV428(){assert.fail('unexpected failure');},
-    collection:(db,path)=>({path}),doc:(db,...path)=>({path:path.join('/')}),onSnapshot:(ref,options,next)=>{targets.push({ref,next});return()=>{};}});
+    consultaColecaoAtivaV704:path=>({path}),collection:(db,path)=>({path}),doc:(db,...path)=>({path:path.join('/')}),onSnapshot:(ref,options,next)=>{targets.push({ref,next});return()=>{};}});
   vm.runInContext(app.match(/const colecoesEscutadasV428=\[[\s\S]*?\];/)[0],context);
   const a=app.indexOf('// HISTORY_LAZY_V701'),b=app.indexOf('\nlet orcMutationVersion=',a);
   vm.runInContext(app.slice(a,b),context);

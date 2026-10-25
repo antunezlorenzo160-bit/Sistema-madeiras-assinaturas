@@ -1,7 +1,7 @@
 function criarDiagnosticoLeiturasV700({clock=Date.now,cacheMode=()=> 'desconhecido',canMount=()=>false}={}) {
-  const started=clock(),sources=new Map(),stops=new Set();
+  const started=clock(),sources=new Map(),stops=new Set(),references=new WeakMap();
   function source(ref){
-    const parts=String(ref?.path||'desconhecido').split('/');
+    const parts=String(references.get(ref)||ref?.path||'desconhecido').split('/');
     const name=parts[0]==='empresas'&&parts[2]==='dados'?parts[3]:parts[0];
     if(!sources.has(name))sources.set(name,{collection:name,requests:{},returnedDocuments:0,listenersOpened:0,activeListeners:0,serverSnapshots:0,cacheSnapshots:0,pendingSnapshots:0,maxDocumentsInSnapshot:0,documentChanges:0,errors:0});
     return sources.get(name);
@@ -66,5 +66,5 @@ function criarDiagnosticoLeiturasV700({clock=Date.now,cacheMode=()=> 'desconheci
     copy.onclick=async()=>{try{await doc.defaultView.navigator.clipboard.writeText(JSON.stringify(report(),null,2));status.textContent='Diagnóstico copiado. Não contém registros, senhas ou tokens.';}catch{status.textContent='Não foi possível copiar. A medição pode ser selecionada abaixo.';}};
     box.append(title,note,refresh,copy,status,pre);host.append(box);box.addEventListener('toggle',()=>{if(box.open)refresh.onclick();});
   }
-  return {wrapRead,wrapSnapshot,report,mount,stopAll(){for(const stop of [...stops])stop();}};
+  return {wrapRead,wrapSnapshot,report,mount,identify(ref,path){references.set(ref,path);return ref;},stopAll(){for(const stop of [...stops])stop();}};
 }

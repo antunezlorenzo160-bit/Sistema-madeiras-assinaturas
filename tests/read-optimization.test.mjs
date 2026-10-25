@@ -48,7 +48,7 @@ test('metadata-only write confirmation refreshes cached snapshots and clears the
     offlineOps:()=>[],observadoresBloqueadosV429:false,conexaoOnline:()=>true,document:{hidden:false},
     cancelamentosV428:[],sessaoSyncV428:0,telemetriaLocalV429:{aberturas:0,eventosServidor:0,documentosPrimeiraResposta:0},
     atualizarStatusSync(){},setBootStep(){},agendarAplicacaoV428(){scheduled++;},falhaObservadorV428(){assert.fail('unexpected failure');},
-    movimentosSolicitadosV701:false,colecoesEscutadasV428:collections,db:{},COL:{syncTest:'sm2_sync_status'},collection:(db,path)=>({path}),doc:(db,...path)=>({path:path.join('/')}),
+    movimentosSolicitadosV701:false,colecoesEscutadasV428:collections,db:{},COL:{syncTest:'sm2_sync_status'},consultaColecaoAtivaV704:path=>({path}),collection:(db,path)=>({path}),doc:(db,...path)=>({path:path.join('/')}),
     onSnapshot:(ref,options,next)=>{callbacks.push(next);return()=>{};}});
   const a=app.indexOf('function abrirObservadoresV428(){'),b=app.indexOf('\nlet orcMutationVersion=',a);
   const guard=app.match(/function temOperacoesPendentesV428\(nome\)\{[^\n]+\}/)[0];

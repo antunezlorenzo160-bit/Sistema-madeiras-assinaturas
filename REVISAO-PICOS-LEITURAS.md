@@ -109,3 +109,34 @@ compatibilidade para versões antigas e normalizar os registros legados. Uma
 consulta apenas por `excluido == false` omitiria itens antigos e novos itens
 gravados por uma versão anterior. Não foram executadas migrações no Firebase
 pelo agente. O proprietário foi solicitado a fornecer o texto das regras atuais.
+
+## Regras recebidas e preparação do filtro (V704)
+
+O proprietário forneceu as regras publicadas. `firestore.rules` preserva seus
+caminhos, vínculo ativo e isolamento e separa `sm2_orcamento_itens` da regra
+genérica: create/update exigem `excluido` booleano no documento resultante.
+Read/delete mantêm o controle por empresa. Sem retirar a coleção da lista genérica,
+uma permissão ampla sobreposta tornaria a validação ineficaz.
+
+O filtro está DESLIGADO em `config/budget-active.json`. Não ativar antes da
+confirmação da publicação das regras pelo proprietário. As regras afetam o
+Firebase compartilhado, inclusive clientes antigos; estes precisam atualizar
+para a prévia compatível antes de criar/editar itens do orçamento.
+
+Após confirmação, habilitar a configuração na prévia. O cliente solicita preparo
+por API autenticada; o servidor deriva a empresa exclusivamente de `membros/uid`.
+A primeira preparação lê a coleção uma vez e adiciona `excluido:false` somente
+aos ativos antigos, com releitura transacional para preservar exclusões
+concorrentes. Não apaga históricos, não substitui registros nem altera valores.
+Falha parcial não marca esquema pronto; a retomada é idempotente. Uma marca de
+versão por empresa evita novas varreduras nas aberturas seguintes.
+
+Somente após confirmação `ready:true`, o listener usa `where('excluido','==',false)`.
+Falhas de autenticação, preparo ou rede conservam a consulta inteira. O diagnóstico
+continua identificando a coleção mesmo quando a referência é uma Query.
+
+Validação local: migração idempotente, alteração concorrente para excluído,
+preservação de dados e outras empresas, endpoint desabilitado, vínculo inativo,
+tentativa de informar outra empresa, filtro seletivo e fallback completo.
+As regras foram revisadas a partir do texto fornecido; não foi executado emulator
+nem teste de regras no Firebase real. Nenhuma migração real foi executada pelo agente.
