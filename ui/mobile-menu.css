@@ -72,4 +72,21 @@
     display:block!important;font-size:20px!important;line-height:1.2!important;margin:0!important;
   }
 }
+@media screen{
+  /* Dark grey text stays legible on gold selections without a blurred shadow. */
+  html body:is(.tema-vidro,.tema-natural) :is(
+    header button.active,.modo-medida button.active,
+    .estoque-tipo-btn.active,.planilha-estoque-btn.active,
+    .estoque-tab-btn.active,.estoque-subtab-btn.active,
+    .madeira-filtro-tabs button.active,.bitola-tabs button.active
+  ){
+    color:#494136!important;text-shadow:none!important;font-weight:600!important;
+  }
+  html body:is(.tema-vidro,.tema-natural) :is(
+    header button.active,.modo-medida button.active,
+    .estoque-tipo-btn.active,.planilha-estoque-btn.active,
+    .estoque-tab-btn.active,.estoque-subtab-btn.active,
+    .madeira-filtro-tabs button.active,.bitola-tabs button.active
+  ) :is(span,small,strong){color:inherit!important;text-shadow:none!important;font-weight:inherit!important}
+}
 @media print{#mobileMenuToggle,#mobileMenuBackdrop,#mobileMenuClose{display:none!important}}
