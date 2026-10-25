@@ -22,7 +22,22 @@ export function valorMaoObraToras(volume, preco) {
   return Math.round((volume * preco + Number.EPSILON) * 100) / 100;
 }
 
-export function iniciarCubagemToras({ document: doc = document, storage, copiar, pdf, observarPrecos, salvarPrecos }) {
+export function agruparToras(linhas) {
+  const grupos = new Map();
+  for (const linha of linhas) {
+    volumeToras(linha.diametro, linha.comprimento, linha.quantidade);
+    const chave = JSON.stringify([chaveEspecieToras(linha.especie), linha.diametro, linha.comprimento, linha.precoMaoObra ?? null]);
+    const anterior = grupos.get(chave);
+    if (anterior) {
+      const quantidade = anterior.quantidade + linha.quantidade;
+      volumeToras(linha.diametro, linha.comprimento, quantidade);
+      anterior.quantidade = quantidade; anterior.ids.push(linha.id);
+    } else grupos.set(chave, { ...linha, ids: [linha.id] });
+  }
+  return [...grupos.values()];
+}
+
+export function iniciarCubagemToras({ document: doc = document, storage, copiar, pdf, observarPrecos, salvarPrecos, observarLista, gravarLinha, salvarIdentificacao }) {
   const abrir = doc.getElementById('btnCubagemToras');
   if (!abrir || doc.getElementById('cubagemToras')) return;
   const dialog = doc.createElement('dialog');
@@ -56,7 +71,7 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
       <p id="toraPreview" role="status" aria-live="polite">Informe as medidas.</p>
       <button class="btn btn-primary" type="submit">Adicionar à lista</button>
     </form>
-    <p id="toraAviso" role="status">Lista salva somente neste dispositivo. Não movimenta estoque ou pedidos.</p>
+    <p id="toraAviso" role="status">Carregando lista de cubagem…</p>
     <div class="export-actions"><button type="button" class="btn btn-secondary" data-copiar>Copiar lista</button><button type="button" class="btn btn-primary" data-pdf>Gerar PDF</button><button type="button" class="btn btn-secondary" data-limpar>Limpar lista</button></div>
     <div id="torasExport"><h3>Resumo da cubagem de toras</h3><p>Método: cilindro pelo diâmetro, sem desconto de casca.</p><p>Volume = π × (diâmetro em metros)² ÷ 4 × comprimento × quantidade.</p><div id="torasIdentificacao"></div><div id="torasLinhas"></div><p id="torasTotal"></p></div>`;
   doc.body.appendChild(dialog);
@@ -131,6 +146,7 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
       try { volumeToras(l.diametro, l.comprimento, l.quantidade); return typeof l.especie === 'string'; } catch { return false; }
     });
   } catch { el('toraAviso').textContent = 'Não foi possível recuperar a lista deste dispositivo.'; }
+  linhas = linhas.map(l => l.id ? l : ({...l, id:doc.defaultView.crypto.randomUUID(), migrar:true}));
   const precosKey = 'cubagem_toras_precos_v1';
   let precos = {base:null, especies:[]}, precosProntos = !observarPrecos, salvandoPreco = false;
   try { const salvo = JSON.parse(storage.getItem(precosKey) || 'null'); if (salvo && Array.isArray(salvo.especies)) precos = salvo; } catch {}
@@ -207,17 +223,35 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
   function atualizarIdentificacao() {
     const destino = el('torasIdentificacao'); destino.replaceChildren(); preencherIdentificacao(destino);
   }
+  let identificacaoTimer;
+  function sincronizarIdentificacao() {
+    if (!salvarIdentificacao) return;
+    clearTimeout(identificacaoTimer);
+    identificacaoTimer = undefined;
+    Promise.resolve().then(() => salvarIdentificacao({maoObra:el('toraMaoObra').value,cliente:el('toraCliente').value})).catch(falhaSync);
+  }
   for (const id of ['toraMaoObra', 'toraCliente']) el(id).addEventListener('input', () => {
     atualizarIdentificacao();
+    clearTimeout(identificacaoTimer);
+    if (salvarIdentificacao) identificacaoTimer = setTimeout(sincronizarIdentificacao, 400);
     try { storage.setItem(identificacaoKey, JSON.stringify({ maoObra: el('toraMaoObra').value, cliente: el('toraCliente').value })); }
     catch { el('toraAviso').textContent = 'Não foi possível salvar a identificação. Exporte a lista antes de fechar o sistema.'; }
   });
+  for (const id of ['toraMaoObra', 'toraCliente']) el(id).addEventListener('blur', () => { if (identificacaoTimer) sincronizarIdentificacao(); });
   atualizarIdentificacao();
   function salvar() {
     try {
       storage.setItem(key, JSON.stringify(linhas));
-      el('toraAviso').textContent = storage.durable === false ? 'Armazenamento indisponível. Exporte a lista antes de fechar o sistema.' : 'Lista salva somente neste dispositivo. Não movimenta estoque ou pedidos.';
+      el('toraAviso').textContent = storage.durable === false ? 'Armazenamento indisponível. Exporte a lista antes de fechar o sistema.' : observarLista ? 'Lista salva neste aparelho • aguardando sincronização com a empresa.' : 'Lista salva somente neste dispositivo. Não movimenta estoque ou pedidos.';
     } catch { el('toraAviso').textContent = 'Não foi possível salvar. Exporte a lista antes de fechar o sistema.'; }
+  }
+  function falhaSync() {
+    el('toraAviso').textContent = 'Não foi possível confirmar a sincronização. A lista permanece neste aparelho; confira a conexão e as permissões.';
+  }
+  function removerLinhas(ids) {
+    const removidas = linhas.filter(l => ids.includes(l.id));
+    linhas = linhas.filter(l => !ids.includes(l.id)); salvar(); render();
+    if (gravarLinha) Promise.all(removidas.map(l => gravarLinha(l.id, {...l, ativo:false}))).catch(falhaSync);
   }
   function render() {
     const host = el('torasLinhas'); host.replaceChildren();
@@ -225,7 +259,8 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
     const tabela = doc.createElement('table'); tabela.style.cssText = 'width:100%;border-collapse:collapse;font-size:12px;line-height:1.4';
     tabela.className = 'toras-resumo-tabela';
     tabela.setAttribute('aria-label', 'Resumo dos lançamentos de toras');
-    const comValores = linhas.some(l => typeof l.precoMaoObra === 'number');
+    const grupos = agruparToras(linhas);
+    const comValores = grupos.some(l => typeof l.precoMaoObra === 'number');
     const cabecalho = tabela.createTHead().insertRow();
     for (const [indice, texto] of ['Espécie', 'Qtd.', 'Diâmetro (cm)', 'Comp. (m)', 'm³/tora', 'm³ total', ...(comValores ? ['R$/m³', 'Valor (R$)'] : []), 'Ação'].entries()) {
       const th = doc.createElement('th'); th.scope = 'col'; th.textContent = texto;
@@ -238,7 +273,7 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
     }
     const corpo = tabela.createTBody(); wrap.appendChild(tabela); host.appendChild(wrap);
     let total = 0, quantidade = 0, valorTotal = 0;
-    linhas.forEach((l, indice) => {
+    grupos.forEach((l, indice) => {
       const { unitario, total: volume } = volumeToras(l.diametro, l.comprimento, l.quantidade);
       total += volume; quantidade += l.quantidade;
       const tr = doc.createElement('tr');
@@ -254,7 +289,7 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
       });
       const acoes = doc.createElement('td'); acoes.className = 'no-print tora-acoes';
       const remover = doc.createElement('button'); remover.type = 'button'; remover.className = 'btn btn-secondary no-print'; remover.textContent = 'Remover'; remover.setAttribute('aria-label', 'Remover grupo ' + (indice + 1));
-      remover.onclick = () => { linhas.splice(indice, 1); salvar(); render(); }; acoes.appendChild(remover); tr.appendChild(acoes); corpo.appendChild(tr);
+      remover.onclick = () => removerLinhas(l.ids); acoes.appendChild(remover); tr.appendChild(acoes); corpo.appendChild(tr);
 
     });
     aplicarTema();
@@ -272,7 +307,7 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
     event.preventDefault();
     try {
       const [diametro, comprimento, quantidade] = ler(); volumeToras(diametro, comprimento, quantidade);
-      const item = { especie: el('toraEspecie').value.trim(), diametro, comprimento, quantidade };
+      const item = { id:doc.defaultView.crypto.randomUUID(), migrar:true, especie: el('toraEspecie').value.trim(), diametro, comprimento, quantidade };
       if (el('toraCobrar').checked) {
         if (!precosProntos) throw Error('Aguarde a confirmação dos preços da empresa.');
         const preco = precoMaoObraToras(precos, item.especie);
@@ -280,7 +315,9 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
         valorMaoObraToras(volumeToras(diametro, comprimento, quantidade).total, preco);
         item.precoMaoObra = preco;
       }
+      agruparToras([...linhas, item]);
       linhas.push(item); salvar(); render();
+      if (gravarLinha) Promise.resolve().then(() => gravarLinha(item.id, item)).catch(falhaSync);
       el('toraDiametro').value = ''; preview(); el('toraDiametro').focus();
     } catch (e) { el('toraPreview').textContent = e.message; }
   });
@@ -292,7 +329,7 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
     const resumo = doc.createElement('div');
     const titulo = doc.createElement('h3'); titulo.textContent = 'Cubagem de toras'; resumo.appendChild(titulo);
     preencherIdentificacao(resumo);
-    for (const l of linhas) {
+    for (const l of agruparToras(linhas)) {
       const h = doc.createElement('h4'); h.textContent = l.especie || 'Espécie não informada'; resumo.appendChild(h);
       const v = volumeToras(l.diametro, l.comprimento, l.quantidade);
       const tabela = doc.createElement('table');
@@ -316,7 +353,84 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
     doc.defaultView.addEventListener('afterprint', () => { if (dialog.isConnected && !dialog.open) dialog.showModal(); }, { once: true });
   };
   dialog.querySelector('[data-limpar]').onclick = () => {
-    if (linhas.length && doc.defaultView.confirm('Apagar a lista de cubagem de toras deste dispositivo?')) { linhas = []; salvar(); render(); }
+    if (linhas.length && doc.defaultView.confirm(observarLista ? 'Apagar esta lista de cubagem de toras da empresa em todos os dispositivos?' : 'Apagar a lista de cubagem de toras deste dispositivo?')) removerLinhas(linhas.map(l => l.id));
   };
-  render();
+  salvar(); render();
+  if (observarLista) {
+    const migrando = new Set();
+    let migrandoIdentificacao = false;
+    const parar = observarLista(estado => {
+      const antigas = linhas.filter(l => l.migrar);
+      const recebidas = Array.isArray(estado.linhas) ? estado.linhas.filter(l => {
+        try { volumeToras(l.diametro, l.comprimento, l.quantidade); return typeof l.especie === 'string'; } catch { return false; }
+      }) : [];
+      const ids = new Set(recebidas.map(l => l.id));
+      if (!(estado.offline && !estado.conhecido)) linhas = [...recebidas, ...antigas.filter(l => !ids.has(l.id))];
+      const dados = estado.identificacao;
+      if (dados && typeof dados === 'object' && !identificacaoTimer) {
+        for (const [campo, id] of [['maoObra','toraMaoObra'],['cliente','toraCliente']]) {
+          if (doc.activeElement !== el(id) && typeof dados[campo] === 'string') el(id).value = dados[campo];
+        }
+        atualizarIdentificacao();
+        try { storage.setItem(identificacaoKey,JSON.stringify(dados)); } catch {}
+      }
+      salvar(); render();
+      el('toraAviso').textContent = estado.pendente ? 'Lista salva neste aparelho • aguardando sincronização com a empresa.' : estado.offline ? 'Sem confirmação do servidor • lista disponível neste aparelho.' : 'Cubagem sincronizada com a empresa. Não movimenta estoque ou pedidos.';
+      if (estado.pronto && !dados && salvarIdentificacao && !migrandoIdentificacao && (el('toraMaoObra').value || el('toraCliente').value)) {
+        migrandoIdentificacao = true; sincronizarIdentificacao();
+      }
+      if (estado.pronto && gravarLinha) for (const linha of antigas) {
+        if (migrando.has(linha.id)) continue;
+        migrando.add(linha.id);
+        Promise.resolve().then(() => gravarLinha(linha.id, {...linha, migrar:false})).catch(() => { migrando.delete(linha.id); falhaSync(); });
+      }
+    }, falhaSync);
+    doc.defaultView.addEventListener('pagehide', () => { if (identificacaoTimer) sincronizarIdentificacao(); parar?.(); }, {once:true});
+  }
+}
+
+
+const PREFIX = 'cubagem_toras_linha_';
+const IDENTIFICACAO = 'cubagem_toras_identificacao';
+
+// Each addition has its own document. Offline additions from two devices never
+// replace an entire list; removals are tombstones for the known additions only.
+export function criarSincronismoToras({ observar, pendencias, gravar, confirmar }) {
+  let ultimo, receber;
+  function publicar() {
+    if (!ultimo || !receber) return;
+    const registros = new Map(ultimo.docs.map(d => [d.id, d.data]));
+    const fila = pendencias().filter(op => op.id.startsWith(PREFIX) || op.id === IDENTIFICACAO);
+    for (const op of fila) {
+      if (op.modo === 'delete') registros.delete(op.id);
+      else registros.set(op.id, op.obj);
+    }
+    receber({
+      linhas: [...registros].filter(([id, data]) => id.startsWith(PREFIX) && data.ativo !== false)
+        .map(([id, data]) => ({ ...data, id: id.slice(PREFIX.length) })),
+      identificacao: registros.get(IDENTIFICACAO),
+      conhecido: [...registros.keys()].some(id => id.startsWith(PREFIX)),
+      pronto: !ultimo.fromCache,
+      pendente: fila.length > 0 || ultimo.hasPendingWrites,
+      offline: ultimo.fromCache,
+    });
+  }
+  async function salvar(id, dados) {
+    // Queue is persisted before attempting the server; failures keep the change.
+    gravar(id, dados);
+    publicar();
+    try { await confirmar(); } finally { publicar(); }
+  }
+  return {
+    observarLista(callback, falhar) {
+      receber = callback;
+      return observar(snapshot => { ultimo = snapshot; publicar(); }, falhar);
+    },
+    gravarLinha(id, dados) {
+      if (!/^[a-zA-Z0-9_-]{1,120}$/.test(id)) throw Error('Identificador da cubagem inválido.');
+      const { migrar, ...limpos } = dados;
+      return salvar(PREFIX + id, limpos);
+    },
+    salvarIdentificacao: dados => salvar(IDENTIFICACAO, dados),
+  };
 }
