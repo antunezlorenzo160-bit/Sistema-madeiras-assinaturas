@@ -6,7 +6,10 @@ export function platformFailure(error, {ownerAuthorized=false}={}) {
   if (error instanceof PlatformError) return {status:error.status,body:{error:error.message}};
   const code=String(error.code ?? '').toLowerCase();
   let message='O servidor encontrou uma falha ao carregar a plataforma.',supportCode='PLATFORM_INTERNAL';
-  if (['7','permission-denied','permission_denied'].includes(code)) {
+  if (['8','resource-exhausted','resource_exhausted'].includes(code)) {
+    message='O Firebase atingiu uma cota de uso. Os dados estão indisponíveis até a liberação da cota. Atualizar a página não libera esse limite.';
+    supportCode='FIRESTORE_QUOTA_EXCEEDED';
+  } else if (['7','permission-denied','permission_denied'].includes(code)) {
     message='O servidor não tem permissão para acessar os dados da plataforma no Firebase. É preciso revisar a permissão da conta de serviço.';
     supportCode='FIRESTORE_PERMISSION_DENIED';
   } else if (['16','unauthenticated'].includes(code) || code.includes('invalid-credential') || code.includes('service-account')) {
@@ -33,7 +36,7 @@ export function platformFailure(error, {ownerAuthorized=false}={}) {
     const nativeCode=/^[A-Za-z0-9_./-]{1,64}$/.test(String(error.code??''))?String(error.code):'sem código';
     diagnostic=(error.name==='TypeError'?'TypeError / ':'')+nativeCode+': '+safe;
   }
-  return {status:supportCode==='PLATFORM_INTERNAL'?500:503,body:{error:message+' Código: '+supportCode+(stage?' • '+stage:'')+(diagnostic?' • Diagnóstico: '+diagnostic:''),supportCode,...(stage?{stage}:{})}};
+  return {status:supportCode==='FIRESTORE_QUOTA_EXCEEDED'?429:supportCode==='PLATFORM_INTERNAL'?500:503,body:{error:message+' Código: '+supportCode+(stage?' • '+stage:'')+(diagnostic?' • Diagnóstico: '+diagnostic:''),supportCode,...(stage?{stage}:{})}};
 }
 export function isPlatformAdmin(decoded, configuredUid, ownerEmail) {
   if (configuredUid) return decoded?.uid === configuredUid;

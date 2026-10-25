@@ -2,8 +2,10 @@ import { randomUUID } from 'node:crypto';
 import { authenticate, failure, json, PlatformError } from './lib/platform-auth.mjs';
 import { METHODS, validatePlan, validateWatermark } from './lib/platform.mjs';
 import { testCheckout } from './lib/mercadopago.mjs';
+import { createReadBudget } from './lib/read-budget.mjs';
 
 const ids = value => typeof value === 'string' && /^[A-Za-z0-9_-]{1,120}$/.test(value);
+const overviewReads = createReadBudget();
 export default async function handler(req) {
   if (!['GET','POST'].includes(req.method)) return json(405,{error:'Método não permitido.'});
   let stage='authentication',ownerAuthorized=false;
@@ -12,6 +14,7 @@ export default async function handler(req) {
     ownerAuthorized=true;
     const root = db.collection('plataforma_admin');
     if (req.method === 'GET') {
+      const overview = await overviewReads.load(async()=>{
       const read=(name,promise)=>promise.catch(error=>{error.stage=name;throw error;});
       const [plans,companies,subscriptions,watermark,charges] = await Promise.all([
         read('plans',root.doc('billing').collection('plans').limit(200).get()),
@@ -21,9 +24,11 @@ export default async function handler(req) {
         read('charges',root.doc('billing').collection('charges').limit(100).get()),
       ]);
       const list = snap => snap.docs.map(d=>({...d.data(),id:d.id}));
-      return json(200,{plans:list(plans),companies:list(companies),subscriptions:list(subscriptions),charges:list(charges),
+      return {plans:list(plans),companies:list(companies),subscriptions:list(subscriptions),charges:list(charges),
         watermark:watermark.exists?watermark.data():{widthMm:180,opacity:.04,image:''},
-        methods:METHODS.map(id=>({id,status:process.env.MERCADO_PAGO_TEST_ACCESS_TOKEN?'test_available':'not_connected'})),provider:'mercadopago',testConfigured:Boolean(process.env.MERCADO_PAGO_TEST_ACCESS_TOKEN),livePayments:false});
+        methods:METHODS.map(id=>({id,status:process.env.MERCADO_PAGO_TEST_ACCESS_TOKEN?'test_available':'not_connected'})),provider:'mercadopago',testConfigured:Boolean(process.env.MERCADO_PAGO_TEST_ACCESS_TOKEN),livePayments:false};
+      });
+      return json(200,overview);
     }
     stage='operation';
     const text = await req.text();
@@ -41,6 +46,7 @@ export default async function handler(req) {
       const id = randomUUID();
       const checkout = await testCheckout({token:process.env.MERCADO_PAGO_TEST_ACCESS_TOKEN,amountCents:plan.data().amountCents,title:plan.data().name,reference:id,returnUrl:new URL('/plataforma/',base).href});
       await root.doc('billing').collection('charges').doc(id).set({...checkout,empresaId:input.empresaId,planId:plan.id,amountCents:plan.data().amountCents,status:'test_checkout_created',createdAt:Date.now(),createdBy:uid});
+      overviewReads.invalidate();
       return json(200,{ok:true,id,url:checkout.url,mode:'test'});
     }
     let ref, data;
@@ -66,6 +72,7 @@ export default async function handler(req) {
     batch.set(ref,{...data,updatedAt:Date.now(),updatedBy:uid});
     batch.set(root.doc('audit').collection('events').doc(randomUUID()),{action:input.action,target:ref.path,uid,at:Date.now()});
     await batch.commit();
+    overviewReads.invalidate();
     return json(200,{ok:true,id:ref.id});
   } catch(error) { if(!error.stage)error.stage=stage;return failure(error,ownerAuthorized); }
 }

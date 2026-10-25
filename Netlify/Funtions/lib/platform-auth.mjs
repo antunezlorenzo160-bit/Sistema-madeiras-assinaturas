@@ -6,7 +6,7 @@ import { OWNER_EMAIL } from './platform-owner.mjs';
 
 export { PlatformError };
 export function json(status, data) {
-  return new Response(JSON.stringify(data), {status, headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store'}});
+  return new Response(JSON.stringify(data), {status, headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store',...(status===429?{'retry-after':'60'}:{})}});
 }
 export async function authenticate(req, admin = true) {
   const match = (req.headers.get('authorization') || '').match(/^Bearer (.+)$/i);
