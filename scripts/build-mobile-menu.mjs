@@ -15,7 +15,7 @@ for (; end < html.length; end++) {
 }
 let app = JSON.parse(html.slice(start, end));
 const css = readFileSync(new URL('ui/mobile-menu.css', root), 'utf8');
-const js = readFileSync(new URL('ui/mobile-menu.js', root), 'utf8');
+const js = readFileSync(new URL('ui/mobile-menu.js', root), 'utf8') + '\n' + readFileSync(new URL('ui/package-counter.js', root), 'utf8');
 const injection = `<style id="mobile-menu-styles">${css}</style><script id="mobile-menu-script">${js}</script>`;
 app = app.replace(/<style id="mobile-menu-styles">[\s\S]*?<\/script>/, '');
 if (!app.includes('</body>')) throw new Error('Fim da aplicação não encontrado.');

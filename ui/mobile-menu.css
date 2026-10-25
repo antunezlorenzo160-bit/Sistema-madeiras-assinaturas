@@ -52,21 +52,13 @@
 }
 @media screen and (min-width:761px){
   html body header .tabs #estoqueTituloFixoV633{display:none!important}
-  html body #calculadora .largura-input-wrap.com-contador #largura{
-    height:64px!important;min-height:64px!important;padding-right:104px!important;
-  }
-  html body #calculadora #miniContadorPacotes{
-    box-sizing:border-box!important;top:4px!important;bottom:4px!important;
-    min-width:90px!important;padding:4px 8px!important;
-    flex-direction:column!important;justify-content:center!important;gap:2px!important;
-  }
   html body #calculadora #miniContadorPacotes small{
-    display:block!important;flex:0 0 auto!important;font-size:12px!important;
-    line-height:1.2!important;margin:0!important;white-space:nowrap!important;
+    display:block!important;font-size:12px!important;line-height:1.2!important;margin:0!important;
   }
-  html body #calculadora #miniNumeroPacotesM2{
-    display:block!important;flex:0 0 auto!important;font-size:24px!important;
-    line-height:1.15!important;margin:0!important;white-space:nowrap!important;
+  html body #calculadora #miniContadorPacotes #miniNumeroPacotesM2{display:none!important}
+  html body #calculadora #miniContadorPacotes[data-contando="true"] small{display:none!important}
+  html body #calculadora #miniContadorPacotes[data-contando="true"] #miniNumeroPacotesM2{
+    display:block!important;font-size:20px!important;line-height:1.2!important;margin:0!important;
   }
 }
 @media print{#mobileMenuToggle,#mobileMenuBackdrop,#mobileMenuClose{display:none!important}}
