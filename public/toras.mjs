@@ -45,8 +45,8 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
   dialog.className = 'card';
   dialog.setAttribute('aria-labelledby', 'tituloCubagemToras');
   dialog.style.cssText = 'box-sizing:border-box;width:min(680px,96vw);max-height:92dvh;overflow:auto;padding:18px;border:1px solid #888;border-radius:14px;background:var(--card,#fff);color:var(--text,#111)';
-  dialog.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><h2 id="tituloCubagemToras">Cubagem de toras</h2><button type="button" class="btn btn-secondary" data-fechar aria-label="Fechar cubagem de toras">Fechar</button></div>
-    <p>Diâmetro + comprimento. Volume cilíndrico, sem desconto de casca.</p>
+  dialog.innerHTML = `<div class="toras-cabecalho"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><h2 id="tituloCubagemToras">Cubagem de toras</h2><button type="button" class="btn btn-secondary" data-fechar aria-label="Fechar cubagem de toras">Fechar</button></div>
+    <p class="toras-descricao">Diâmetro + comprimento. Volume cilíndrico, sem desconto de casca.</p></div><div class="toras-layout"><section class="toras-calculo" aria-label="Cálculo da cubagem">
     <details id="cadastroPrecosToras"><summary>Cadastro de mão de obra por m³</summary>
       <form id="formPrecoToras">
         <label for="toraPrecoBase">Preço base para todas as espécies (R$/m³)</label><input id="toraPrecoBase" type="number" min="0" step="0.01" inputmode="decimal" required>
@@ -58,22 +58,22 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
       <p id="toraPrecoStatus" role="status">Carregando preços…</p><div id="toraPrecosLista"></div>
     </details>
     <form id="formToras">
-      <label for="toraMaoObra">Mão de obra (opcional)</label><input id="toraMaoObra" maxlength="100" autocomplete="off">
-      <label for="toraCliente">Nome do cliente (opcional)</label><input id="toraCliente" maxlength="100" autocomplete="name">
-      <label for="toraEspecie">Espécie / identificação (opcional)</label><input id="toraEspecie" maxlength="100" autocomplete="off">
+      <div class="toras-identificacao"><div><label for="toraMaoObra">Mão de obra (opcional)</label><input id="toraMaoObra" maxlength="100" autocomplete="off"></div>
+      <div><label for="toraCliente">Nome do cliente (opcional)</label><input id="toraCliente" maxlength="100" autocomplete="name"></div>
+      <div class="toras-especie-campo"><label for="toraEspecie">Espécie / identificação (opcional)</label><input id="toraEspecie" maxlength="100" autocomplete="off"></div></div>
       <div class="grid3">
         <div><label for="toraDiametro">Diâmetro (cm)</label><input id="toraDiametro" type="number" min="0.01" step="any" inputmode="decimal" required></div>
         <div><label for="toraComprimento">Comprimento (m)</label><input id="toraComprimento" type="number" min="0.01" step="any" inputmode="decimal" required></div>
-        <div><label for="toraQuantidade">Quantidade de toras</label><input id="toraQuantidade" type="number" min="1" step="1" inputmode="numeric" value="1" required></div>
+        <div><label for="toraQuantidade">Quantidade</label><input id="toraQuantidade" type="number" min="1" step="1" inputmode="numeric" value="1" required></div>
       </div>
-      <label style="display:flex;align-items:center;gap:8px"><input id="toraCobrar" type="checkbox" style="width:auto">Calcular mão de obra neste lançamento</label>
+      <label class="toras-cobrar" style="display:flex;align-items:center;gap:8px"><input id="toraCobrar" type="checkbox" style="width:auto">Calcular mão de obra neste lançamento</label>
       <p id="toraTarifa" role="status"></p>
       <p id="toraPreview" role="status" aria-live="polite">Informe as medidas.</p>
       <button class="btn btn-primary" type="submit">Adicionar à lista</button>
     </form>
-    <p id="toraAviso" role="status">Carregando lista de cubagem…</p>
+    </section><section class="toras-planilha" aria-label="Planilha da cubagem"><p id="toraAviso" role="status">Carregando lista de cubagem…</p>
     <div class="export-actions"><button type="button" class="btn btn-secondary" data-copiar>Copiar lista</button><button type="button" class="btn btn-primary" data-pdf>Gerar PDF</button><button type="button" class="btn btn-secondary" data-limpar>Limpar lista</button></div>
-    <div id="torasExport"><h3>Resumo da cubagem de toras</h3><p>Método: cilindro pelo diâmetro, sem desconto de casca.</p><p>Volume = π × (diâmetro em metros)² ÷ 4 × comprimento × quantidade.</p><div id="torasIdentificacao"></div><div id="torasLinhas"></div><p id="torasTotal"></p></div>`;
+    <div id="torasExport"><h3>Resumo da cubagem de toras</h3><p>Método: cilindro pelo diâmetro, sem desconto de casca.</p><p>Volume = π × (diâmetro em metros)² ÷ 4 × comprimento × quantidade.</p><div id="torasIdentificacao"></div><div id="torasLinhas"></div><p id="torasTotal"></p></div></section></div>`;
   doc.body.appendChild(dialog);
   const el = id => dialog.querySelector('#' + id);
   // O modal está fora de <main>. Copiar a aparência dos controles reais
@@ -127,6 +127,47 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
       #cubagemToras .tora-acoes button::after{content:'×';font-size:14px;line-height:1}
       #cubagemToras #torasTotal{font-size:12px;line-height:1.5;overflow-wrap:anywhere}
     }`;
+  estiloToras.textContent += `
+    @media screen{
+      #cubagemToras .toras-cabecalho h2{margin:0!important;font-size:20px!important;line-height:1.2!important}
+      #cubagemToras .toras-cabecalho{margin-bottom:10px}
+      #cubagemToras .toras-descricao{margin:5px 0;font-size:12px}
+      #cubagemToras .toras-calculo,#cubagemToras .toras-planilha{min-width:0}
+      #cubagemToras .toras-identificacao{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 10px}
+      #cubagemToras .toras-identificacao>div{min-width:0}
+      #cubagemToras .toras-especie-campo{grid-column:1/-1}
+      #cubagemToras .grid3{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px}
+      #cubagemToras label{font-size:13px!important;line-height:1.25!important;margin:6px 0 3px!important}
+      #cubagemToras input:not([type=checkbox]){font-size:16px!important;line-height:1.25!important;height:38px!important;min-height:38px!important;padding:7px 9px!important}
+      #cubagemToras .toras-cobrar{display:flex!important;align-items:center;gap:7px;min-height:30px;margin:6px 0!important}
+      #cubagemToras .toras-cobrar input{flex:0 0 auto;margin:0!important}
+      #cubagemToras #toraTarifa:empty{display:none}
+      #cubagemToras #toraTarifa,#cubagemToras #toraPreview{font-size:12px!important;line-height:1.35!important;margin:5px 0!important}
+      #cubagemToras #toraAviso{font-size:12px!important;line-height:1.3!important;margin:8px 0!important}
+      #cubagemToras .export-actions{flex-wrap:nowrap;gap:6px;margin:8px 0}
+      #cubagemToras .export-actions button{flex:1;min-width:0;font-size:13px!important;padding:9px 6px!important;min-height:38px!important}
+      #cubagemToras #formToras>button{min-height:38px!important;padding:9px 12px!important;font-size:14px!important}
+      #cubagemToras #torasExport>h3{font-size:16px!important;margin:8px 0!important}
+      #cubagemToras #torasExport>p:not(#torasTotal){display:none}
+      #cubagemToras #torasIdentificacao{font-size:12px;line-height:1.35}
+      #cubagemToras #cadastroPrecosToras>summary{font-size:13px;min-height:24px}
+    }
+    @media screen and (min-width:1000px){
+      #cubagemToras[open]{display:flex!important;flex-direction:column;overflow:hidden!important}
+      #cubagemToras .toras-cabecalho{flex:0 0 auto}
+      #cubagemToras .toras-layout{display:grid;grid-template-columns:minmax(300px,380px) minmax(0,1fr);gap:24px;flex:1;min-height:0}
+      #cubagemToras .toras-calculo,#cubagemToras .toras-planilha{overflow-y:auto;min-height:0;padding:0 8px 12px 0;overscroll-behavior:contain}
+      #cubagemToras .toras-planilha{padding-left:20px;border-left:1px solid var(--line,#638371)}
+    }
+    @media screen and (max-width:760px){
+      #cubagemToras{padding:8px!important}
+      #cubagemToras .toras-cabecalho{margin-bottom:4px}
+      #cubagemToras .toras-cabecalho h2{font-size:18px!important}
+      #cubagemToras .toras-cabecalho button{min-height:36px!important;padding:7px 10px!important;font-size:13px!important}
+      #cubagemToras .toras-descricao{display:none}
+      #cubagemToras .grid3{gap:6px}
+    }
+  `;
   doc.head.appendChild(estiloToras);
   let temaPendente = false;
   const observarTema = new doc.defaultView.MutationObserver(() => {
@@ -321,7 +362,7 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
       el('toraDiametro').value = ''; preview(); el('toraDiametro').focus();
     } catch (e) { el('toraPreview').textContent = e.message; }
   });
-  abrir.addEventListener('click', () => { aplicarTema(); dialog.showModal(); el('toraDiametro').focus(); });
+  abrir.addEventListener('click', () => { aplicarTema(); dialog.showModal(); dialog.scrollTop=0; dialog.querySelector('.toras-calculo').scrollTop=0; dialog.querySelector('.toras-planilha').scrollTop=0; el('toraDiametro').focus({preventScroll:true}); });
   dialog.querySelector('[data-fechar]').onclick = () => dialog.close();
   dialog.querySelector('[data-copiar]').onclick = async () => {
     if (!linhas.length) { el('toraAviso').textContent = 'Adicione uma tora à lista primeiro.'; return; }
