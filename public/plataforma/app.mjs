@@ -146,7 +146,7 @@ $('charge-form').onsubmit=async event=>{
 
 $('invite-form').onsubmit=async event=>{
  event.preventDefault();const button=event.target.querySelector('button'),f=new FormData(event.target);button.disabled=true;status('Gerando convite…');
- try{const result=await api({action:'invitation.create',name:f.get('name'),email:f.get('email')});$('invite-url').value=result.url;$('invite-result').hidden=false;$('invite-copy-status').textContent='';status('Convite pronto. Copie e envie ao responsável.');}
+ try{const result=await api({action:'invitation.create',name:f.get('name'),email:f.get('email')});const inviteUrl=new URL('/cadastro/',location.origin);inviteUrl.hash=new URL(result.url).hash;$('invite-url').value=inviteUrl.href;$('invite-result').hidden=false;$('invite-copy-status').textContent='';status('Convite pronto. Copie e envie ao responsável.');}
  catch(error){status(error.message,true);}finally{button.disabled=false;}
 };
 $('invite-copy').onclick=async()=>{try{await navigator.clipboard.writeText($('invite-url').value);$('invite-copy-status').textContent='Link copiado.';}catch{$('invite-url').focus();$('invite-url').select();$('invite-copy-status').textContent='Selecione e copie o link acima.';}};
