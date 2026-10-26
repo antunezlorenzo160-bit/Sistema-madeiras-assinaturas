@@ -36,3 +36,22 @@ test('deadline rejects a stalled operation and cancels it',async()=>{
   await assert.rejects(vm.runInContext('withDeadline(()=>new Promise(()=>{}),5,cancel)',app.context),/demorou demais/);
   assert.equal(canceled,true);
 });
+test('contract simulation shows the selected price without requests or subscription changes',()=>{
+  const app=setup();
+  vm.runInContext(`state={companies:[{id:'company',name:'Serraria'}],plans:[{id:'plan',name:'Completo',amountCents:19990,interval:'monthly'}],subscriptions:[{empresaId:'company',status:'trial',trialMode:'indefinite'}]}`,app.context);
+  app.element('subscription-company').value='company';app.element('subscription-plan').value='plan';
+  const before=vm.runInContext('JSON.stringify(state)',app.context);
+  app.element('subscription-simulate').onclick();
+  assert.equal(app.element('subscription-simulation').hidden,false);
+  assert.match(app.element('subscription-simulation-summary').textContent,/199,90 por mês/);
+  assert.equal(vm.runInContext('JSON.stringify(state)',app.context),before);
+  assert.equal(app.requests(),0);
+  vm.runInContext("state.plans[0].interval='yearly'",app.context);
+  app.element('subscription-simulate').onclick();
+  assert.match(app.element('subscription-simulation-summary').textContent,/199,90 por ano/);
+  vm.runInContext('state.plans[0].active=false',app.context);
+  app.element('subscription-simulate').onclick();
+  assert.equal(app.element('subscription-simulation').hidden,true);
+  assert.match(app.element('status').textContent,/indisponível/);
+  assert.equal(app.requests(),0);
+});

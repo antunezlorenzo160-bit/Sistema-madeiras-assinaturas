@@ -56,3 +56,12 @@ A configuração global é consultada com autenticação ao abrir o sistema, ao 
 indisponível, permanece o último padrão carregado na sessão ou o padrão compilado.
 A geração continua no navegador; isso não impede edição de um PDF após o download
 ou alterações feitas pelo console do navegador.
+
+## Conferência da contratação
+
+Em Assinaturas, selecione empresa e plano e use **Simular contratação**.
+O resumo exibe o valor mensal ou anual do plano e a situação atual da empresa.
+A simulação ocorre no navegador, sem consultas adicionais, gravações, cobrança,
+aceite de contrato ou encerramento do teste gratuito. Trocar a seleção oculta o
+resumo anterior. **Salvar assinatura administrativa** continua sendo uma operação
+separada, que altera o vínculo e a situação no cadastro; não confirma pagamento.

@@ -38,6 +38,7 @@ function preview(){
   $('wm-preview').style.width=Math.round(Number($('wm-width').value)/210*100)+'%';
 }
 function render(){
+  $('subscription-simulation').hidden=true;
   $('total-companies').textContent=state.companies.length;
   const active=state.subscriptions.filter(s=>s.status==='active');$('total-active').textContent=active.length;
   $('total-monthly').textContent=money(Math.round(active.reduce((sum,s)=>{const p=state.plans.find(p=>p.id===s.planId);return sum+(p?(p.interval==='yearly'?p.amountCents/12:p.amountCents):0);},0)));
@@ -106,6 +107,27 @@ async function save(form,data){
 }
 $('plan-form').onsubmit=async event=>{event.preventDefault();const f=new FormData(event.target);if(await save(event.target,{action:'plan.save',name:f.get('name'),amountCents:Math.round(Number(f.get('amount'))*100),interval:f.get('interval')}))event.target.reset();};
 $('company-form').onsubmit=async event=>{event.preventDefault();const f=new FormData(event.target);if(await save(event.target,{action:'company.save',empresaId:f.get('empresaId'),name:f.get('name')}))event.target.reset();};
+$('subscription-simulate').onclick=()=>{
+  const box=$('subscription-simulation');box.hidden=true;
+  const company=state.companies.find(c=>c.id===$('subscription-company').value);
+  const plan=state.plans.find(p=>p.id===$('subscription-plan').value);
+  if(!company||!plan){status('Selecione a empresa e o plano para simular.',true);return;}
+  if(plan.active===false||!Number.isSafeInteger(plan.amountCents)||plan.amountCents<0||!['monthly','yearly'].includes(plan.interval)){
+    status('Este plano está indisponível. Escolha outro plano.',true);return;
+  }
+  const subscription=state.subscriptions.find(s=>s.empresaId===company.id);
+  const current=subscription?.status==='trial'?companyManagement.trialLabel(subscription):
+    ({active:'Assinatura ativa',past_due:'Assinatura pendente',canceled:'Assinatura cancelada'}[subscription?.status]||'Sem assinatura cadastrada');
+  $('subscription-simulation-summary').textContent=[
+    'Empresa: '+company.name,
+    'Plano: '+plan.name,
+    'Valor: '+money(plan.amountCents)+(plan.interval==='yearly'?' por ano':' por mês'),
+    'Situação atual: '+current,
+    'Renovação automática: desativada nesta prévia.'
+  ].join('\n');
+  box.hidden=false;status('Simulação pronta. Nenhuma alteração foi salva.');
+};
+$('subscription-form').addEventListener('change',()=>{$('subscription-simulation').hidden=true;});
 $('subscription-form').onsubmit=async event=>{event.preventDefault();const f=new FormData(event.target);await save(event.target,{action:'subscription.save',empresaId:f.get('empresaId'),planId:f.get('planId'),status:f.get('status')});};
 $('watermark-form').onsubmit=async event=>{event.preventDefault();await save(event.target,{action:'watermark.save',widthMm:Number($('wm-width').value),opacity:Number($('wm-opacity').value)/100,image});};
 for(const id of ['wm-width','wm-opacity'])$(id).oninput=preview;
