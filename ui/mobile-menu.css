@@ -1,3 +1,5 @@
+/* Trial information belongs to the welcome screen, on PC and mobile. */
+html body:not(:has(section#inicio.tab.active)) #avisoPlataformaV707{display:none!important}
 /* Welcome layout is shared by PC and mobile; navigation visibility remains responsive. */
 @media screen{
   /* Give the welcome header its own top row, independent of tab scroll/layout. */
