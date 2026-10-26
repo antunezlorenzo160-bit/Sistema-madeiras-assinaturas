@@ -1,3 +1,4 @@
+import {createCompanyManagement} from './company-management.mjs';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js';
 import { initializeAuth, browserLocalPersistence, inMemoryPersistence, onAuthStateChanged, signInWithEmailAndPassword, signOut, sendEmailVerification } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
 
@@ -11,13 +12,13 @@ function withDeadline(task, milliseconds=20000, onTimeout=()=>{}){
   const timeout=new Promise((resolve,reject)=>{timer=setTimeout(()=>{onTimeout();reject(Error('A verificação demorou demais. Confira a conexão e tente entrar novamente.'));},milliseconds);});
   return Promise.race([Promise.resolve().then(task),timeout]).finally(()=>clearTimeout(timer));
 }
-async function api(data){
+async function api(data,{fresh=false}={}){
   const user=auth.currentUser;
   if(!user)throw Error('Entre com sua conta para continuar.');
   const controller=new AbortController();
   return withDeadline(async()=>{
     const token=await user.getIdToken();
-    const response=await fetch('/.netlify/functions/platform-admin',{method:data?'POST':'GET',headers:{Authorization:'Bearer '+token,...(data?{'Content-Type':'application/json'}:{})},...(data?{body:JSON.stringify(data)}:{}),signal:controller.signal});
+    const response=await fetch('/.netlify/functions/platform-admin'+(!data&&fresh?'?refresh=1':''),{method:data?'POST':'GET',headers:{Authorization:'Bearer '+token,...(data?{'Content-Type':'application/json'}:{})},...(data?{body:JSON.stringify(data)}:{}),signal:controller.signal});
     const result=await response.json().catch(()=>({}));
     if(!response.ok)throw Error(result.error||'Não foi possível acessar a plataforma.');
     return result;
@@ -40,10 +41,10 @@ function render(){
   $('total-companies').textContent=state.companies.length;
   const active=state.subscriptions.filter(s=>s.status==='active');$('total-active').textContent=active.length;
   $('total-monthly').textContent=money(Math.round(active.reduce((sum,s)=>{const p=state.plans.find(p=>p.id===s.planId);return sum+(p?(p.interval==='yearly'?p.amountCents/12:p.amountCents):0);},0)));
-  list('companies-list',state.companies,(host,c)=>record(host,c.name,c.empresaId));
+  companyManagement.render(state);
   list('plans-list',state.plans,(host,p)=>record(host,p.name,p.interval==='monthly'?'Mensal':'Anual',money(p.amountCents)));
   const labels={trial:'Em teste',active:'Ativa',past_due:'Pendente',canceled:'Cancelada'};
-  list('subscriptions-list',state.subscriptions,(host,s)=>record(host,state.companies.find(c=>c.id===s.empresaId)?.name||s.empresaId,s.trialMode==='indefinite'?'Gratuito sem prazo definido':state.plans.find(p=>p.id===s.planId)?.name||s.planId,labels[s.status]||s.status));
+  list('subscriptions-list',state.subscriptions,(host,s)=>record(host,state.companies.find(c=>c.id===s.empresaId)?.name||s.empresaId,s.status==='trial'?companyManagement.trialLabel(s):state.plans.find(p=>p.id===s.planId)?.name||'Sem plano',labels[s.status]||s.status));
   for(const [id,items]of [['subscription-company',state.companies],['subscription-plan',state.plans],['charge-company',state.companies]]){
     const select=$(id),current=select.value;select.replaceChildren(new Option('Selecione…',''));
     items.forEach(item=>select.add(new Option(item.name,item.id)));select.value=current;
@@ -58,7 +59,9 @@ function render(){
   });
   const wm=state.watermark;$('wm-width').value=wm.widthMm;$('wm-opacity').value=Math.round(wm.opacity*100);image=wm.image||'';preview();
 }
-async function refresh(){state=await api();render();}
+async function refresh(fresh=false){state=await api(undefined,{fresh});render();}
+const companyManagement=createCompanyManagement({document,api,onChange:()=>refresh(true),status});
+$('companies-refresh').onclick=async()=>{const b=$('companies-refresh');b.disabled=true;try{await refresh(true);status('Lista de empresas atualizada.');}catch(error){status(error.message,true);}finally{b.disabled=false;}};
 function page(name){document.querySelectorAll('[data-panel]').forEach(p=>p.hidden=p.dataset.panel!==name);document.querySelectorAll('[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===name));$('page-title').textContent=document.querySelector(`[data-page="${name}"]`).textContent;status('');}
 document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>page(b.dataset.page));
 document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>page(b.dataset.open));

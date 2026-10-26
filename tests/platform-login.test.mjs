@@ -2,13 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
+import {createCompanyManagement} from '../public/plataforma/company-management.mjs';
 
 function setup({response={ok:true,json:async()=>({})}}={}){
   const elements=new Map();let authChanged,requests=0;
-  const element=id=>{if(!elements.has(id))elements.set(id,{hidden:false,value:'',disabled:false,classList:{toggle(){}},textContent:''});return elements.get(id);};
+  const element=id=>{if(!elements.has(id))elements.set(id,{hidden:false,value:'',disabled:false,classList:{toggle(){}},textContent:'',addEventListener(){}});return elements.get(id);};
   const user={uid:'owner',emailVerified:true,getIdToken:async()=> 'valid-token'};
   const auth={currentUser:user};
-  const context=vm.createContext({document:{getElementById:element,querySelectorAll:()=>[]},
+  const context=vm.createContext({createCompanyManagement,document:{getElementById:element,querySelectorAll:()=>[]},
     initializeApp:()=>({}),initializeAuth:()=>auth,browserLocalPersistence:{},inMemoryPersistence:{},
     onAuthStateChanged:(a,callback)=>{authChanged=callback;},
     signInWithEmailAndPassword:async()=>({user}),signOut:async()=>{},sendEmailVerification:async()=>{},

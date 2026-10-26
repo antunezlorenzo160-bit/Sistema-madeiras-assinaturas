@@ -4,6 +4,7 @@ import { METHODS, validatePlan, validateWatermark } from './lib/platform.mjs';
 import { testCheckout } from './lib/mercadopago.mjs';
 import { createReadBudget } from './lib/read-budget.mjs';
 import { createInvitation } from './lib/invitations.mjs';
+import {companyDetail,manageCompany} from './lib/company-management.mjs';
 
 const ids = value => typeof value === 'string' && /^[A-Za-z0-9_-]{1,120}$/.test(value);
 const overviewReads = createReadBudget();
@@ -15,6 +16,7 @@ export default async function handler(req) {
     ownerAuthorized=true;
     const root = db.collection('plataforma_admin');
     if (req.method === 'GET') {
+      if(new URL(req.url).searchParams.get('refresh')==='1')overviewReads.invalidate();
       const overview = await overviewReads.load(async()=>{
       const read=(name,promise)=>promise.catch(error=>{error.stage=name;throw error;});
       const [plans,companies,subscriptions,watermark,charges] = await Promise.all([
@@ -36,6 +38,10 @@ export default async function handler(req) {
     if (text.length > 400000) throw new PlatformError(413,'Arquivo muito grande.');
     let input; try { input = JSON.parse(text); } catch { throw new PlatformError(400,'Pedido inválido.'); }
     if (!input || typeof input !== 'object') throw new PlatformError(400,'Pedido inválido.');
+    if(input.action==='company.detail')return json(200,await companyDetail(db,input.empresaId));
+    if(['company.access','trial.save'].includes(input.action)){
+      const result=await manageCompany(db,input,uid);overviewReads.invalidate();return json(200,result);
+    }
     if(input.action==='invitation.create'){
       const base=process.env.DEPLOY_PRIME_URL||process.env.URL;
       if(!base||!base.startsWith('https://'))throw new PlatformError(503,'URL da prévia não configurada.');
@@ -47,6 +53,7 @@ export default async function handler(req) {
       if (!ids(input.empresaId)) throw new PlatformError(400,'Empresa inválida.');
       const subscription = await root.doc('billing').collection('subscriptions').doc(input.empresaId).get();
       if (!subscription.exists || subscription.data().status === 'canceled') throw new PlatformError(400,'Cadastre uma assinatura válida antes de gerar a cobrança de teste.');
+      if(!ids(subscription.data().planId))throw new PlatformError(400,'Escolha um plano para esta assinatura antes de gerar o checkout de teste.');
       const plan = await root.doc('billing').collection('plans').doc(subscription.data().planId).get();
       if (!plan.exists || plan.data().active === false) throw new PlatformError(400,'Plano indisponível.');
       const base = process.env.DEPLOY_PRIME_URL || process.env.URL;
@@ -57,7 +64,7 @@ export default async function handler(req) {
       overviewReads.invalidate();
       return json(200,{ok:true,id,url:checkout.url,mode:'test'});
     }
-    let ref, data;
+    let ref, data, clearTrialNotices=[];
     try {
       if (input.action === 'plan.save') {
         if (input.id && !ids(input.id)) throw Error('Plano inválido.');
@@ -72,12 +79,19 @@ export default async function handler(req) {
         if (!company.exists || !plan.exists) throw Error('Cadastre a empresa e o plano primeiro.');
         ref = root.doc('billing').collection('subscriptions').doc(input.empresaId);
         data = {empresaId:input.empresaId,planId:input.planId,status:input.status,source:'manual_admin'};
+        if(input.status!=='trial'){
+          const members=await db.collection('membros').where('empresaId','==',input.empresaId).limit(401).get();
+          if(members.size>400)throw new PlatformError(409,'Esta empresa exige uma operação em lote maior.');
+          clearTrialNotices=members.docs.map(member=>member.ref);
+          Object.assign(data,{trialMode:null,trialEndDate:null,trialEndsAt:null});
+        }
       } else if (input.action === 'watermark.save') {
         ref = root.doc('pdf_watermark'); data = validateWatermark(input);
       } else throw Error('Ação inválida.');
-    } catch(error) { throw new PlatformError(400,error.message); }
+    } catch(error) { if(error instanceof PlatformError)throw error;throw new PlatformError(400,error.message); }
     const batch = db.batch();
-    batch.set(ref,{...data,updatedAt:Date.now(),updatedBy:uid});
+    batch.set(ref,{...data,updatedAt:Date.now(),updatedBy:uid},{merge:true});
+    for(const member of clearTrialNotices)batch.update(member,{avisoPlataforma:null});
     batch.set(root.doc('audit').collection('events').doc(randomUUID()),{action:input.action,target:ref.path,uid,at:Date.now()});
     await batch.commit();
     overviewReads.invalidate();
