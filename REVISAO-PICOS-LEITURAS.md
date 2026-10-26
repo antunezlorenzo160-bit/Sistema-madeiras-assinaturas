@@ -151,3 +151,32 @@ verificação independente. A primeira abertura online faz a preparação por em
 pode haver uma última leitura completa pelo servidor nessa preparação. As próximas
 aberturas reutilizam a marca de versão e a consulta filtrada. A redução real ainda
 precisa ser confirmada pelo diagnóstico e pelo uso faturado após essa abertura.
+
+## Correção do teste entre aparelhos (V705)
+
+O proprietário relatou que a exclusão no celular não chegava ao PC e que atualizar
+o PC fazia o item reaparecer. Foi encontrado um envio duplicado no lançamento:
+`enfileirarOffline` guardava o item, mas `gravarDoc` o enviava diretamente sem
+retirar aquela revisão da fila. A fila podia bloquear a aplicação da exclusão
+remota e reenviar o registro ativo na abertura seguinte.
+
+O lançamento passa a usar somente a fila durável existente, com remoção da revisão
+confirmada. Após concluir operações de orçamento, a sincronização reaplica o
+snapshot confirmado em memória, sem consultar a coleção inteira novamente.
+
+Operações de orçamento da fila usam transação por documento: um registro completo
+antigo não pode desfazer `excluido:true` recebido de outro aparelho. A exclusão
+concorrente causa retentativa transacional e preserva o estado excluído. A reabertura
+intencional de orçamento salvo continua permitida pelo fluxo existente de merge
+com `excluido:false`. Uma falha mantém a operação na fila; uma confirmação antiga
+não remove uma revisão local mais nova. Filas antigas passam pela mesma proteção.
+
+Há uma leitura por operação pendente do orçamento dentro da transação (podendo
+haver retentativas). Ela é contabilizada no diagnóstico como
+`verificacaoOperacaoPendente`. Não foi acrescentada consulta periódica ou leitura
+integral da coleção, e o filtro de itens ativos permanece habilitado.
+
+Testes locais simulam adicionar → confirmar → excluir remotamente → atualizar,
+fila antiga com item já excluído, exclusão concorrente, edição mais nova durante
+confirmação, reabertura intencional e falha de rede. Falta repetir o teste real
+nos dois aparelhos atualizados na mesma prévia.
