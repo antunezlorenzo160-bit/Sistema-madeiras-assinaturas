@@ -1,3 +1,4 @@
+import {confirmTestPayment} from './lib/payment-confirmation.mjs';
 import { randomUUID } from 'node:crypto';
 import { authenticate, failure, json, PlatformError } from './lib/platform-auth.mjs';
 import { METHODS, validatePlan, validateWatermark } from './lib/platform.mjs';
@@ -29,7 +30,7 @@ export default async function handler(req) {
       const list = snap => snap.docs.map(d=>({...d.data(),id:d.id}));
       return {plans:list(plans),companies:list(companies),subscriptions:list(subscriptions),charges:list(charges),
         watermark:watermark.exists?watermark.data():{widthMm:180,opacity:.04,image:''},
-        methods:METHODS.map(id=>({id,status:process.env.MERCADO_PAGO_TEST_ACCESS_TOKEN?'test_available':'not_connected'})),provider:'mercadopago',testConfigured:Boolean(process.env.MERCADO_PAGO_TEST_ACCESS_TOKEN),livePayments:false};
+        methods:METHODS.map(id=>({id,status:process.env.MERCADO_PAGO_TEST_ACCESS_TOKEN?'test_available':'not_connected'})),provider:'mercadopago',testConfigured:Boolean(process.env.MERCADO_PAGO_TEST_ACCESS_TOKEN),livePayments:false,webhookConfigured:Boolean(process.env.MERCADO_PAGO_TEST_WEBHOOK_SECRET)};
       });
       return json(200,overview);
     }
@@ -43,11 +44,15 @@ export default async function handler(req) {
       const result=await manageCompany(db,input,uid);overviewReads.invalidate();return json(200,result);
     }
     if(input.action==='invitation.create'){
-      const base=process.env.DEPLOY_PRIME_URL||process.env.URL;
+      const base=new URL(req.url).protocol==='https:'?new URL(req.url).origin:process.env.DEPLOY_PRIME_URL||process.env.URL;
       if(!base||!base.startsWith('https://'))throw new PlatformError(503,'URL da prévia não configurada.');
       const result=await createInvitation(db,input,uid);
       const url=new URL('/cadastro/',base);url.hash='convite='+result.token;
       return json(200,{ok:true,url:url.href,empresaId:result.empresaId});
+    }
+    if(input.action==='charge.verify'){
+      const result=await confirmTestPayment({db,chargeId:input.chargeId,token:process.env.MERCADO_PAGO_TEST_ACCESS_TOKEN});
+      overviewReads.invalidate();return json(200,result);
     }
     if (input.action === 'charge.test') {
       if (!ids(input.empresaId)) throw new PlatformError(400,'Empresa inválida.');
@@ -56,10 +61,10 @@ export default async function handler(req) {
       if(!ids(subscription.data().planId))throw new PlatformError(400,'Escolha um plano para esta assinatura antes de gerar o checkout de teste.');
       const plan = await root.doc('billing').collection('plans').doc(subscription.data().planId).get();
       if (!plan.exists || plan.data().active === false) throw new PlatformError(400,'Plano indisponível.');
-      const base = process.env.DEPLOY_PRIME_URL || process.env.URL;
+      const base = new URL(req.url).protocol==='https:'?new URL(req.url).origin:process.env.DEPLOY_PRIME_URL || process.env.URL;
       if (!base || !base.startsWith('https://')) throw new PlatformError(503,'URL da prévia não configurada.');
       const id = randomUUID();
-      const checkout = await testCheckout({token:process.env.MERCADO_PAGO_TEST_ACCESS_TOKEN,amountCents:plan.data().amountCents,title:plan.data().name,reference:id,returnUrl:new URL('/plataforma/',base).href});
+      const checkout = await testCheckout({token:process.env.MERCADO_PAGO_TEST_ACCESS_TOKEN,amountCents:plan.data().amountCents,title:plan.data().name,reference:id,returnUrl:new URL('/plataforma/',base).href,...(process.env.MERCADO_PAGO_TEST_WEBHOOK_SECRET?{notificationUrl:new URL('/.netlify/functions/mercadopago-webhook',base).href}:{})});
       await root.doc('billing').collection('charges').doc(id).set({...checkout,empresaId:input.empresaId,planId:plan.id,amountCents:plan.data().amountCents,status:'test_checkout_created',createdAt:Date.now(),createdBy:uid});
       overviewReads.invalidate();
       return json(200,{ok:true,id,url:checkout.url,mode:'test'});

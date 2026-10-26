@@ -14,7 +14,8 @@ Administradores e funcionários das empresas não recebem acesso à API da plata
 - Marca d’água global: PNG/JPEG até 250 KB, tamanho e intensidade.
 - API de leitura da marca d’água para contas com vínculo ativo na empresa.
 - Checkout Pro de teste pelo Mercado Pago, com valor lido do plano no servidor.
-- Nenhuma cobrança real ou confirmação automática de pagamento.
+- Consulta autenticada de pagamentos e confirmação por webhook assinado, somente para testes.
+- Nenhuma cobrança real ou ativação de contrato real por pagamento simulado.
 
 ## Configuração do servidor
 
@@ -40,9 +41,10 @@ para a conta, o comprador e a operação. Pix, boleto, crédito, débito e conta
 Pago não devem ser prometidos para todo tipo de recorrência. A transferência
 prevista no Brasil é Pix; TED e carteiras de terceiros não estão implementadas.
 
-Não há webhook, conciliação, renovação automática, emissão fiscal ou ativação por
-pagamento nesta etapa. Gerar um checkout não marca uma fatura como paga. A ativação
-de produção é uma etapa separada, após integração e testes desses fluxos.
+Há conferência de pagamento no provedor e webhook de aprovação de teste. Não há
+renovação automática, emissão fiscal ou ativação de contrato real por pagamento
+simulado. Gerar um checkout não confirma pagamento. A ativação de produção é
+uma etapa separada.
 
 Referências oficiais:
 - https://www.mercadopago.com.br/developers/pt/reference/online-payments/checkout-pro-preferences/overview
@@ -65,3 +67,28 @@ A simulação ocorre no navegador, sem consultas adicionais, gravações, cobran
 aceite de contrato ou encerramento do teste gratuito. Trocar a seleção oculta o
 resumo anterior. **Salvar assinatura administrativa** continua sendo uma operação
 separada, que altera o vínculo e a situação no cadastro; não confirma pagamento.
+
+## Confirmação de pagamentos de teste
+
+Em Pagamentos, **Conferir pagamento de teste** consulta a API usando a referência
+da cobrança já salva. Para notificações automáticas, configure no Mercado Pago o
+webhook de pagamentos de teste apontando para:
+`https://deploy-preview-11--famous-marigold-4e370d.netlify.app/.netlify/functions/mercadopago-webhook`
+
+Salve a assinatura secreta gerada pelo provedor em
+`MERCADO_PAGO_TEST_WEBHOOK_SECRET`, como segredo somente em Deploy Previews, e
+reconstrua a prévia. Nunca coloque o valor no código, na URL ou em mensagens.
+O servidor verifica HMAC SHA-256, request ID, payment ID e timestamp (cinco minutos),
+e consulta o pagamento na API autenticada. Não aceita confirmação pela URL de retorno.
+Valida vendedor de teste, cobrança registrada, referência, BRL e valor exato.
+A aprovação grava `test_payment_approved`, metadados em `subscription.testPayment`
+quando o plano ainda coincide, e auditoria atômica e idempotente. Não altera acesso,
+status da assinatura real, prazo de teste ou receita contratada. Sem assinatura
+secreta configurada, o endpoint recusa notificações.
+
+O callback é informado nos novos checkouts após a configuração. Para pagamentos
+antigos, use a conferência manual. Pendências, recusas e estornos não ativam
+contratos; reversão automática de uma aprovação por estorno ainda não está integrada.
+Não há polling. A tela consulta de novo quando atualizada; o resumo pode ficar em
+cache por até 30 segundos. O teste real de webhook exige configuração e pagamento
+na conta de teste; os testes locais não comprovam entrega pelo provedor.

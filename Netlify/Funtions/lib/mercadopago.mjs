@@ -1,7 +1,7 @@
 import { PlatformError } from './platform.mjs';
 
 // This release only creates test checkouts. Production activation is separate.
-export async function testCheckout({ token, amountCents, title, reference, returnUrl, request = fetch }) {
+export async function testCheckout({ token, amountCents, title, reference, returnUrl, notificationUrl, request = fetch }) {
   if (!token) throw new PlatformError(503,'Configure as credenciais de teste do Mercado Pago no servidor.');
   async function call(path, body) {
     const response = await request('https://api.mercadopago.com' + path, {
@@ -17,6 +17,7 @@ export async function testCheckout({ token, amountCents, title, reference, retur
   if (!Number.isSafeInteger(amountCents) || amountCents <= 0 || amountCents > 100000000) throw new PlatformError(400,'Valor de cobrança inválido.');
   const preference = await call('/checkout/preferences', {
     items:[{id:reference,title,currency_id:'BRL',quantity:1,unit_price:amountCents/100}],
+    ...(notificationUrl?{notification_url:notificationUrl}:{}),
     external_reference:reference,back_urls:{success:returnUrl,pending:returnUrl,failure:returnUrl},
     // No payment types are excluded: available methods are selected by Mercado Pago.
   });

@@ -45,17 +45,27 @@ function render(){
   companyManagement.render(state);
   list('plans-list',state.plans,(host,p)=>record(host,p.name,p.interval==='monthly'?'Mensal':'Anual',money(p.amountCents)));
   const labels={trial:'Em teste',active:'Ativa',past_due:'Pendente',canceled:'Cancelada'};
-  list('subscriptions-list',state.subscriptions,(host,s)=>record(host,state.companies.find(c=>c.id===s.empresaId)?.name||s.empresaId,s.status==='trial'?companyManagement.trialLabel(s):state.plans.find(p=>p.id===s.planId)?.name||'Sem plano',labels[s.status]||s.status));
+  list('subscriptions-list',state.subscriptions,(host,s)=>record(host,state.companies.find(c=>c.id===s.empresaId)?.name||s.empresaId,s.status==='trial'?companyManagement.trialLabel(s):state.plans.find(p=>p.id===s.planId)?.name||'Sem plano',(labels[s.status]||s.status)+(s.testPayment?.status==='approved'?' • Pagamento de teste validado':'')));
   for(const [id,items]of [['subscription-company',state.companies],['subscription-plan',state.plans],['charge-company',state.companies]]){
     const select=$(id),current=select.value;select.replaceChildren(new Option('Selecione…',''));
     items.forEach(item=>select.add(new Option(item.name,item.id)));select.value=current;
   }
+  $('webhook-status').textContent=state.webhookConfigured?'Notificações automáticas configuradas. Novas aprovações de teste serão validadas pelo servidor. Atualize a lista para consultar.':'Confirmação automática aguardando configuração do webhook. Use Conferir pagamento de teste para consultar uma cobrança.';
   $('charge-submit').disabled=!state.testConfigured;
   $('payment-connection').textContent=state.testConfigured?'Credencial de teste cadastrada. O próximo checkout valida a conexão.':'Configure as credenciais de teste no servidor para habilitar.';
   $('provider-status').textContent=state.testConfigured?'Somente testes':'Aguardando conexão';
   $('provider-text').textContent=state.testConfigured?'Ambiente de testes. Cobranças reais permanecem desativadas.':'Conexão ainda não configurada. Nenhuma cobrança real será feita nesta prévia.';
   list('charges-list',state.charges||[],(host,c)=>{
-    record(host,money(c.amountCents),'Checkout de teste criado. Pagamento não confirmado.');
+    record(host,money(c.amountCents),c.status==='test_payment_approved'?'Pagamento de teste aprovado e validado no Mercado Pago.':'Checkout de teste criado. Pagamento ainda não confirmado na plataforma.');
+    if(c.status!=='test_payment_approved'){
+      const verify=document.createElement('button');verify.type='button';verify.className='secondary';verify.textContent='Conferir pagamento de teste';
+      verify.onclick=async()=>{verify.disabled=true;status('Consultando pagamento no Mercado Pago…');
+        try{const result=await api({action:'charge.verify',chargeId:c.id});await refresh(true);
+          const labels={approved:'Pagamento de teste aprovado e validado. O teste gratuito e o acesso continuam como estão.',not_found:'Pagamento ainda não encontrado. Se acabou de pagar, aguarde e confira novamente.',pending:'Pagamento de teste pendente.',in_process:'Pagamento de teste em análise.',rejected:'Pagamento de teste recusado.',cancelled:'Pagamento de teste cancelado.',refunded:'Pagamento de teste estornado.',charged_back:'Pagamento de teste contestado.'};
+          status(labels[result.status]||'O pagamento ainda não foi aprovado.');
+        }catch(error){status(error.message,true);}finally{verify.disabled=false;}
+      };host.append(verify);
+    }
     try{const url=new URL(c.url);if(url.protocol==='https:'&&/^(?:[a-z0-9-]+\.)*mercadopago\.(com|com\.br)$/.test(url.hostname)){const link=document.createElement('a');link.href=url.href;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Abrir checkout de teste ↗';host.append(link);}}catch{}
   });
   const wm=state.watermark;$('wm-width').value=wm.widthMm;$('wm-opacity').value=Math.round(wm.opacity*100);image=wm.image||'';preview();
