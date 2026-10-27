@@ -46,3 +46,15 @@ test('webhook requires a fresh HMAC signature covering the payment id and reques
  assert.throws(()=>verifyWebhook(make(),undefined,now));
  assert.throws(()=>verifyWebhook(make('456','invalid'),secret,now));
 });
+
+test('webhook diagnostics distinguish missing headers, expired timestamp and mismatched key',()=>{
+ const now=1700000000000,ts=String(now);
+ const signed=createHmac('sha256','correct').update(`id:456;request-id:request;ts:${ts};`).digest('hex');
+ const make=(headers={},query='?data.id=456')=>new Request('https://example.com/hook'+query,{headers});
+ const headers={'x-request-id':'request','x-signature':`ts=${ts},v1=${signed}`};
+ assert.throws(()=>verifyWebhook(make(),'correct',now),e=>e.supportCode==='WEBHOOK_SIGNATURE_MISSING');
+ assert.throws(()=>verifyWebhook(make(headers),'different',now),e=>e.supportCode==='WEBHOOK_SIGNATURE_MISMATCH');
+ assert.throws(()=>verifyWebhook(make(headers),'correct',now+600000),e=>e.supportCode==='WEBHOOK_TIMESTAMP_EXPIRED');
+ assert.throws(()=>verifyWebhook(make(headers,''),'correct',now),e=>e.supportCode==='WEBHOOK_ID_MISSING');
+ assert.throws(()=>verifyWebhook(make({'x-signature':headers['x-signature']}),'correct',now),e=>e.supportCode==='WEBHOOK_REQUEST_ID_MISSING');
+});

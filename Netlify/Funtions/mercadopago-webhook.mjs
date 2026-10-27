@@ -10,5 +10,11 @@ export default async function handler(req){
   if(String(body.data?.id)!==paymentId)return json(400,{error:'Pagamento divergente.'});
   const result=await confirmTestPayment({db:serverDb(),paymentId,token:process.env.MERCADO_PAGO_TEST_ACCESS_TOKEN});
   return json(200,result);
- }catch(error){return failure(error);}
+ }catch(error){
+  if(error.supportCode){
+   console.warn('mercadopago_webhook_rejected',{supportCode:error.supportCode});
+   return json(error.status,{error:error.message,supportCode:error.supportCode});
+  }
+  return failure(error);
+ }
 }

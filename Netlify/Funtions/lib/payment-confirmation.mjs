@@ -3,15 +3,19 @@ import {PlatformError} from './platform.mjs';
 const billing='plataforma_admin/billing';
 const valid=value=>typeof value==='string'&&/^[A-Za-z0-9_-]{1,120}$/.test(value);
 export function verifyWebhook(req,secret,now=Date.now()){
- if(!secret)throw new PlatformError(503,'Webhook de teste ainda não configurado.');
+ const reject=(status,message,supportCode)=>{throw Object.assign(new PlatformError(status,message),{supportCode});};
+ if(!secret)reject(503,'Webhook de teste ainda não configurado.','WEBHOOK_SECRET_MISSING');
  const id=new URL(req.url).searchParams.get('data.id');
  const requestId=req.headers.get('x-request-id');
+ if(!req.headers.get('x-signature'))reject(401,'Notificação sem assinatura.','WEBHOOK_SIGNATURE_MISSING');
+ if(!id)reject(401,'Notificação sem ID na URL.','WEBHOOK_ID_MISSING');
+ if(!requestId)reject(401,'Notificação sem identificador da requisição.','WEBHOOK_REQUEST_ID_MISSING');
  const parts=Object.fromEntries((req.headers.get('x-signature')||'').split(',').map(p=>p.trim().split('=')));
- if(!/^\d{1,30}$/.test(id||'')||!requestId||requestId.length>200||!/^\d{10,13}$/.test(parts.ts||'')||! /^[a-f0-9]{64}$/i.test(parts.v1||''))throw new PlatformError(401,'Notificação inválida.');
+ if(!/^\d{1,30}$/.test(id||'')||!requestId||requestId.length>200||!/^\d{10,13}$/.test(parts.ts||'')||! /^[a-f0-9]{64}$/i.test(parts.v1||''))reject(401,'Notificação inválida.','WEBHOOK_SIGNATURE_FORMAT');
  const timestamp=Number(parts.ts)*(parts.ts.length===10?1000:1);
- if(Math.abs(now-timestamp)>300000)throw new PlatformError(401,'Notificação expirada.');
+ if(Math.abs(now-timestamp)>300000)reject(401,'Notificação expirada.','WEBHOOK_TIMESTAMP_EXPIRED');
  const expected=createHmac('sha256',secret).update(`id:${id};request-id:${requestId};ts:${parts.ts};`).digest();
- if(!timingSafeEqual(expected,Buffer.from(parts.v1,'hex')))throw new PlatformError(401,'Assinatura inválida.');
+ if(!timingSafeEqual(expected,Buffer.from(parts.v1,'hex')))reject(401,'Assinatura inválida.','WEBHOOK_SIGNATURE_MISMATCH');
  return id;
 }
 export async function confirmTestPayment({db,paymentId,chargeId,token,request=fetch,now=Date.now()}){
