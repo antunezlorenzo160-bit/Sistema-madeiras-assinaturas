@@ -1,3 +1,4 @@
+import {createTestPeriod} from '../Netlify/Funtions/lib/contract-periods.mjs';
 import test from 'node:test';import assert from 'node:assert/strict';
 import {companyContractOverview,requestCompanyContract} from '../Netlify/Funtions/lib/company-contract.mjs';
 function setup(){
@@ -52,4 +53,13 @@ test('zero-priced monthly and annual plans remain visible and can be requested w
  const result=await companyContractOverview(s.db,s.identity);assert(result.offers.some(p=>p.id==='monthly'&&p.amountCents===0));assert(result.offers.some(p=>p.id==='yearly'&&p.amountCents===0));
  const request=await requestCompanyContract(s.db,s.identity,{...s.input,expectedAmountCents:0});assert.equal(request.request.amountCents,0);assert.equal(request.request.automaticBilling,false);
  assert.equal(s.records.get('plataforma_admin/billing/subscriptions/tenant').status,'trial');
+});
+
+test('a company only sees a catalog increase near renewal and cannot replace an ongoing annual period',async()=>{
+ const s=setup(),start=Date.parse('2026-10-28T13:00:00Z'),period=createTestPeriod({planId:'yearly',planName:'Anual',amountCents:200000,interval:'yearly'},start,{empresaId:'tenant'});
+ s.records.set('plataforma_admin/billing/test_contract_periods/tenant',period);s.records.get('plataforma_admin/billing/plans/yearly').amountCents=250000;
+ const tomorrow=await companyContractOverview(s.db,s.identity,start+86400000);assert.equal(tomorrow.offers.length,0);assert.equal(tomorrow.currentPeriod.amountCents,200000);assert.equal(tomorrow.currentPeriod.nextTerms,null);
+ await assert.rejects(requestCompanyContract(s.db,s.identity,{...s.input,expectedAmountCents:250000},start+86400000),/preço garantido/);assert.equal(s.writes.length,0);
+ const notice=await companyContractOverview(s.db,s.identity,period.renewalNoticeAt);assert(notice.offers.length>0);assert.equal(notice.currentPeriod.nextTerms.amountCents,250000);
+ await requestCompanyContract(s.db,s.identity,{...s.input,expectedAmountCents:250000},period.renewalNoticeAt);assert.equal(s.records.get('plataforma_admin/billing/test_contract_periods/tenant').amountCents,200000);
 });

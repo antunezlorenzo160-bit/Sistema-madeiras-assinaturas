@@ -28,3 +28,10 @@ test('refresh renders zero-priced options and preserves the previous request as 
  assert.equal(options.length,2);assert.match(options[0].text,/0,00/);assert.match(s.node('plan-description').textContent,/Gratuito/);assert.equal(s.node('request-submit').disabled,false);
  assert.match(s.node('request-summary').textContent,/199,90/);assert.match(s.node('request-summary').textContent,/Valor registrado na solicitação/);
 });
+
+test('company screen preserves the locked annual price and hides repricing until the renewal window',()=>{
+ const s=setup();s.context.periodData={planName:'Completo Anual',amountCents:200000,interval:'yearly',startsAt:Date.parse('2026-10-28T13:00:00Z'),endsAt:Date.parse('2027-10-28T13:00:00Z'),active:true,renewalOpen:false};
+ vm.runInContext('showPeriod(periodData)',s.context);assert.equal(s.node('choice-card').hidden,true);assert.match(s.node('period-summary').textContent,/2\.000,00/);assert(!s.node('period-renewal').textContent.includes('2.500'));
+ Object.assign(s.context.periodData,{renewalOpen:true,priceChanged:true,nextTerms:{amountCents:250000,interval:'yearly'}});vm.runInContext('showPeriod(periodData)',s.context);
+ assert.equal(s.node('choice-card').hidden,false);assert.match(s.node('period-summary').textContent,/2\.000,00/);assert.match(s.node('period-renewal').textContent,/2\.500,00/);assert.match(s.node('period-renewal').textContent,/próximo período/);
+});

@@ -1,3 +1,4 @@
+import {startRequestedTestPeriod,assertCheckoutPeriodAvailable} from './lib/contract-periods.mjs';
 import {savePlan} from './lib/plans.mjs';
 import {removePlanDuplicates} from './lib/plan-duplicates.mjs';
 import {confirmTestPayment} from './lib/payment-confirmation.mjs';
@@ -22,16 +23,17 @@ export default async function handler(req) {
       if(new URL(req.url).searchParams.get('refresh')==='1')overviewReads.invalidate();
       const overview = await overviewReads.load(async()=>{
       const read=(name,promise)=>promise.catch(error=>{error.stage=name;throw error;});
-      const [plans,companies,subscriptions,watermark,charges,contractRequests] = await Promise.all([
+      const [plans,companies,subscriptions,watermark,charges,contractRequests,testPeriods] = await Promise.all([
         read('plans',root.doc('billing').collection('plans').limit(200).get()),
         read('companies',root.doc('billing').collection('companies').limit(200).get()),
         read('subscriptions',root.doc('billing').collection('subscriptions').limit(200).get()),
         read('watermark',root.doc('pdf_watermark').get()),
         read('charges',root.doc('billing').collection('charges').limit(100).get()),
         read('subscriptions',root.doc('billing').collection('contract_requests').limit(200).get()),
+        read('subscriptions',root.doc('billing').collection('test_contract_periods').limit(200).get()),
       ]);
       const list = snap => snap.docs.map(d=>({...d.data(),id:d.id}));
-      return {plans:list(plans),companies:list(companies),subscriptions:list(subscriptions),charges:list(charges),contractRequests:list(contractRequests),
+      return {plans:list(plans),companies:list(companies),subscriptions:list(subscriptions),charges:list(charges),contractRequests:list(contractRequests),testPeriods:list(testPeriods),
         watermark:watermark.exists?watermark.data():{widthMm:180,opacity:.04,image:''},
         methods:METHODS.map(id=>({id,status:process.env.MERCADO_PAGO_TEST_ACCESS_TOKEN?'test_available':'not_connected'})),provider:'mercadopago',testConfigured:Boolean(process.env.MERCADO_PAGO_TEST_ACCESS_TOKEN),livePayments:false,webhookConfigured:Boolean(process.env.MERCADO_PAGO_TEST_WEBHOOK_SECRET)};
       });
@@ -53,6 +55,7 @@ export default async function handler(req) {
       const url=new URL('/cadastro/',base);url.hash='convite='+result.token;
       return json(200,{ok:true,url:url.href,empresaId:result.empresaId});
     }
+    if(input.action==='contract.period.start'){const result=await startRequestedTestPeriod(db,input,uid);overviewReads.invalidate();return json(200,result);}
     if(input.action==='plan.save'){const result=await savePlan(db,input,uid);overviewReads.invalidate();return json(200,result);}
     if(input.action==='plan.removeDuplicates'){const result=await removePlanDuplicates(db,input.planId,uid);overviewReads.invalidate();return json(200,result);}
     if(input.action==='charge.inspect')return json(200,await inspectTestCheckout({db,chargeId:input.chargeId,token:process.env.MERCADO_PAGO_TEST_ACCESS_TOKEN}));
@@ -71,9 +74,11 @@ export default async function handler(req) {
       requireManualTestCheckout(subscription.data());
       const base = new URL(req.url).protocol==='https:'?new URL(req.url).origin:process.env.DEPLOY_PRIME_URL || process.env.URL;
       if (!base || !base.startsWith('https://')) throw new PlatformError(503,'URL da prévia não configurada.');
+      const currentPeriod=await root.doc('billing').collection('test_contract_periods').doc(input.empresaId).get();
+      assertCheckoutPeriodAvailable(currentPeriod.exists?currentPeriod.data():null);
       const id = randomUUID();
       const checkout = await testCheckout({token:process.env.MERCADO_PAGO_TEST_ACCESS_TOKEN,amountCents:plan.data().amountCents,title:plan.data().name,reference:id,returnUrl:new URL('/plataforma/',base).href,...(process.env.MERCADO_PAGO_TEST_WEBHOOK_SECRET?{notificationUrl:new URL('/.netlify/functions/mercadopago-webhook',base).href}:{})});
-      await root.doc('billing').collection('charges').doc(id).set({...checkout,empresaId:input.empresaId,planId:plan.id,amountCents:plan.data().amountCents,status:'test_checkout_created',createdAt:Date.now(),createdBy:uid});
+      await root.doc('billing').collection('charges').doc(id).set({...checkout,empresaId:input.empresaId,planId:plan.id,amountCents:plan.data().amountCents,planName:plan.data().name,interval:plan.data().interval,contractPeriodVersion:1,previousPeriodId:currentPeriod.exists?currentPeriod.data().id:null,status:'test_checkout_created',createdAt:Date.now(),createdBy:uid});
       overviewReads.invalidate();
       return json(200,{ok:true,id,url:checkout.url,mode:'test'});
     }

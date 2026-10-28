@@ -25,6 +25,16 @@ function describe(){
  $('request-submit').disabled=!plan;$('acknowledge').checked=false;
  $('renewal-description').textContent=$('renewal').value==='automatic'?'Preferência de renovação automática para o futuro. Nenhum débito será agendado nesta prévia.':'Você decide se deseja pagar novamente a cada '+(plan?.interval==='yearly'?'ano.':'mês.');
 }
+function showPeriod(period){
+ $('period-card').hidden=!period;
+ $('choice-card').hidden=Boolean(period?.active&&!period.renewalOpen);
+ if(!period)return;
+ const date=value=>new Date(value).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'});
+ $('period-summary').textContent=[period.planName,'Valor garantido: '+money(period.amountCents)+(period.interval==='yearly'?' pelos 12 meses':' pelo mês'),'Início: '+date(period.startsAt),'Válido até: '+date(period.endsAt)].join('\n');
+ $('period-renewal').textContent=!period.renewalOpen?'O período está vigente. A revisão do plano será exibida perto da renovação, sem alterar o preço atual.':
+  period.priceChanged?'Seu período '+(period.expired?'venceu':'termina')+' em '+date(period.endsAt)+'. Para renovar, confira o novo valor: '+money(period.nextTerms.amountCents)+(period.nextTerms.interval==='yearly'?' por ano.':' por mês.')+' O novo valor só vale para o próximo período. Nenhum débito será feito automaticamente nesta prévia.':
+  period.expired?'O período de teste registrado venceu. Você pode revisar o plano para simular a renovação. Seu acesso gratuito não foi bloqueado.':'Seu período está perto do vencimento. Você pode revisar o plano para a próxima renovação.';
+}
 async function load(){
  message('Consultando planos…');const result=await api();
  state=result;
@@ -33,7 +43,7 @@ async function load(){
  $('plan').replaceChildren();
  if(!result.offers.length){const empty=new Option('Nenhum plano disponível','');empty.disabled=true;$('plan').add(empty);}
  for(const plan of result.offers)$('plan').add(new Option(plan.name+' — '+money(plan.amountCents)+(plan.interval==='yearly'?' por ano':' por mês'),plan.id));
- describe();showRequest(result.request);message('');
+ describe();showPeriod(result.currentPeriod);showRequest(result.request);message('');
 }
 async function run(task){if(busy)return;busy=true;document.querySelectorAll('button').forEach(b=>b.disabled=true);try{await task();}catch(error){message(error.code?'Não foi possível entrar. Confira o e-mail e a senha.':error.message);}finally{busy=false;document.querySelectorAll('button').forEach(b=>b.disabled=false);if(state)$('request-submit').disabled=!state.offers.length;}}
 function showPassword(visible){

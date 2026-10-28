@@ -10,11 +10,11 @@ function setup(changes={}){
  const db={doc:path=>({path,id:path.split('/').at(-1)}),runTransaction:async callback=>callback({
   get:async ref=>({exists:records.has(ref.path),data:()=>records.get(ref.path)}),
   update:(ref,data)=>{writes.push({ref,data});Object.assign(records.get(ref.path),data);},
-  set:(ref,data)=>{writes.push({ref,data});Object.assign(records.get(ref.path),data);},
+  set:(ref,data)=>{writes.push({ref,data});const previous=records.get(ref.path)||{};Object.assign(previous,data);records.set(ref.path,previous);},
   create:(ref,data)=>{assert(!records.has(ref.path));writes.push({ref,data});records.set(ref.path,data);}
  })};
  const request=async url=>({ok:true,json:async()=>url.endsWith('/users/me')?{id:123,tags:['test_user']}:url.includes('/search?')?{results:[payment]}:payment});
- return {db,request,token:'APP_USR-test',chargeId:'invoice',payment,charge,sub,writes};
+ return {db,records,request,token:'APP_USR-test',chargeId:'invoice',payment,charge,sub,writes};
 }
 test('provider confirmation is idempotent and preserves indefinite trial and access',async()=>{
  const s=setup();assert.equal((await confirmTestPayment(s)).status,'approved');
@@ -57,4 +57,11 @@ test('webhook diagnostics distinguish missing headers, expired timestamp and mis
  assert.throws(()=>verifyWebhook(make(headers),'correct',now+600000),e=>e.supportCode==='WEBHOOK_TIMESTAMP_EXPIRED');
  assert.throws(()=>verifyWebhook(make(headers,''),'correct',now),e=>e.supportCode==='WEBHOOK_ID_MISSING');
  assert.throws(()=>verifyWebhook(make({'x-signature':headers['x-signature']}),'correct',now),e=>e.supportCode==='WEBHOOK_REQUEST_ID_MISSING');
+});
+
+test('a newly confirmed test payment locks the checkout terms rather than the edited catalog price',async()=>{
+ const s=setup();Object.assign(s.charge,{contractPeriodVersion:1,previousPeriodId:null,planName:'Anual',interval:'yearly'});s.payment.date_approved='2026-10-28T13:00:00Z';s.now=Date.parse('2026-10-28T13:01:00Z');
+ await confirmTestPayment(s);const period=s.records.get('plataforma_admin/billing/test_contract_periods/company');
+ assert.equal(period.amountCents,19990);assert.equal(period.interval,'yearly');assert.equal(period.endsAt,Date.parse('2027-10-28T13:00:00Z'));assert.equal(s.charge.periodApplied,true);assert.equal(s.sub.status,'trial');
+ const count=s.writes.length;await confirmTestPayment(s);assert.equal(s.writes.length,count);
 });

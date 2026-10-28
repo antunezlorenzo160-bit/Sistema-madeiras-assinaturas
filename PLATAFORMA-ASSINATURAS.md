@@ -167,3 +167,46 @@ valor sem alterar o acesso ou gerar pagamento. A API de checkout impede gerar um
 preferência no Mercado Pago para plano gratuito. O resumo da solicitação anterior
 conserva seu preço e data e é identificado como histórico. Atualizar planos consulta
 o catálogo atual sem regravar a escolha passada.
+
+## Preço garantido por vigência — somente prévia de teste
+
+A regra de período foi implementada no módulo `contract-periods.mjs`, sem ativar
+contratos ou cobranças reais. Um período em `test_contract_periods/{empresaId}`
+guarda plano, valor acordado, moeda, periodicidade, início e vencimento. Alterar o
+catálogo não regrava esse registro. Mensal dura um mês de calendário e anual 12
+meses, em horário de Brasília (UTC-3), com ajuste para o último dia válido do mês
+(ex.: 31/01 → 28/02; 29/02 no anual → 28/02 do ano seguinte). O fim é exclusivo.
+
+O período de teste pode ser iniciado pelo proprietário em Assinaturas → Escolhas
+dos responsáveis → Iniciar período de teste com preço garantido. Usa a cotação da
+solicitação exibida e verifica sua data/revisão para não usar uma escolha trocada.
+Repetir a operação é idempotente. Não permite substituir uma vigência ainda ativa.
+Na renovação, exige uma solicitação nova próxima ao vencimento; não reaproveita
+automaticamente uma solicitação de um ciclo antigo. O início é o horário do servidor.
+
+Novos checkouts de teste gravam as condições do período no momento de emissão.
+Quando a API valida a aprovação, aplica uma vigência simulada a partir da data de
+aprovação do provedor. Eventos repetidos, pagamentos fora de ordem ou outra cobrança
+para um período já iniciado não prolongam nem sobrescrevem a vigência. Checkouts
+anteriores a esta implementação continuam sendo validados, mas não recebem datas
+contratuais presumidas. O proprietário pode simular a vigência pela solicitação.
+Nenhuma empresa foi migrada ou recebeu vigência automaticamente pelo deploy.
+
+Um período de teste ativo bloqueia a geração de outro checkout avulso para a mesma
+empresa. O reajuste só pode entrar em uma nova vigência depois do vencimento. A
+solicitação antecipada de renovação não encurta o ciclo atual nem inicia o próximo.
+
+Na página de planos da empresa, o preço do período aparece como garantido até o
+vencimento. O catálogo e a revisão são liberados perto da renovação: inicialmente
+30 dias antes do anual e 7 dias antes do mensal. O aviso informa o preço seguinte,
+quando houve alteração, sem aplicá-lo ao ciclo atual. O novo valor é consultado no
+catálogo; o valor do período permanece no snapshot. A validação é feita também no
+servidor. Depois do vencimento, a revisão continua disponível sem bloquear o acesso
+gratuito do sistema. Este aviso aparece ao consultar/atualizar a página de planos;
+não há envio automático por e-mail, tarefa agendada, débito recorrente ou polling.
+
+A vigência é separada da assinatura administrativa e dos membros. Não modifica
+status trial/active, prazo gratuito, suspensão ou permissões de acesso. Antes de
+ativar contratação real, o fluxo deverá vincular essas mesmas regras a pagamentos
+reais validados, aceite do responsável, política de cancelamento e avisos efetivos.
+A recorrência real permanece desativada.

@@ -1,3 +1,4 @@
+import {periodFromApprovedCharge} from './contract-periods.mjs';
 import {createHmac,timingSafeEqual} from 'node:crypto';
 import {PlatformError} from './platform.mjs';
 const billing='plataforma_admin/billing';
@@ -50,11 +51,14 @@ export async function confirmTestPayment({db,paymentId,chargeId,token,request=fe
      payment.currency_id!=='BRL'||Math.abs(Number(payment.transaction_amount)*100-charge.amountCents)>.001||!Number.isFinite(Number(payment.transaction_amount)))throw new PlatformError(409,'Empresa, vendedor, moeda ou valor divergente.');
   if(payment.status!=='approved')return {ok:true,status:payment.status||'pending'};
   if(charge.status==='test_payment_approved')return {ok:true,status:'approved',alreadyConfirmed:true};
-  const subRef=db.doc(`${billing}/subscriptions/${charge.empresaId}`),sub=await tx.get(subRef);
-  tx.update(ref,{status:'test_payment_approved',paymentId:String(payment.id),confirmedAt:now});
+  const subRef=db.doc(`${billing}/subscriptions/${charge.empresaId}`),periodRef=db.doc(`${billing}/test_contract_periods/${charge.empresaId}`);
+  const [sub,currentPeriod]=await Promise.all([tx.get(subRef),tx.get(periodRef)]);
+  const period=periodFromApprovedCharge(charge,payment,currentPeriod.exists?currentPeriod.data():null,now);
+  tx.update(ref,{status:'test_payment_approved',paymentId:String(payment.id),confirmedAt:now,periodApplied:Boolean(period)});
+  if(period)tx.set(periodRef,period);
   // A sandbox payment never activates a real contract, changes access or ends a trial.
   if(sub.exists&&sub.data().planId===charge.planId)tx.set(subRef,{testPayment:{status:'approved',chargeId:ref.id,paymentId:String(payment.id),planId:charge.planId,amountCents:charge.amountCents,confirmedAt:now}},{merge:true});
-  tx.create(db.doc(`plataforma_admin/audit/events/payment-test-${payment.id}`),{action:'payment.test.approved',chargeId:ref.id,empresaId:charge.empresaId,paymentId:String(payment.id),at:now});
+  tx.create(db.doc(`plataforma_admin/audit/events/payment-test-${payment.id}`),{action:'payment.test.approved',chargeId:ref.id,empresaId:charge.empresaId,paymentId:String(payment.id),at:now,...(period?{period}:{})});
   return {ok:true,status:'approved'};
  });
 }

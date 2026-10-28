@@ -45,6 +45,13 @@ function render(){
   companyManagement.render(state);
   list('contract-requests-list',[...(state.contractRequests||[])].sort((a,b)=>b.requestedAt-a.requestedAt),(host,r)=>{
     record(host,r.companyName||r.empresaId,(r.planName||'Plano')+' • '+(r.interval==='yearly'?'Anual':'Mensal')+' • Renovação '+(r.renewalPreference==='automatic'?'automática, apenas preferência':'manual')+' • Solicitado em '+new Date(r.requestedAt).toLocaleString('pt-BR'),money(r.amountCents));
+    const current=(state.testPeriods||[]).find(p=>p.empresaId===r.empresaId);
+    if(current){const info=document.createElement('p');info.textContent='Período de teste: '+money(current.amountCents)+' até '+new Date(current.endsAt).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'})+'. Preço garantido até essa data.';host.append(info);}
+    if(!current||Date.now()>=current.endsAt){
+      const start=document.createElement('button');start.type='button';start.className='secondary';start.textContent='Iniciar período de teste com preço garantido';
+      start.onclick=async()=>{start.disabled=true;try{await api({action:'contract.period.start',empresaId:r.empresaId,expectedRequestedAt:r.requestedAt});await refresh(true);status('Período de teste registrado. O preço está garantido até o vencimento. Nenhuma cobrança real ou alteração de acesso foi realizada.');}catch(error){status(error.message,true);}finally{start.disabled=false;}};host.append(start);
+    }
+
   });
   list('plans-list',state.plans,(host,p)=>{
     record(host,p.name,p.interval==='monthly'?'Mensal':'Anual — pagamento único pelos 12 meses',money(p.amountCents));
