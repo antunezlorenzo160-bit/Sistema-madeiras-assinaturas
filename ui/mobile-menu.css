@@ -119,3 +119,20 @@ html body:not(:has(section#inicio.tab.active)) #avisoPlataformaV707{display:none
     font-size:13px!important;line-height:1.2!important;white-space:normal!important;box-sizing:border-box!important;
   }
 }
+
+/* Calculator controls keep crisp lettering on the glass and natural themes. */
+@media screen{
+  html body #calculadora #btnVerdeOuCorrigirV260,
+  html body #calculadora #transferenciaInlineV257 span{
+    text-shadow:none!important;filter:none!important;font-weight:600!important;
+  }
+  html body #calculadora #transferenciaInlineV257 input:checked + span,
+  html body #calculadora #btnVerdeOuCorrigirV260.active{
+    color:#494136!important;text-shadow:none!important;
+  }
+  html body #calculadora #transferenciaInlineV257 input:not(:checked) + span,
+  html body #calculadora #btnVerdeOuCorrigirV260:not(.active),
+  html body #calculadora #btnVerdeOuCorrigirV260[data-modo="corrigir"]{
+    color:#f3f5f1!important;text-shadow:none!important;
+  }
+}
