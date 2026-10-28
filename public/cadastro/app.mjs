@@ -1,5 +1,5 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js';
-import { initializeAuth,browserLocalPersistence,inMemoryPersistence,createUserWithEmailAndPassword,signInWithEmailAndPassword,sendEmailVerification,signOut } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
+import { initializeAuth,browserLocalPersistence,inMemoryPersistence,createUserWithEmailAndPassword,signInWithEmailAndPassword,sendEmailVerification,signOut,sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
 const app=initializeApp({apiKey:'AIzaSyBQ1_mmY0mP8mdbonbmWLVv6VaDXuzHZkU',authDomain:'estoque-madeiras-cc4d7.firebaseapp.com',projectId:'estoque-madeiras-cc4d7',appId:'1:201851719270:web:8d71d7f6862d7c4709a7a7'},'sm-madeiras-login');
 const auth=initializeAuth(app,{persistence:[browserLocalPersistence,inMemoryPersistence]}),$=id=>document.getElementById(id);
 // O convite fica no fragmento, fora dos logs de requisição e do cabeçalho Referer.
@@ -18,14 +18,34 @@ async function complete(){
   const idToken=await user.getIdToken(true);
   const response=await fetch('/.netlify/functions/company-register',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+idToken},body:JSON.stringify({token,name:$('company-name').value.trim()}),signal:controller.signal});
   const data=await response.json();if(!response.ok)throw Error(data.error||'Não foi possível concluir o cadastro.');
-  $('register-form').hidden=true;$('verification').hidden=true;$('open-system').hidden=false;$('change-account').hidden=true;
+  $('register-form').hidden=true;$('forgot-password').hidden=true;$('verification').hidden=true;$('open-system').hidden=false;$('change-account').hidden=true;
   status('Empresa cadastrada. Seu teste gratuito está liberado, sem prazo definido e sem cobrança automática.');
  }finally{clearTimeout(timer);}
 }
+function showPassword(visible){
+ $('password').type=visible?'text':'password';
+ $('toggle-password').setAttribute('aria-label',visible?'Ocultar senha':'Mostrar senha');
+ $('toggle-password').setAttribute('aria-pressed',String(visible));
+ $('password-slash').hidden=!visible;
+}
+$('toggle-password').addEventListener('pointerdown',event=>event.preventDefault());
+$('toggle-password').onclick=()=>{
+ const field=$('password'),position=field.selectionStart;showPassword(field.type==='password');
+ field.focus({preventScroll:true});if(position!==null)try{field.setSelectionRange(position,position);}catch{}
+};
+$('forgot-password').onclick=()=>run(async()=>{
+ const email=$('email').value.trim();
+ if(!email||!$('email').validity.valid){status('Informe um e-mail válido no campo E-mail para recuperar sua senha.');$('email').focus();return;}
+ if(!navigator.onLine){status('Conecte-se à internet para recuperar sua senha.');return;}
+ status('Solicitando recuperação de senha…');
+ const success='Se houver uma conta com este e-mail, você receberá um link para criar uma nova senha. Confira também a caixa de spam. Sua senha atual só muda se você concluir a redefinição.';
+ try{auth.languageCode='pt-BR';await sendPasswordResetEmail(auth,email);status(success);}
+ catch(error){status(error.code==='auth/user-not-found'?success:({'auth/invalid-email':'Confira o e-mail informado.','auth/too-many-requests':'Muitas tentativas. Aguarde alguns minutos antes de tentar novamente.','auth/network-request-failed':'Não foi possível conectar. Confira a internet e tente novamente.'}[error.code]||'Não foi possível solicitar a recuperação. Tente novamente mais tarde.'));}
+});
 $('register-form').onsubmit=event=>{event.preventDefault();run(async()=>{
  if(!token)throw Error('Abra o link completo de convite enviado pelo administrador.');
  status('Verificando conta…');
- const password=$('password').value;$('password').value='';
+ const password=$('password').value;$('password').value='';showPassword(false);
  const sign=$('mode').value==='create'?createUserWithEmailAndPassword:signInWithEmailAndPassword;
  const {user}=await sign(auth,$('email').value.trim(),password);
  $('change-account').hidden=false;
