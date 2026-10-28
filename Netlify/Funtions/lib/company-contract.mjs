@@ -2,7 +2,7 @@ import {randomUUID} from 'node:crypto';
 import {PlatformError,validateRenewalPreference} from './platform.mjs';
 const root='plataforma_admin/billing';
 const validId=value=>typeof value==='string'&&/^[-A-Za-z0-9_]{1,120}$/.test(value);
-function offered(plan){return plan.active!==false&&Number.isSafeInteger(plan.amountCents)&&plan.amountCents>0&&plan.amountCents<=100000000&&['monthly','yearly'].includes(plan.interval)&&typeof plan.name==='string'&&Boolean(plan.name.trim());}
+function offered(plan){return plan.active!==false&&Number.isSafeInteger(plan.amountCents)&&plan.amountCents>=0&&plan.amountCents<=100000000&&['monthly','yearly'].includes(plan.interval)&&typeof plan.name==='string'&&Boolean(plan.name.trim());}
 async function companyContext(db,identity,read=ref=>ref.get()){
  if(identity.emailVerified!==true)throw new PlatformError(403,'Confirme seu e-mail antes de escolher um plano.');
  const member=await read(db.doc(`membros/${identity.uid}`));

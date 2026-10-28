@@ -64,10 +64,11 @@ export default async function handler(req) {
       if (!ids(input.empresaId)) throw new PlatformError(400,'Empresa inválida.');
       const subscription = await root.doc('billing').collection('subscriptions').doc(input.empresaId).get();
       if (!subscription.exists || subscription.data().status === 'canceled') throw new PlatformError(400,'Cadastre uma assinatura válida antes de gerar a cobrança de teste.');
-      requireManualTestCheckout(subscription.data());
       if(!ids(subscription.data().planId))throw new PlatformError(400,'Escolha um plano para esta assinatura antes de gerar o checkout de teste.');
       const plan = await root.doc('billing').collection('plans').doc(subscription.data().planId).get();
       if (!plan.exists || plan.data().active === false) throw new PlatformError(400,'Plano indisponível.');
+      if(plan.data().amountCents===0)throw new PlatformError(400,'Este plano está gratuito (R$ 0,00). Não há pagamento a realizar no Mercado Pago.');
+      requireManualTestCheckout(subscription.data());
       const base = new URL(req.url).protocol==='https:'?new URL(req.url).origin:process.env.DEPLOY_PRIME_URL || process.env.URL;
       if (!base || !base.startsWith('https://')) throw new PlatformError(503,'URL da prévia não configurada.');
       const id = randomUUID();

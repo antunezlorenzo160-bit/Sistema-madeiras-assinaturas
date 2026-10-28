@@ -122,7 +122,7 @@ exige e-mail verificado, vínculo ativo e ownerUid da empresa; em cadastros anti
 sem ownerUid, exige papel admin. Nem o proprietário da plataforma recebe acesso a
 outra empresa por esse endpoint sem o vínculo apropriado.
 
-O catálogo retorna planos pagos ativos cadastrados pelo proprietário, com valor e
+O catálogo retorna planos ativos cadastrados pelo proprietário, inclusive gratuitos, com valor e
 periodicidade atuais, eliminando cópias idênticas de nome, valor e período. O responsável escolhe
 renovação e confirma que está registrando somente uma solicitação de teste. O POST
 revalida o plano, preço, período e revisão, deriva a empresa do vínculo, salva uma
@@ -158,3 +158,12 @@ e cobranças já criadas preservam seus valores. Novos checkouts usam o preço a
 do plano. Esta edição não executa cobranças, não reembolsa pagamentos e não altera
 acesso ou prazo de teste. Regras de comunicação e aplicação de reajustes a contratos
 reais existentes ainda serão tratadas na etapa de contratação real.
+
+### Planos gratuitos e histórico da escolha
+
+Valor zero é válido na administração e no catálogo da empresa. O seletor mostra
+R$ 0,00 e a descrição indica gratuidade. A solicitação de teste pode registrar esse
+valor sem alterar o acesso ou gerar pagamento. A API de checkout impede gerar uma
+preferência no Mercado Pago para plano gratuito. O resumo da solicitação anterior
+conserva seu preço e data e é identificado como histórico. Atualizar planos consulta
+o catálogo atual sem regravar a escolha passada.

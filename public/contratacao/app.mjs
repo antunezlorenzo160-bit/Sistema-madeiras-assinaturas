@@ -8,27 +8,31 @@ function message(text){$('status').textContent=text;}
 async function api(data){
  const user=auth.currentUser;if(!user)throw Error('Entre com sua conta para continuar.');
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);
- try{const token=await user.getIdToken();const response=await fetch('/.netlify/functions/company-contract',{method:data?'POST':'GET',headers:{Authorization:'Bearer '+token,...(data?{'Content-Type':'application/json'}:{})},...(data?{body:JSON.stringify(data)}:{}),signal:controller.signal});
+ try{const token=await user.getIdToken();const response=await fetch('/.netlify/functions/company-contract',{cache:'no-store',method:data?'POST':'GET',headers:{Authorization:'Bearer '+token,...(data?{'Content-Type':'application/json'}:{})},...(data?{body:JSON.stringify(data)}:{}),signal:controller.signal});
   const result=await response.json();if(!response.ok)throw Error(result.error||'Não foi possível consultar os planos.');
   if(auth.currentUser?.uid!==user.uid)throw Error('A conta foi alterada. Entre novamente.');return result;
  }catch(error){if(error.name==='AbortError')throw Error('A conexão demorou. Tente novamente.');throw error;}finally{clearTimeout(timer);}
 }
 function showRequest(request){
  $('request-card').hidden=!request;if(!request)return;
- $('request-summary').textContent=[request.planName,money(request.amountCents)+(request.interval==='yearly'?' por ano, pago de uma vez':' por mês'),'Renovação desejada: '+(request.renewalPreference==='automatic'?'automática, ainda sem autorização de débito':'manual'),'Registrada em: '+new Date(request.requestedAt).toLocaleString('pt-BR')].join('\n');
+ $('request-summary').textContent=[request.planName,money(request.amountCents)+(request.interval==='yearly'?' por ano, pago de uma vez':' por mês'),'Renovação desejada: '+(request.renewalPreference==='automatic'?'automática, ainda sem autorização de débito':'manual'),'Valor registrado na solicitação de: '+new Date(request.requestedAt).toLocaleString('pt-BR')].join('\n');
 }
 function describe(){
  const plan=state?.offers.find(p=>p.id===$('plan').value);
  const monthly=state?.offers.find(p=>p.interval==='monthly');
  const saving=plan?.interval==='yearly'&&monthly?monthly.amountCents*12-plan.amountCents:0;
- $('plan-description').textContent=plan?(plan.interval==='yearly'?money(plan.amountCents)+' pagos de uma vez pelos 12 meses. Não é parcelamento mensal.'+(saving>0?' Economia de '+money(saving)+' comparada a 12 mensalidades de '+money(monthly.amountCents)+'.':''):money(plan.amountCents)+' por mês.'):'Nenhum plano disponível. Entre em contato com a plataforma.';
+ $('plan-description').textContent=plan?(plan.amountCents===0?'Gratuito neste valor. Não há pagamento a realizar no Mercado Pago.':plan.interval==='yearly'?money(plan.amountCents)+' pagos de uma vez pelos 12 meses. Não é parcelamento mensal.'+(saving>0?' Economia de '+money(saving)+' comparada a 12 mensalidades de '+money(monthly.amountCents)+'.':''):money(plan.amountCents)+' por mês.'):'Nenhum plano disponível. Entre em contato com a plataforma.';
  $('request-submit').disabled=!plan;$('acknowledge').checked=false;
  $('renewal-description').textContent=$('renewal').value==='automatic'?'Preferência de renovação automática para o futuro. Nenhum débito será agendado nesta prévia.':'Você decide se deseja pagar novamente a cada '+(plan?.interval==='yearly'?'ano.':'mês.');
 }
 async function load(){
- message('Consultando planos…');const result=await api();state=result;
+ message('Consultando planos…');const result=await api();
+ state=result;
  $('login').hidden=true;$('contract').hidden=false;$('company-name').textContent=result.company.name;
- $('plan').replaceChildren();for(const plan of result.offers)$('plan').add(new Option(plan.name+' — '+money(plan.amountCents)+(plan.interval==='yearly'?' por ano':' por mês'),plan.id));
+ $('catalog-notice').textContent=result.offers.length?'Preços atuais consultados na plataforma.':'Nenhum plano ativo com preço válido está disponível. Confira o cadastro dos planos na administração.';
+ $('plan').replaceChildren();
+ if(!result.offers.length){const empty=new Option('Nenhum plano disponível','');empty.disabled=true;$('plan').add(empty);}
+ for(const plan of result.offers)$('plan').add(new Option(plan.name+' — '+money(plan.amountCents)+(plan.interval==='yearly'?' por ano':' por mês'),plan.id));
  describe();showRequest(result.request);message('');
 }
 async function run(task){if(busy)return;busy=true;document.querySelectorAll('button').forEach(b=>b.disabled=true);try{await task();}catch(error){message(error.code?'Não foi possível entrar. Confira o e-mail e a senha.':error.message);}finally{busy=false;document.querySelectorAll('button').forEach(b=>b.disabled=false);if(state)$('request-submit').disabled=!state.offers.length;}}

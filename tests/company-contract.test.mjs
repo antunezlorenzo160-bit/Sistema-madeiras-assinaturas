@@ -46,3 +46,10 @@ test('owner price adjustments appear in the catalog and stale customer quotes ca
  await assert.rejects(requestCompanyContract(s.db,s.identity,s.input),/plano mudou/);assert.equal(s.writes.length,0);
  const result=await requestCompanyContract(s.db,s.identity,{...s.input,expectedAmountCents:220000,revision:20});assert.equal(result.request.amountCents,220000);
 });
+
+test('zero-priced monthly and annual plans remain visible and can be requested without billing',async()=>{
+ const s=setup();s.records.get('plataforma_admin/billing/plans/monthly').amountCents=0;s.records.get('plataforma_admin/billing/plans/yearly').amountCents=0;
+ const result=await companyContractOverview(s.db,s.identity);assert(result.offers.some(p=>p.id==='monthly'&&p.amountCents===0));assert(result.offers.some(p=>p.id==='yearly'&&p.amountCents===0));
+ const request=await requestCompanyContract(s.db,s.identity,{...s.input,expectedAmountCents:0});assert.equal(request.request.amountCents,0);assert.equal(request.request.automaticBilling,false);
+ assert.equal(s.records.get('plataforma_admin/billing/subscriptions/tenant').status,'trial');
+});

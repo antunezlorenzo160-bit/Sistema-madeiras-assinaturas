@@ -19,3 +19,12 @@ test('eye toggles visibility and accessible labels without sending a login; logi
  s.node('toggle-password').onclick();assert.equal(s.node('password').type,'password');assert.equal(s.node('toggle-password').attributes['aria-pressed'],'false');
  s.node('toggle-password').onclick();await s.node('login-form').onsubmit({preventDefault(){}});await new Promise(resolve=>setTimeout(resolve,0));assert.equal(s.node('password').type,'password');assert.equal(s.node('password').value,'');assert.equal(s.calls[0].password,'existing-password');
 });
+
+test('refresh renders zero-priced options and preserves the previous request as historical data',async()=>{
+ const s=setup(),options=[];s.context.Option=class{constructor(text,value){this.text=text;this.value=value;}};
+ s.node('plan').replaceChildren=()=>{options.length=0;s.node('plan').value='';};s.node('plan').add=option=>{options.push(option);if(options.length===1)s.node('plan').value=option.value;};
+ s.context.responseData={company:{name:'Empresa'},offers:[{id:'monthly',name:'Mensal',amountCents:0,interval:'monthly',revision:2},{id:'annual',name:'Anual',amountCents:0,interval:'yearly',revision:2}],request:{planName:'Mensal',amountCents:19990,interval:'monthly',renewalPreference:'manual',requestedAt:100}};
+ vm.runInContext('api=async()=>responseData',s.context);await vm.runInContext('load()',s.context);
+ assert.equal(options.length,2);assert.match(options[0].text,/0,00/);assert.match(s.node('plan-description').textContent,/Gratuito/);assert.equal(s.node('request-submit').disabled,false);
+ assert.match(s.node('request-summary').textContent,/199,90/);assert.match(s.node('request-summary').textContent,/Valor registrado na solicitação/);
+});
