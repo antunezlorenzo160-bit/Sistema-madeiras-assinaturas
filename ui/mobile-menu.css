@@ -151,3 +151,22 @@ html body #calculadora #btnContadorCompacto[hidden]{display:none!important}
 html body.calculadora-m2-sem-servicos #calculadora .largura-lancar-row{
   align-items:start!important;
 }
+
+/* Let the launch stack share the right column across width and length rows. */
+html body.calculadora-m2-sem-servicos #calculadora .largura-lancar-row{
+  position:relative!important;
+}
+html body.calculadora-m2-sem-servicos #calculadora .largura-lancar-row .launch-box{
+  position:absolute!important;top:0!important;right:0!important;
+  width:205px!important;margin:0!important;
+}
+@media(max-width:760px){
+  html body.calculadora-m2-sem-servicos #calculadora .largura-lancar-row .launch-box{
+    width:clamp(112px,36vw,140px)!important;
+  }
+}
+@media(max-width:400px){
+  html body.calculadora-m2-sem-servicos #calculadora .largura-lancar-row .launch-box{
+    width:112px!important;
+  }
+}
