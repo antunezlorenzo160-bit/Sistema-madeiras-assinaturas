@@ -136,3 +136,13 @@ html body:not(:has(section#inicio.tab.active)) #avisoPlataformaV707{display:none
     color:#f3f5f1!important;text-shadow:none!important;
   }
 }
+
+/* Keep the package counter toggle next to the launch action. */
+html body #calculadora #painelPacotesM2{display:none!important}
+html body #calculadora #btnContadorCompacto{
+  width:100%!important;max-width:none!important;min-width:0!important;
+  min-height:44px!important;height:auto!important;margin-top:8px!important;
+  padding:8px 6px!important;font-size:13px!important;line-height:1.2!important;
+  white-space:normal!important;text-shadow:none!important;font-weight:600!important;
+}
+html body #calculadora #btnContadorCompacto[hidden]{display:none!important}
