@@ -40,3 +40,14 @@ test('diagnostic details require verified owner and redact secret material',()=>
   const secret={stage:'watermark',message:'private_key: do-not-expose-this'};
   assert(!platformFailure(secret,{ownerAuthorized:true}).body.error.includes('do-not-expose'));
 });
+
+test('renewal choice never activates recurring billing and rejects unsupported values',async()=>{
+ const {validateRenewalPreference,requireManualTestCheckout}=await import('../Netlify/Funtions/lib/platform.mjs');
+ for(const choice of ['manual','automatic'])assert.deepEqual(validateRenewalPreference(choice),{renewalPreference:choice,automaticBilling:false});
+ assert.deepEqual(validateRenewalPreference(undefined),{});
+ for(const choice of ['monthly',null,true,''])assert.throws(()=>validateRenewalPreference(choice));
+ assert.throws(()=>requireManualTestCheckout({renewalPreference:'automatic'}),/apenas na simulação/);
+ assert.doesNotThrow(()=>requireManualTestCheckout({renewalPreference:'manual'}));
+ assert.doesNotThrow(()=>requireManualTestCheckout({}));
+ assert.equal(validatePlan({name:'Completo Anual',amountCents:200000,interval:'yearly'}).amountCents,200000);
+});

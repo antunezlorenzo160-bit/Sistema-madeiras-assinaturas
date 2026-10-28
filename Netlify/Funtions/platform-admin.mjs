@@ -1,7 +1,7 @@
 import {confirmTestPayment} from './lib/payment-confirmation.mjs';
 import { randomUUID } from 'node:crypto';
 import { authenticate, failure, json, PlatformError } from './lib/platform-auth.mjs';
-import { METHODS, validatePlan, validateWatermark } from './lib/platform.mjs';
+import { METHODS, validatePlan, validateWatermark, validateRenewalPreference, requireManualTestCheckout } from './lib/platform.mjs';
 import { testCheckout,inspectTestCheckout } from './lib/mercadopago.mjs';
 import { createReadBudget } from './lib/read-budget.mjs';
 import { createInvitation } from './lib/invitations.mjs';
@@ -59,6 +59,7 @@ export default async function handler(req) {
       if (!ids(input.empresaId)) throw new PlatformError(400,'Empresa inválida.');
       const subscription = await root.doc('billing').collection('subscriptions').doc(input.empresaId).get();
       if (!subscription.exists || subscription.data().status === 'canceled') throw new PlatformError(400,'Cadastre uma assinatura válida antes de gerar a cobrança de teste.');
+      requireManualTestCheckout(subscription.data());
       if(!ids(subscription.data().planId))throw new PlatformError(400,'Escolha um plano para esta assinatura antes de gerar o checkout de teste.');
       const plan = await root.doc('billing').collection('plans').doc(subscription.data().planId).get();
       if (!plan.exists || plan.data().active === false) throw new PlatformError(400,'Plano indisponível.');
@@ -84,7 +85,7 @@ export default async function handler(req) {
         const [company,plan] = await Promise.all([root.doc('billing').collection('companies').doc(input.empresaId).get(),root.doc('billing').collection('plans').doc(input.planId).get()]);
         if (!company.exists || !plan.exists) throw Error('Cadastre a empresa e o plano primeiro.');
         ref = root.doc('billing').collection('subscriptions').doc(input.empresaId);
-        data = {empresaId:input.empresaId,planId:input.planId,status:input.status,source:'manual_admin'};
+        data = {empresaId:input.empresaId,planId:input.planId,status:input.status,source:'manual_admin',...validateRenewalPreference(input.renewalPreference)};
         if(input.status!=='trial'){
           const members=await db.collection('membros').where('empresaId','==',input.empresaId).limit(401).get();
           if(members.size>400)throw new PlatformError(409,'Esta empresa exige uma operação em lote maior.');

@@ -55,3 +55,15 @@ test('contract simulation shows the selected price without requests or subscript
   assert.match(app.element('status').textContent,/indisponível/);
   assert.equal(app.requests(),0);
 });
+
+test('annual and monthly presets fill drafts without requests; annual automatic choice remains a simulation',()=>{
+ const app=setup();app.element('plan-preset-yearly').onclick();
+ assert.equal(app.element('plan-amount').value,'2000.00');assert.equal(app.element('plan-interval').value,'yearly');
+ app.element('plan-preset-monthly').onclick();assert.equal(app.element('plan-amount').value,'199.90');assert.equal(app.element('plan-interval').value,'monthly');
+ vm.runInContext(`state={companies:[{id:'company',name:'Serraria'}],plans:[{id:'annual',name:'Completo Anual',amountCents:200000,interval:'yearly'}],subscriptions:[{empresaId:'company',status:'trial',trialMode:'indefinite'}]}`,app.context);
+ app.element('subscription-company').value='company';app.element('subscription-plan').value='annual';app.element('subscription-renewal').value='automatic';
+ const before=vm.runInContext('JSON.stringify(state)',app.context);app.element('subscription-simulate').onclick();
+ const summary=app.element('subscription-simulation-summary').textContent;
+ assert.match(summary,/2\.000,00 por ano/);assert.match(summary,/somente simulação/);assert.match(summary,/Pagamento único pelos 12 meses/);
+ assert.equal(vm.runInContext('JSON.stringify(state)',app.context),before);assert.equal(app.requests(),0);
+});

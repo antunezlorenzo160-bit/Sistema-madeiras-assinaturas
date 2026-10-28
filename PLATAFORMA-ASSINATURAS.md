@@ -92,3 +92,24 @@ contratos; reversão automática de uma aprovação por estorno ainda não está
 Não há polling. A tela consulta de novo quando atualizada; o resumo pode ficar em
 cache por até 30 segundos. O teste real de webhook exige configuração e pagamento
 na conta de teste; os testes locais não comprovam entrega pelo provedor.
+
+## Opções comerciais aprovadas — preparação na prévia
+
+- Completo mensal: R$ 199,90 por mês.
+- Completo anual: R$ 2.000 pagos de uma vez pelos 12 meses; economia de R$ 398,80
+  comparada a 12 mensalidades (aproximadamente 16,6%). Não representa parcelamento.
+- Em Planos, os botões preenchem os formulários com esses valores. O proprietário
+  ainda precisa salvar cada cadastro autenticado; o deploy não cria nem altera planos
+  existentes no Firestore. Conferir a lista para evitar duplicações do mensal.
+- Em Assinaturas, a escolha de plano distingue valor e periodicidade. A simulação
+  permite renovação manual ou automática, sem gravação ou término do teste gratuito.
+- O cadastro administrativo pode guardar `renewalPreference` manual/automatic;
+  `automaticBilling` permanece false nas duas escolhas. Essa preferência é do
+  administrador para simulação e não é um aceite do cliente ou mandato de pagamento.
+- Checkouts de teste avulsos são bloqueados quando a preferência salva é automática,
+  evitando apresentar um pagamento único como autorização recorrente.
+- A adesão do cliente e a integração de recorrência com Mercado Pago ainda precisam
+  ser implementadas e validadas antes de oferecer cobrança automática real. Renovação
+  manual não gera faturas futuras, lembretes ou envio de cobranças automaticamente.
+- Os testes gratuitos existentes não são migrados pelo deploy. Não foram configurados
+  vencimentos, suspensão por atraso, cancelamento ou cobranças reais nesta etapa.

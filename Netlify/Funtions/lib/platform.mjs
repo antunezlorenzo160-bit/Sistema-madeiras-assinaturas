@@ -62,3 +62,12 @@ export function validateWatermark(input) {
   }
   return { widthMm: input.widthMm, opacity: input.opacity, image };
 }
+
+export function validateRenewalPreference(value){
+ if(value===undefined)return {}; // Preserve previous records when called by older previews.
+ if(!['manual','automatic'].includes(value))throw Error('Escolha renovação manual ou automática.');
+ return {renewalPreference:value,automaticBilling:false};
+}
+export function requireManualTestCheckout(subscription){
+ if(subscription.renewalPreference==='automatic')throw new PlatformError(409,'A renovação automática está disponível apenas na simulação. Para testar um pagamento avulso, escolha renovação manual na assinatura.');
+}
