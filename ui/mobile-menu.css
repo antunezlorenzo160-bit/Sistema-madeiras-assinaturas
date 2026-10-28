@@ -170,3 +170,8 @@ html body.calculadora-m2-sem-servicos #calculadora .largura-lancar-row .launch-b
     width:112px!important;
   }
 }
+
+/* Services belong only to quotation and load destinations, in either unit. */
+html body #calculadora:not(:has(input[name="destinoLancamento"][value="orcamento"]:checked)):not(:has(input[name="destinoLancamento"][value="carga"]:checked)) #servicosM3Lancamento{
+  display:none!important;
+}
