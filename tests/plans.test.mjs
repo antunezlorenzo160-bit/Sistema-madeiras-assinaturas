@@ -13,3 +13,16 @@ test('stale editors, removed plans and invalid values cannot overwrite the catal
  for(const change of [{expectedRevision:9},{id:'missing'},{amountCents:-1}]){const s=setup();await assert.rejects(savePlan(s.db,{...s.input,...change},'owner'));assert.equal(s.writes.length,0);}
 });
 test('editing an inactive plan does not silently reactivate it',async()=>{const s=setup();s.records.get(s.path).active=false;await savePlan(s.db,s.input,'owner',20);assert.equal(s.records.get(s.path).active,false);});
+
+test('renaming current plans is atomic, preserves adjusted prices and ids, and never creates SM PRO',async()=>{
+ const {renameCurrentPlansToSM}=await import('../Netlify/Funtions/lib/plans.mjs');
+ const root='plataforma_admin/billing/plans',records=new Map([[root+'/monthly',{name:'Sistema de Madeiras — Completo',amountCents:0,interval:'monthly',active:true,updatedAt:1}],[root+'/annual',{name:'Sistema de Madeiras — Completo Anual',amountCents:250000,interval:'yearly',active:true,updatedAt:2}],[root+'/pro',{name:'SM PRO',amountCents:500000,interval:'yearly',active:true}],[root+'/archived',{name:'Sistema',amountCents:100,interval:'monthly',active:false}]]),writes=[];
+ const db={doc:path=>({path}),collection:path=>({limit:()=>({path})}),runTransaction:async fn=>{
+  let writing=false;return fn({get:async query=>{assert(!writing);const docs=[...records.keys()].filter(p=>p.startsWith(query.path+'/')).map(path=>{const data=structuredClone(records.get(path));return {id:path.split('/').at(-1),ref:{path},data:()=>data};});return {docs,size:docs.length};},set:(ref,data)=>{writing=true;writes.push(ref.path);records.set(ref.path,{...records.get(ref.path),...data});},create:(ref,data)=>{writing=true;writes.push(ref.path);records.set(ref.path,data);}});
+ }};
+ assert.equal((await renameCurrentPlansToSM(db,'owner',10)).renamed,2);
+ assert.equal(records.get(root+'/monthly').name,'SM');assert.equal(records.get(root+'/monthly').amountCents,0);
+ assert.equal(records.get(root+'/annual').name,'SM');assert.equal(records.get(root+'/annual').amountCents,250000);assert.equal(records.get(root+'/annual').interval,'yearly');
+ assert.equal(records.get(root+'/pro').name,'SM PRO');assert.equal(records.get(root+'/archived').name,'Sistema');
+ const before=writes.length;assert.equal((await renameCurrentPlansToSM(db,'owner',20)).renamed,0);assert.equal(writes.length,before);
+});

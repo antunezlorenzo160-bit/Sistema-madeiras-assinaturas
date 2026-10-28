@@ -210,3 +210,18 @@ status trial/active, prazo gratuito, suspensão ou permissões de acesso. Antes 
 ativar contratação real, o fluxo deverá vincular essas mesmas regras a pagamentos
 reais validados, aceite do responsável, política de cancelamento e avisos efetivos.
 A recorrência real permanece desativada.
+
+## Nome comercial dos planos atuais
+
+O padrão do formulário e dos modelos mensal/anual agora é **SM**. **SM PRO** está
+reservado para o futuro; nenhum novo plano PRO é criado nesta alteração.
+Em Planos, **Aplicar nome SM nos planos atuais** executa uma renomeação autenticada
+pelo proprietário, em transação, dos planos ativos com os nomes legados Sistema,
+Sistema de Madeiras — Completo e Sistema de Madeiras — Completo Anual. Preserva IDs,
+preços (inclusive zero ou valores reajustados), periodicidade e vínculos. É idempotente
+e auditada. O deploy prepara a ação, mas não modifica o Firestore sem o clique do
+proprietário. Planos inativos e outras categorias não são alterados.
+
+Históricos de solicitações e pagamentos conservam o texto original. A vigência exibe
+o nome atual do plano quando disponível, mantendo intactos os valores e datas do
+snapshot contratado. Mensal e anual são diferenciados pela periodicidade na interface.

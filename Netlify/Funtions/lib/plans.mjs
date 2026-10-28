@@ -14,3 +14,15 @@ export async function savePlan(db,input,uid,now=Date.now()){
   return {ok:true,id:ref.id,revision};
  });
 }
+
+export async function renameCurrentPlansToSM(db,uid,now=Date.now()){
+ const names=new Set(['Sistema','Sistema de Madeiras — Completo','Sistema de Madeiras — Completo Anual']);
+ return db.runTransaction(async tx=>{
+  const plans=await tx.get(db.collection('plataforma_admin/billing/plans').limit(201));
+  if(plans.size>200)throw new PlatformError(409,'A lista de planos exige revisão antes de aplicar a alteração.');
+  const targets=plans.docs.filter(doc=>{const p=doc.data();return p.active!==false&&names.has(p.name)&&['monthly','yearly'].includes(p.interval);});
+  for(const doc of targets)tx.set(doc.ref,{name:'SM',updatedAt:Math.max(now,Number(doc.data().updatedAt||0)+1),updatedBy:uid},{merge:true});
+  if(targets.length)tx.create(db.doc(`plataforma_admin/audit/events/${randomUUID()}`),{action:'plan.rename_current_sm',uid,at:now,plans:targets.map(doc=>({id:doc.id,previousName:doc.data().name,nextName:'SM'}))});
+  return {ok:true,renamed:targets.length};
+ });
+}

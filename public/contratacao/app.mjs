@@ -30,7 +30,7 @@ function showPeriod(period){
  $('choice-card').hidden=Boolean(period?.active&&!period.renewalOpen);
  if(!period)return;
  const date=value=>new Date(value).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'});
- $('period-summary').textContent=[period.planName,'Valor garantido: '+money(period.amountCents)+(period.interval==='yearly'?' pelos 12 meses':' pelo mês'),'Início: '+date(period.startsAt),'Válido até: '+date(period.endsAt)].join('\n');
+ $('period-summary').textContent=[period.displayName||period.planName,'Valor garantido: '+money(period.amountCents)+(period.interval==='yearly'?' pelos 12 meses':' pelo mês'),'Início: '+date(period.startsAt),'Válido até: '+date(period.endsAt)].join('\n');
  $('period-renewal').textContent=!period.renewalOpen?'O período está vigente. A revisão do plano será exibida perto da renovação, sem alterar o preço atual.':
   period.priceChanged?'Seu período '+(period.expired?'venceu':'termina')+' em '+date(period.endsAt)+'. Para renovar, confira o novo valor: '+money(period.nextTerms.amountCents)+(period.nextTerms.interval==='yearly'?' por ano.':' por mês.')+' O novo valor só vale para o próximo período. Nenhum débito será feito automaticamente nesta prévia.':
   period.expired?'O período de teste registrado venceu. Você pode revisar o plano para simular a renovação. Seu acesso gratuito não foi bloqueado.':'Seu período está perto do vencimento. Você pode revisar o plano para a próxima renovação.';

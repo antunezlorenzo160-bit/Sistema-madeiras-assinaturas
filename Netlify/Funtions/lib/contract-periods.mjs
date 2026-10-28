@@ -21,7 +21,7 @@ export function periodView(period,currentPlan,now=Date.now()){
  if(!period||period.mode!=='test')return null;
  const active=now<period.endsAt,renewalOpen=now>=period.renewalNoticeAt;
  const next=currentPlan&&currentPlan.active!==false?{name:currentPlan.name,amountCents:currentPlan.amountCents,interval:currentPlan.interval}:null;
- return {...period,active,renewalOpen,expired:!active,nextTerms:renewalOpen?next:null,priceChanged:renewalOpen&&next?next.amountCents!==period.amountCents||next.interval!==period.interval:false};
+ return {...period,displayName:currentPlan?.name||period.planName,active,renewalOpen,expired:!active,nextTerms:renewalOpen?next:null,priceChanged:renewalOpen&&next?next.amountCents!==period.amountCents||next.interval!==period.interval:false};
 }
 export async function startRequestedTestPeriod(db,input,uid,now=Date.now()){
  if(!validId(input.empresaId)||!Number.isSafeInteger(input.expectedRequestedAt))throw new PlatformError(400,'Solicitação inválida.');

@@ -53,6 +53,7 @@ function render(){
     }
 
   });
+  $('plans-rename-sm').hidden=!state.plans.some(p=>p.active!==false&&['Sistema','Sistema de Madeiras — Completo','Sistema de Madeiras — Completo Anual'].includes(p.name)&&['monthly','yearly'].includes(p.interval));
   list('plans-list',state.plans,(host,p)=>{
     record(host,p.name,p.interval==='monthly'?'Mensal':'Anual — pagamento único pelos 12 meses',money(p.amountCents));
     const edit=document.createElement('button');edit.type='button';edit.className='secondary';edit.textContent='Editar';edit.onclick=()=>editPlan(p);host.append(edit);
@@ -149,10 +150,15 @@ function editPlan(plan){
  $('plan-editor-title').textContent='Editar plano';$('plan-submit').textContent='Salvar alterações';$('plan-cancel-edit').hidden=false;$('plan-preset-controls').hidden=true;
  $('plan-form').scrollIntoView?.({behavior:'smooth',block:'center'});$('plan-name').focus?.({preventScroll:true});status('Editando o plano existente. O reajuste valerá para novos checkouts.');
 }
+$('plans-rename-sm').onclick=async()=>{
+ const button=$('plans-rename-sm');button.disabled=true;
+ try{const result=await api({action:'plan.renameCurrentToSM'});await refresh(true);resetPlanEditor();status(result.renamed?'Nome SM aplicado aos planos atuais. Valores, periodicidades e vínculos foram preservados.':'Os planos atuais já estão atualizados.');}
+ catch(error){status(error.message,true);}finally{button.disabled=false;}
+};
 $('plan-cancel-edit').onclick=()=>{resetPlanEditor();status('Edição cancelada. Nenhuma alteração foi salva.');};
 for(const [id,interval,amount,name] of [
- ['plan-preset-monthly','monthly','199.90','Sistema de Madeiras — Completo'],
- ['plan-preset-yearly','yearly','2000.00','Sistema de Madeiras — Completo Anual']
+ ['plan-preset-monthly','monthly','199.90','SM'],
+ ['plan-preset-yearly','yearly','2000.00','SM']
 ])$(id).onclick=()=>{
  $('plan-name').value=name;$('plan-amount').value=amount;$('plan-interval').value=interval;
  status('Formulário preenchido. Confira e toque em Salvar plano para cadastrar.');
