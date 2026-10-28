@@ -1,5 +1,5 @@
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js';
-import {initializeAuth,browserLocalPersistence,inMemoryPersistence,onAuthStateChanged,signInWithEmailAndPassword,signOut} from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
+import {initializeAuth,browserLocalPersistence,inMemoryPersistence,onAuthStateChanged,signInWithEmailAndPassword,signOut,sendPasswordResetEmail} from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
 const app=initializeApp({apiKey:'AIzaSyBQ1_mmY0mP8mdbonbmWLVv6VaDXuzHZkU',authDomain:'estoque-madeiras-cc4d7.firebaseapp.com',projectId:'estoque-madeiras-cc4d7',appId:'1:201851719270:web:8d71d7f6862d7c4709a7a7'},'sm-madeiras-login');
 const auth=initializeAuth(app,{persistence:[browserLocalPersistence,inMemoryPersistence]}),$=id=>document.getElementById(id);
 let state=null,busy=false;
@@ -30,7 +30,27 @@ async function load(){
  describe();showRequest(result.request);message('');
 }
 async function run(task){if(busy)return;busy=true;document.querySelectorAll('button').forEach(b=>b.disabled=true);try{await task();}catch(error){message(error.code?'Não foi possível entrar. Confira o e-mail e a senha.':error.message);}finally{busy=false;document.querySelectorAll('button').forEach(b=>b.disabled=false);if(state)$('request-submit').disabled=!state.offers.length;}}
-$('login-form').onsubmit=event=>{event.preventDefault();run(async()=>{const password=$('password').value;$('password').value='';await signInWithEmailAndPassword(auth,$('email').value.trim(),password);});};
+function showPassword(visible){
+ $('password').type=visible?'text':'password';
+ $('toggle-password').setAttribute('aria-label',visible?'Ocultar senha':'Mostrar senha');
+ $('toggle-password').setAttribute('aria-pressed',String(visible));
+ $('password-slash').hidden=!visible;
+}
+$('toggle-password').addEventListener('pointerdown',event=>event.preventDefault());
+$('toggle-password').onclick=()=>{
+ const field=$('password'),position=field.selectionStart;showPassword(field.type==='password');
+ field.focus({preventScroll:true});if(position!==null)try{field.setSelectionRange(position,position);}catch{}
+};
+$('forgot-password').onclick=()=>run(async()=>{
+ const email=$('email').value.trim();
+ if(!email||!$('email').validity.valid){message('Informe um e-mail válido no campo E-mail para recuperar sua senha.');$('email').focus();return;}
+ if(!navigator.onLine){message('Conecte-se à internet para recuperar sua senha.');return;}
+ message('Solicitando recuperação de senha…');
+ const success='Se houver uma conta com este e-mail, você receberá um link para criar uma nova senha. Confira também a caixa de spam. Sua senha atual só muda se você concluir a redefinição.';
+ try{auth.languageCode='pt-BR';await sendPasswordResetEmail(auth,email);message(success);}
+ catch(error){message(error.code==='auth/user-not-found'?success:({'auth/invalid-email':'Confira o e-mail informado.','auth/too-many-requests':'Muitas tentativas. Aguarde alguns minutos antes de tentar novamente.','auth/network-request-failed':'Não foi possível conectar. Confira a internet e tente novamente.'}[error.code]||'Não foi possível solicitar a recuperação. Tente novamente mais tarde.'));}
+});
+$('login-form').onsubmit=event=>{event.preventDefault();run(async()=>{const password=$('password').value;$('password').value='';showPassword(false);await signInWithEmailAndPassword(auth,$('email').value.trim(),password);});};
 onAuthStateChanged(auth,user=>{state=null;$('contract').hidden=true;$('login').hidden=false;if(user)load().catch(error=>message(error.message));else message('');});
 $('contract-form').onsubmit=event=>{event.preventDefault();run(async()=>{
  const plan=state?.offers.find(p=>p.id===$('plan').value);if(!plan||!$('acknowledge').checked)throw Error('Confira o plano e marque a confirmação da simulação.');
