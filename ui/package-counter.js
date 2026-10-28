@@ -37,3 +37,27 @@
     startup.observe(document.body, { childList: true, subtree: true });
   }
 })();
+
+/* Services must be selected again after changing measurement units. */
+(() => {
+  function measurementMode() {
+    const classes = document.body.classList;
+    if (classes.contains('modo-linear-real')) return 'linear';
+    if (classes.contains('calculadora-m2-sem-servicos')) return 'm2';
+    if (classes.contains('modo-granel-v384')) return 'granel';
+    if (classes.contains('modo-fechado-v387')) return 'fechado';
+    return 'm3';
+  }
+  let previousMode = measurementMode();
+  new MutationObserver(() => {
+    const mode = measurementMode();
+    if (mode === previousMode) return;
+    previousMode = mode;
+    ['chkEndireitamento', 'chkAplainamento'].forEach(id => {
+      const checkbox = document.getElementById(id);
+      if (!checkbox || !checkbox.checked) return;
+      checkbox.checked = false;
+      checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+  }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+})();
