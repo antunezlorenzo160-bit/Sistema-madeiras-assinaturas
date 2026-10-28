@@ -184,3 +184,16 @@ html body.modo-linear-real #calculadora .comprimento-servicos-row{
 html body.modo-linear-real #calculadora .comprimento-servicos-row .launch-box{
   justify-self:stretch!important;min-width:0!important;width:100%!important;
 }
+
+/* Quotation entry needs only the clear-fields action in this toolbar. */
+html body #calculadora:has(input[name="destinoLancamento"][value="orcamento"]:checked) #btnGuardarResumoCalc,
+html body #calculadora:has(input[name="destinoLancamento"][value="orcamento"]:checked) #btnNovoResumoCalc,
+html body #calculadora:has(input[name="destinoLancamento"][value="orcamento"]:checked) #btnLimparLancamentos{
+  display:none!important;
+}
+html body #calculadora:has(input[name="destinoLancamento"][value="orcamento"]:checked) .row-actions:has(> #btnLimparCampos){
+  grid-template-columns:minmax(0,1fr)!important;
+}
+html body #calculadora:has(input[name="destinoLancamento"][value="orcamento"]:checked) #btnLimparCampos{
+  width:100%!important;max-width:none!important;grid-column:1/-1!important;
+}
