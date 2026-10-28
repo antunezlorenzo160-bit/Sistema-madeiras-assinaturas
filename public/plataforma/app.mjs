@@ -43,6 +43,9 @@ function render(){
   const active=state.subscriptions.filter(s=>s.status==='active');$('total-active').textContent=active.length;
   $('total-monthly').textContent=money(Math.round(active.reduce((sum,s)=>{const p=state.plans.find(p=>p.id===s.planId);return sum+(p?(p.interval==='yearly'?p.amountCents/12:p.amountCents):0);},0)));
   companyManagement.render(state);
+  list('contract-requests-list',[...(state.contractRequests||[])].sort((a,b)=>b.requestedAt-a.requestedAt),(host,r)=>{
+    record(host,r.companyName||r.empresaId,(r.planName||'Plano')+' • '+(r.interval==='yearly'?'Anual':'Mensal')+' • Renovação '+(r.renewalPreference==='automatic'?'automática, apenas preferência':'manual')+' • Solicitado em '+new Date(r.requestedAt).toLocaleString('pt-BR'),money(r.amountCents));
+  });
   list('plans-list',state.plans,(host,p)=>{
     record(host,p.name,p.interval==='monthly'?'Mensal':'Anual — pagamento único pelos 12 meses',money(p.amountCents));
     if(state.plans.some(other=>other.id!==p.id&&other.name===p.name&&other.amountCents===p.amountCents&&other.interval===p.interval)){
@@ -85,6 +88,7 @@ function render(){
 }
 async function refresh(fresh=false){state=await api(undefined,{fresh});render();}
 const companyManagement=createCompanyManagement({document,api,onChange:()=>refresh(true),status});
+$('requests-refresh').onclick=async()=>{const b=$('requests-refresh');b.disabled=true;try{await refresh(true);status('Solicitações atualizadas.');}catch(error){status(error.message,true);}finally{b.disabled=false;}};
 $('companies-refresh').onclick=async()=>{const b=$('companies-refresh');b.disabled=true;try{await refresh(true);status('Lista de empresas atualizada.');}catch(error){status(error.message,true);}finally{b.disabled=false;}};
 function page(name){document.querySelectorAll('[data-panel]').forEach(p=>p.hidden=p.dataset.panel!==name);document.querySelectorAll('[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===name));$('page-title').textContent=document.querySelector(`[data-page="${name}"]`).textContent;status('');}
 document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>page(b.dataset.page));

@@ -1,0 +1,41 @@
+import {initializeApp} from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js';
+import {initializeAuth,browserLocalPersistence,inMemoryPersistence,onAuthStateChanged,signInWithEmailAndPassword,signOut} from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
+const app=initializeApp({apiKey:'AIzaSyBQ1_mmY0mP8mdbonbmWLVv6VaDXuzHZkU',authDomain:'estoque-madeiras-cc4d7.firebaseapp.com',projectId:'estoque-madeiras-cc4d7',appId:'1:201851719270:web:8d71d7f6862d7c4709a7a7'},'sm-madeiras-login');
+const auth=initializeAuth(app,{persistence:[browserLocalPersistence,inMemoryPersistence]}),$=id=>document.getElementById(id);
+let state=null,busy=false;
+const money=value=>(value/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+function message(text){$('status').textContent=text;}
+async function api(data){
+ const user=auth.currentUser;if(!user)throw Error('Entre com sua conta para continuar.');
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);
+ try{const token=await user.getIdToken();const response=await fetch('/.netlify/functions/company-contract',{method:data?'POST':'GET',headers:{Authorization:'Bearer '+token,...(data?{'Content-Type':'application/json'}:{})},...(data?{body:JSON.stringify(data)}:{}),signal:controller.signal});
+  const result=await response.json();if(!response.ok)throw Error(result.error||'Não foi possível consultar os planos.');
+  if(auth.currentUser?.uid!==user.uid)throw Error('A conta foi alterada. Entre novamente.');return result;
+ }catch(error){if(error.name==='AbortError')throw Error('A conexão demorou. Tente novamente.');throw error;}finally{clearTimeout(timer);}
+}
+function showRequest(request){
+ $('request-card').hidden=!request;if(!request)return;
+ $('request-summary').textContent=[request.planName,money(request.amountCents)+(request.interval==='yearly'?' por ano, pago de uma vez':' por mês'),'Renovação desejada: '+(request.renewalPreference==='automatic'?'automática, ainda sem autorização de débito':'manual'),'Registrada em: '+new Date(request.requestedAt).toLocaleString('pt-BR')].join('\n');
+}
+function describe(){
+ const plan=state?.offers.find(p=>p.id===$('plan').value);
+ $('plan-description').textContent=plan?(plan.interval==='yearly'?money(plan.amountCents)+' pagos de uma vez pelos 12 meses. Não é parcelamento mensal. Economia de R$ 398,80 comparada a 12 mensalidades de R$ 199,90.':money(plan.amountCents)+' por mês.'):'Nenhum plano disponível. Entre em contato com a plataforma.';
+ $('request-submit').disabled=!plan;$('acknowledge').checked=false;
+ $('renewal-description').textContent=$('renewal').value==='automatic'?'Preferência de renovação automática para o futuro. Nenhum débito será agendado nesta prévia.':'Você decide se deseja pagar novamente a cada '+(plan?.interval==='yearly'?'ano.':'mês.');
+}
+async function load(){
+ message('Consultando planos…');const result=await api();state=result;
+ $('login').hidden=true;$('contract').hidden=false;$('company-name').textContent=result.company.name;
+ $('plan').replaceChildren();for(const plan of result.offers)$('plan').add(new Option(plan.name+' — '+money(plan.amountCents)+(plan.interval==='yearly'?' por ano':' por mês'),plan.id));
+ describe();showRequest(result.request);message('');
+}
+async function run(task){if(busy)return;busy=true;document.querySelectorAll('button').forEach(b=>b.disabled=true);try{await task();}catch(error){message(error.code?'Não foi possível entrar. Confira o e-mail e a senha.':error.message);}finally{busy=false;document.querySelectorAll('button').forEach(b=>b.disabled=false);if(state)$('request-submit').disabled=!state.offers.length;}}
+$('login-form').onsubmit=event=>{event.preventDefault();run(async()=>{const password=$('password').value;$('password').value='';await signInWithEmailAndPassword(auth,$('email').value.trim(),password);});};
+onAuthStateChanged(auth,user=>{state=null;$('contract').hidden=true;$('login').hidden=false;if(user)load().catch(error=>message(error.message));else message('');});
+$('contract-form').onsubmit=event=>{event.preventDefault();run(async()=>{
+ const plan=state?.offers.find(p=>p.id===$('plan').value);if(!plan||!$('acknowledge').checked)throw Error('Confira o plano e marque a confirmação da simulação.');
+ const result=await api({planId:plan.id,expectedAmountCents:plan.amountCents,expectedInterval:plan.interval,revision:plan.revision,renewalPreference:$('renewal').value,simulationOnly:true});
+ showRequest(result.request);message('Solicitação de teste registrada. Nenhuma cobrança ou alteração no seu acesso foi realizada.');
+});};
+$('plan').onchange=describe;$('renewal').onchange=describe;
+$('reload').onclick=()=>run(load);$('logout').onclick=()=>run(()=>signOut(auth));

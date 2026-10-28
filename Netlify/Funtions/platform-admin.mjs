@@ -21,15 +21,16 @@ export default async function handler(req) {
       if(new URL(req.url).searchParams.get('refresh')==='1')overviewReads.invalidate();
       const overview = await overviewReads.load(async()=>{
       const read=(name,promise)=>promise.catch(error=>{error.stage=name;throw error;});
-      const [plans,companies,subscriptions,watermark,charges] = await Promise.all([
+      const [plans,companies,subscriptions,watermark,charges,contractRequests] = await Promise.all([
         read('plans',root.doc('billing').collection('plans').limit(200).get()),
         read('companies',root.doc('billing').collection('companies').limit(200).get()),
         read('subscriptions',root.doc('billing').collection('subscriptions').limit(200).get()),
         read('watermark',root.doc('pdf_watermark').get()),
         read('charges',root.doc('billing').collection('charges').limit(100).get()),
+        read('subscriptions',root.doc('billing').collection('contract_requests').limit(200).get()),
       ]);
       const list = snap => snap.docs.map(d=>({...d.data(),id:d.id}));
-      return {plans:list(plans),companies:list(companies),subscriptions:list(subscriptions),charges:list(charges),
+      return {plans:list(plans),companies:list(companies),subscriptions:list(subscriptions),charges:list(charges),contractRequests:list(contractRequests),
         watermark:watermark.exists?watermark.data():{widthMm:180,opacity:.04,image:''},
         methods:METHODS.map(id=>({id,status:process.env.MERCADO_PAGO_TEST_ACCESS_TOKEN?'test_available':'not_connected'})),provider:'mercadopago',testConfigured:Boolean(process.env.MERCADO_PAGO_TEST_ACCESS_TOKEN),livePayments:false,webhookConfigured:Boolean(process.env.MERCADO_PAGO_TEST_WEBHOOK_SECRET)};
       });

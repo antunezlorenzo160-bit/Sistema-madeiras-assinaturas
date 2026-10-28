@@ -113,3 +113,31 @@ na conta de teste; os testes locais não comprovam entrega pelo provedor.
   manual não gera faturas futuras, lembretes ou envio de cobranças automaticamente.
 - Os testes gratuitos existentes não são migrados pelo deploy. Não foram configurados
   vencimentos, suspensão por atraso, cancelamento ou cobranças reais nesta etapa.
+
+## Escolha de plano pelo responsável — solicitação de teste
+
+Página `/contratacao/`, acessível em Configurações → Ver planos da empresa e no
+painel administrativo de Assinaturas. Usa a conta Firebase já existente. O servidor
+exige e-mail verificado, vínculo ativo e ownerUid da empresa; em cadastros antigos
+sem ownerUid, exige papel admin. Nem o proprietário da plataforma recebe acesso a
+outra empresa por esse endpoint sem o vínculo apropriado.
+
+O catálogo retorna apenas ofertas ativas com os valores aprovados (19990 centavos
+mensal / 200000 anual), sem duplicar a mesma periodicidade. O responsável escolhe
+renovação e confirma que está registrando somente uma solicitação de teste. O POST
+revalida o plano, preço, período e revisão, deriva a empresa do vínculo, salva uma
+cotação em `plataforma_admin/billing/contract_requests/{empresaId}` e audita a ação.
+Repetir a mesma escolha não cria novas gravações. Trocar a escolha substitui a
+solicitação atual da empresa; não cria cobrança, aceite jurídico ou autorização
+recorrente. Não altera assinatura existente, teste gratuito, acesso ou membros.
+
+Em Assinaturas → Escolhas dos responsáveis, o proprietário consulta as solicitações
+com valor, data, plano e preferência de renovação. Use Atualizar solicitações para
+buscar novos dados sem depender do cache de 30 segundos. Não há polling ou novas
+consultas Firestore pelo aplicativo principal: o endpoint só é chamado ao abrir a
+página de planos, atualizar ou registrar uma solicitação.
+
+Próxima etapa: revisão do fluxo de adesão e integração de contratação real, cobranças,
+recorrência e direitos do período contratado. Estas etapas não são ativadas pelo
+registro de teste. Validar a página com uma conta de responsável na prévia antes de
+publicar em produção.
