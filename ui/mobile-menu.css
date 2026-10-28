@@ -175,3 +175,12 @@ html body.calculadora-m2-sem-servicos #calculadora .largura-lancar-row .launch-b
 html body #calculadora:not(:has(input[name="destinoLancamento"][value="orcamento"]:checked)):not(:has(input[name="destinoLancamento"][value="carga"]:checked)) #servicosM3Lancamento{
   display:none!important;
 }
+
+/* Reserve the launch column even when linear service selectors are hidden. */
+html body.modo-linear-real #calculadora .comprimento-servicos-row{
+  grid-template-columns:minmax(0,1fr) minmax(112px,.62fr)!important;
+  column-gap:8px!important;
+}
+html body.modo-linear-real #calculadora .comprimento-servicos-row .launch-box{
+  justify-self:stretch!important;min-width:0!important;width:100%!important;
+}
