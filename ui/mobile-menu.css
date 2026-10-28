@@ -146,3 +146,8 @@ html body #calculadora #btnContadorCompacto{
   white-space:normal!important;text-shadow:none!important;font-weight:600!important;
 }
 html body #calculadora #btnContadorCompacto[hidden]{display:none!important}
+
+/* Align width with the top of the launch controls instead of their full height. */
+html body.calculadora-m2-sem-servicos #calculadora .largura-lancar-row{
+  align-items:start!important;
+}
