@@ -122,8 +122,8 @@ exige e-mail verificado, vínculo ativo e ownerUid da empresa; em cadastros anti
 sem ownerUid, exige papel admin. Nem o proprietário da plataforma recebe acesso a
 outra empresa por esse endpoint sem o vínculo apropriado.
 
-O catálogo retorna apenas ofertas ativas com os valores aprovados (19990 centavos
-mensal / 200000 anual), sem duplicar a mesma periodicidade. O responsável escolhe
+O catálogo retorna planos pagos ativos cadastrados pelo proprietário, com valor e
+periodicidade atuais, eliminando cópias idênticas de nome, valor e período. O responsável escolhe
 renovação e confirma que está registrando somente uma solicitação de teste. O POST
 revalida o plano, preço, período e revisão, deriva a empresa do vínculo, salva uma
 cotação em `plataforma_admin/billing/contract_requests/{empresaId}` e audita a ação.
@@ -141,3 +141,20 @@ Próxima etapa: revisão do fluxo de adesão e integração de contratação rea
 recorrência e direitos do período contratado. Estas etapas não são ativadas pelo
 registro de teste. Validar a página com uma conta de responsável na prévia antes de
 publicar em produção.
+
+## Editar planos e reajustar preços
+
+Em Planos → Editar, nome, valor e periodicidade são carregados no formulário.
+Salvar alterações atualiza o mesmo ID, preservando os vínculos. Cancelar edição
+não grava dados. O servidor valida o preço em centavos e a periodicidade; exige
+a revisão atual do plano para impedir sobrescrita de mudanças em outra tela.
+A alteração e os valores anteriores ficam em auditoria. Um plano inativo não é
+reativado pela edição. Editar um plano já removido gera erro em vez de recriá-lo.
+
+A página da empresa consulta os valores atuais e calcula eventual economia anual
+com esses valores, sem manter os preços iniciais fixos. Uma solicitação baseada
+em versão antiga precisa ser revisada antes de salvar. Solicitações já registradas
+e cobranças já criadas preservam seus valores. Novos checkouts usam o preço atual
+do plano. Esta edição não executa cobranças, não reembolsa pagamentos e não altera
+acesso ou prazo de teste. Regras de comunicação e aplicação de reajustes a contratos
+reais existentes ainda serão tratadas na etapa de contratação real.

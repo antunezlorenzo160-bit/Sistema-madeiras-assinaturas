@@ -19,7 +19,9 @@ function showRequest(request){
 }
 function describe(){
  const plan=state?.offers.find(p=>p.id===$('plan').value);
- $('plan-description').textContent=plan?(plan.interval==='yearly'?money(plan.amountCents)+' pagos de uma vez pelos 12 meses. Não é parcelamento mensal. Economia de R$ 398,80 comparada a 12 mensalidades de R$ 199,90.':money(plan.amountCents)+' por mês.'):'Nenhum plano disponível. Entre em contato com a plataforma.';
+ const monthly=state?.offers.find(p=>p.interval==='monthly');
+ const saving=plan?.interval==='yearly'&&monthly?monthly.amountCents*12-plan.amountCents:0;
+ $('plan-description').textContent=plan?(plan.interval==='yearly'?money(plan.amountCents)+' pagos de uma vez pelos 12 meses. Não é parcelamento mensal.'+(saving>0?' Economia de '+money(saving)+' comparada a 12 mensalidades de '+money(monthly.amountCents)+'.':''):money(plan.amountCents)+' por mês.'):'Nenhum plano disponível. Entre em contato com a plataforma.';
  $('request-submit').disabled=!plan;$('acknowledge').checked=false;
  $('renewal-description').textContent=$('renewal').value==='automatic'?'Preferência de renovação automática para o futuro. Nenhum débito será agendado nesta prévia.':'Você decide se deseja pagar novamente a cada '+(plan?.interval==='yearly'?'ano.':'mês.');
 }

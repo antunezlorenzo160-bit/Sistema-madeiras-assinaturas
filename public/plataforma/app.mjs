@@ -4,7 +4,7 @@ import { initializeAuth, browserLocalPersistence, inMemoryPersistence, onAuthSta
 
 const app=initializeApp({apiKey:'AIzaSyBQ1_mmY0mP8mdbonbmWLVv6VaDXuzHZkU',authDomain:'estoque-madeiras-cc4d7.firebaseapp.com',projectId:'estoque-madeiras-cc4d7',appId:'1:201851719270:web:8d71d7f6862d7c4709a7a7'},'sm-madeiras-login');
 const auth=initializeAuth(app,{persistence:[browserLocalPersistence,inMemoryPersistence]}),$=id=>document.getElementById(id);
-let state={plans:[],companies:[],subscriptions:[]},image='';
+let state={plans:[],companies:[],subscriptions:[]},image='',editingPlan=null;
 const money=v=>(v/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 function status(text,error=false){$('status').textContent=text;$('status').classList.toggle('error',error);}
 function withDeadline(task, milliseconds=20000, onTimeout=()=>{}){
@@ -48,6 +48,7 @@ function render(){
   });
   list('plans-list',state.plans,(host,p)=>{
     record(host,p.name,p.interval==='monthly'?'Mensal':'Anual — pagamento único pelos 12 meses',money(p.amountCents));
+    const edit=document.createElement('button');edit.type='button';edit.className='secondary';edit.textContent='Editar';edit.onclick=()=>editPlan(p);host.append(edit);
     if(state.plans.some(other=>other.id!==p.id&&other.name===p.name&&other.amountCents===p.amountCents&&other.interval===p.interval)){
       const button=document.createElement('button');button.type='button';button.className='secondary';button.textContent='Remover cópia sem vínculo';
       button.onclick=async()=>{button.disabled=true;try{const result=await api({action:'plan.removeDuplicates',planId:p.id});await refresh(true);status(result.removed?'Plano duplicado excluído. Os planos com assinaturas ou pagamentos foram preservados.':'Não há mais cópias para remover.');}catch(error){status(error.message,true);}finally{button.disabled=false;}};host.append(button);
@@ -132,6 +133,16 @@ async function save(form,data){
   const button=form.querySelector('button[type=submit],button:not([type])');button.disabled=true;status('Salvando…');
   try{await api(data);await refresh();status('Alteração salva na plataforma.');return true;}catch(error){status(error.message,true);return false;}finally{button.disabled=false;}
 }
+function resetPlanEditor(){
+ editingPlan=null;$('plan-form').reset();$('plan-editor-title').textContent='Cadastrar plano';$('plan-submit').textContent='Salvar plano';$('plan-cancel-edit').hidden=true;$('plan-preset-controls').hidden=false;
+}
+function editPlan(plan){
+ editingPlan={id:plan.id,expectedRevision:Number(plan.updatedAt||0)};
+ $('plan-name').value=plan.name;$('plan-amount').value=(plan.amountCents/100).toFixed(2);$('plan-interval').value=plan.interval;
+ $('plan-editor-title').textContent='Editar plano';$('plan-submit').textContent='Salvar alterações';$('plan-cancel-edit').hidden=false;$('plan-preset-controls').hidden=true;
+ $('plan-form').scrollIntoView?.({behavior:'smooth',block:'center'});$('plan-name').focus?.({preventScroll:true});status('Editando o plano existente. O reajuste valerá para novos checkouts.');
+}
+$('plan-cancel-edit').onclick=()=>{resetPlanEditor();status('Edição cancelada. Nenhuma alteração foi salva.');};
 for(const [id,interval,amount,name] of [
  ['plan-preset-monthly','monthly','199.90','Sistema de Madeiras — Completo'],
  ['plan-preset-yearly','yearly','2000.00','Sistema de Madeiras — Completo Anual']
@@ -139,7 +150,7 @@ for(const [id,interval,amount,name] of [
  $('plan-name').value=name;$('plan-amount').value=amount;$('plan-interval').value=interval;
  status('Formulário preenchido. Confira e toque em Salvar plano para cadastrar.');
 };
-$('plan-form').onsubmit=async event=>{event.preventDefault();const f=new FormData(event.target);if(await save(event.target,{action:'plan.save',name:f.get('name'),amountCents:Math.round(Number(f.get('amount'))*100),interval:f.get('interval')}))event.target.reset();};
+$('plan-form').onsubmit=async event=>{event.preventDefault();const f=new FormData(event.target);if(await save(event.target,{action:'plan.save',...(editingPlan||{}),name:f.get('name'),amountCents:Math.round(Number(f.get('amount'))*100),interval:f.get('interval')}))resetPlanEditor();};
 $('company-form').onsubmit=async event=>{event.preventDefault();const f=new FormData(event.target);if(await save(event.target,{action:'company.save',empresaId:f.get('empresaId'),name:f.get('name')}))event.target.reset();};
 $('subscription-simulate').onclick=()=>{
   const box=$('subscription-simulation');box.hidden=true;

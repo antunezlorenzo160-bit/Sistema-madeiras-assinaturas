@@ -6,7 +6,7 @@ import {createCompanyManagement} from '../public/plataforma/company-management.m
 
 function setup({response={ok:true,json:async()=>({})}}={}){
   const elements=new Map();let authChanged,requests=0;
-  const element=id=>{if(!elements.has(id))elements.set(id,{hidden:false,value:'',disabled:false,classList:{toggle(){}},textContent:'',addEventListener(){}});return elements.get(id);};
+  const element=id=>{if(!elements.has(id))elements.set(id,{hidden:false,value:'',disabled:false,classList:{toggle(){}},textContent:'',addEventListener(){},reset(){}});return elements.get(id);};
   const user={uid:'owner',emailVerified:true,getIdToken:async()=> 'valid-token'};
   const auth={currentUser:user};
   const context=vm.createContext({createCompanyManagement,document:{getElementById:element,querySelectorAll:()=>[]},
@@ -66,4 +66,13 @@ test('annual and monthly presets fill drafts without requests; annual automatic 
  const summary=app.element('subscription-simulation-summary').textContent;
  assert.match(summary,/2\.000,00 por ano/);assert.match(summary,/somente simulação/);assert.match(summary,/Pagamento único pelos 12 meses/);
  assert.equal(vm.runInContext('JSON.stringify(state)',app.context),before);assert.equal(app.requests(),0);
+});
+
+test('editing submits the original plan id and revision instead of creating a duplicate',async()=>{
+ const app=setup();app.context.FormData=class{constructor(form){this.data=form.data;}get(name){return this.data[name];}};
+ vm.runInContext("editPlan({id:'original-plan',name:'Mensal',amountCents:19990,interval:'monthly',updatedAt:50}); save=async(form,data)=>{globalThis.savedPlan=data;return true;}",app.context);
+ assert.equal(app.element('plan-amount').value,'199.90');assert.equal(app.element('plan-submit').textContent,'Salvar alterações');
+ await app.element('plan-form').onsubmit({preventDefault(){},target:{data:{name:'Mensal reajustado',amount:'219.90',interval:'monthly'}}});
+ assert.equal(app.context.savedPlan.id,'original-plan');assert.equal(app.context.savedPlan.expectedRevision,50);assert.equal(app.context.savedPlan.amountCents,21990);
+ assert.equal(app.element('plan-cancel-edit').hidden,true);assert.equal(app.requests(),0);
 });

@@ -2,7 +2,7 @@ import {randomUUID} from 'node:crypto';
 import {PlatformError,validateRenewalPreference} from './platform.mjs';
 const root='plataforma_admin/billing';
 const validId=value=>typeof value==='string'&&/^[-A-Za-z0-9_]{1,120}$/.test(value);
-function offered(plan){return plan.active!==false&&((plan.interval==='monthly'&&plan.amountCents===19990)||(plan.interval==='yearly'&&plan.amountCents===200000));}
+function offered(plan){return plan.active!==false&&Number.isSafeInteger(plan.amountCents)&&plan.amountCents>0&&plan.amountCents<=100000000&&['monthly','yearly'].includes(plan.interval)&&typeof plan.name==='string'&&Boolean(plan.name.trim());}
 async function companyContext(db,identity,read=ref=>ref.get()){
  if(identity.emailVerified!==true)throw new PlatformError(403,'Confirme seu e-mail antes de escolher um plano.');
  const member=await read(db.doc(`membros/${identity.uid}`));
@@ -19,7 +19,7 @@ export async function companyContractOverview(db,identity){
  if(catalog.size>200)throw new PlatformError(409,'O catálogo de planos precisa ser revisado pela plataforma.');
  const plans=catalog.docs.filter(d=>offered(d.data())).sort((a,b)=>a.id.localeCompare(b.id));
  const seen=new Set(),offers=[];
- for(const doc of plans){const p=doc.data();if(seen.has(p.interval))continue;seen.add(p.interval);offers.push({id:doc.id,name:p.name,amountCents:p.amountCents,interval:p.interval,revision:Number(p.updatedAt||0)});}
+ for(const doc of plans){const p=doc.data();const key=JSON.stringify([p.name,p.amountCents,p.interval]);if(seen.has(key))continue;seen.add(key);offers.push({id:doc.id,name:p.name,amountCents:p.amountCents,interval:p.interval,revision:Number(p.updatedAt||0)});}
  return {company,offers,request:request.exists?request.data():null,simulationOnly:true,automaticBilling:false};
 }
 export async function requestCompanyContract(db,identity,input,now=Date.now()){

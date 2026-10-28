@@ -7,7 +7,7 @@ function setup(){
  [`${root}/plans/monthly`,{name:'Completo',active:true,amountCents:19990,interval:'monthly',updatedAt:10}],
  [`${root}/plans/yearly`,{name:'Completo Anual',active:true,amountCents:200000,interval:'yearly',updatedAt:11}],
  [`${root}/plans/monthly-copy`,{name:'Completo',active:true,amountCents:19990,interval:'monthly',updatedAt:10}],
- [`${root}/plans/other`,{name:'Outro',active:true,amountCents:1,interval:'monthly'}],
+ [`${root}/plans/other`,{name:'Outro',active:true,amountCents:-1,interval:'monthly'}],
  [`${root}/subscriptions/tenant`,{status:'trial',trialMode:'indefinite'}]
  ]),writes=[];
  const snap=path=>({id:path.split('/').at(-1),exists:records.has(path),data:()=>records.get(path)});
@@ -38,4 +38,11 @@ test('stale or tampered prices and absent acknowledgement fail before writes',as
   const s=setup();await assert.rejects(requestCompanyContract(s.db,s.identity,{...s.input,...changes}));assert.equal(s.writes.length,0);
  }
  const s=setup();s.records.get('plataforma_admin/billing/plans/yearly').active=false;await assert.rejects(requestCompanyContract(s.db,s.identity,s.input));assert.equal(s.writes.length,0);
+});
+
+test('owner price adjustments appear in the catalog and stale customer quotes cannot be submitted',async()=>{
+ const s=setup();s.records.get('plataforma_admin/billing/plans/yearly').amountCents=220000;s.records.get('plataforma_admin/billing/plans/yearly').updatedAt=20;
+ const catalog=await companyContractOverview(s.db,s.identity);assert.equal(catalog.offers.find(p=>p.id==='yearly').amountCents,220000);
+ await assert.rejects(requestCompanyContract(s.db,s.identity,s.input),/plano mudou/);assert.equal(s.writes.length,0);
+ const result=await requestCompanyContract(s.db,s.identity,{...s.input,expectedAmountCents:220000,revision:20});assert.equal(result.request.amountCents,220000);
 });

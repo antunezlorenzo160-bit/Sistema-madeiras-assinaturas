@@ -1,8 +1,9 @@
+import {savePlan} from './lib/plans.mjs';
 import {removePlanDuplicates} from './lib/plan-duplicates.mjs';
 import {confirmTestPayment} from './lib/payment-confirmation.mjs';
 import { randomUUID } from 'node:crypto';
 import { authenticate, failure, json, PlatformError } from './lib/platform-auth.mjs';
-import { METHODS, validatePlan, validateWatermark, validateRenewalPreference, requireManualTestCheckout } from './lib/platform.mjs';
+import { METHODS, validateWatermark, validateRenewalPreference, requireManualTestCheckout } from './lib/platform.mjs';
 import { testCheckout,inspectTestCheckout } from './lib/mercadopago.mjs';
 import { createReadBudget } from './lib/read-budget.mjs';
 import { createInvitation } from './lib/invitations.mjs';
@@ -52,6 +53,7 @@ export default async function handler(req) {
       const url=new URL('/cadastro/',base);url.hash='convite='+result.token;
       return json(200,{ok:true,url:url.href,empresaId:result.empresaId});
     }
+    if(input.action==='plan.save'){const result=await savePlan(db,input,uid);overviewReads.invalidate();return json(200,result);}
     if(input.action==='plan.removeDuplicates'){const result=await removePlanDuplicates(db,input.planId,uid);overviewReads.invalidate();return json(200,result);}
     if(input.action==='charge.inspect')return json(200,await inspectTestCheckout({db,chargeId:input.chargeId,token:process.env.MERCADO_PAGO_TEST_ACCESS_TOKEN}));
     if(input.action==='charge.verify'){
@@ -76,10 +78,7 @@ export default async function handler(req) {
     }
     let ref, data, clearTrialNotices=[];
     try {
-      if (input.action === 'plan.save') {
-        if (input.id && !ids(input.id)) throw Error('Plano inválido.');
-        ref = root.doc('billing').collection('plans').doc(input.id || randomUUID()); data = validatePlan(input);
-      } else if (input.action === 'company.save') {
+      if (input.action === 'company.save') {
         if (!ids(input.empresaId) || typeof input.name !== 'string' || !input.name.trim() || input.name.length > 120) throw Error('Informe a empresa e o nome.');
         ref = root.doc('billing').collection('companies').doc(input.empresaId);
         data = {name:input.name.trim(),empresaId:input.empresaId};
