@@ -55,7 +55,7 @@ function render(){
   $('payment-connection').textContent=state.testConfigured?'Credencial de teste cadastrada. O próximo checkout valida a conexão.':'Configure as credenciais de teste no servidor para habilitar.';
   $('provider-status').textContent=state.testConfigured?'Somente testes':'Aguardando conexão';
   $('provider-text').textContent=state.testConfigured?'Ambiente de testes. Cobranças reais permanecem desativadas.':'Conexão ainda não configurada. Nenhuma cobrança real será feita nesta prévia.';
-  list('charges-list',state.charges||[],(host,c)=>{
+  list('charges-list',[...(state.charges||[])].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)),(host,c)=>{
     record(host,money(c.amountCents),c.status==='test_payment_approved'?'Pagamento de teste aprovado e validado no Mercado Pago.':'Checkout de teste criado. Pagamento ainda não confirmado na plataforma.');
     if(c.status!=='test_payment_approved'){
       const verify=document.createElement('button');verify.type='button';verify.className='secondary';verify.textContent='Conferir pagamento de teste';
@@ -66,6 +66,13 @@ function render(){
         }catch(error){status(error.message,true);}finally{verify.disabled=false;}
       };host.append(verify);
     }
+    const identity=document.createElement('p');identity.textContent='Criado em: '+(c.createdAt?new Date(c.createdAt).toLocaleString('pt-BR'):'Data não registrada')+' • Operação: '+(c.paymentId||'Ainda não registrada');host.append(identity);
+    const inspect=document.createElement('button');inspect.type='button';inspect.className='secondary';inspect.textContent='Ver configuração do checkout';
+    const diagnostic=document.createElement('p');diagnostic.hidden=true;diagnostic.style.whiteSpace='pre-line';
+    inspect.onclick=async()=>{inspect.disabled=true;try{
+      const d=await api({action:'charge.inspect',chargeId:c.id});
+      diagnostic.textContent=['Vendedor: '+d.sellerId,'Conta vendedora de teste: '+(d.testSeller?'Sim':'Credencial de teste'),'Aplicação usada no checkout: '+(d.applicationId||'Não informada pelo provedor'),'URL de notificação: '+(d.notificationUrl||'Não registrada neste checkout'),'Preferência: '+d.preferenceId].join('\n');diagnostic.hidden=false;
+    }catch(error){status(error.message,true);}finally{inspect.disabled=false;}};host.append(inspect,diagnostic);
     try{const url=new URL(c.url);if(url.protocol==='https:'&&/^(?:[a-z0-9-]+\.)*mercadopago\.(com|com\.br)$/.test(url.hostname)){const link=document.createElement('a');link.href=url.href;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Abrir checkout de teste ↗';host.append(link);}}catch{}
   });
   const wm=state.watermark;$('wm-width').value=wm.widthMm;$('wm-opacity').value=Math.round(wm.opacity*100);image=wm.image||'';preview();

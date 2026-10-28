@@ -26,3 +26,26 @@ export async function testCheckout({ token, amountCents, title, reference, retur
   if (parsed.protocol !== 'https:' || !/^(?:[a-z0-9-]+\.)*mercadopago\.(com|com\.br)$/.test(parsed.hostname)) throw new PlatformError(502,'Endereço do checkout inválido.');
   return {url:parsed.href,preferenceId:String(preference.id),sellerId:String(seller.id),mode:'test'};
 }
+
+// Owner-only diagnostic: return identifiers and callback, never credentials or buyer data.
+export async function inspectTestCheckout({db,chargeId,token,request=fetch}){
+ if(typeof chargeId!=='string'||!/^[-A-Za-z0-9_]{1,120}$/.test(chargeId))throw new PlatformError(400,'Checkout inválido.');
+ const snap=await db.doc(`plataforma_admin/billing/charges/${chargeId}`).get();
+ if(!snap.exists||snap.data().mode!=='test')throw new PlatformError(404,'Checkout de teste não encontrado.');
+ const charge=snap.data();
+ if(!token)throw new PlatformError(503,'Credencial de teste não configurada.');
+ const call=async path=>{
+  const r=await request('https://api.mercadopago.com'+path,{headers:{Authorization:'Bearer '+token},signal:AbortSignal.timeout(12000)});
+  if(!r.ok)throw new PlatformError(502,'Não foi possível conferir a configuração no Mercado Pago.');
+  return r.json();
+ };
+ const seller=await call('/users/me');
+ const testSeller=Array.isArray(seller.tags)&&seller.tags.includes('test_user');
+ if(!token.startsWith('TEST-')&&!testSeller)throw new PlatformError(409,'Somente ambiente de teste permitido.');
+ if(String(seller.id)!==String(charge.sellerId))throw new PlatformError(409,'A credencial atual pertence a outro vendedor.');
+ const preference=await call('/checkout/preferences/'+encodeURIComponent(charge.preferenceId));
+ if(String(preference.collector_id)!==String(seller.id)||preference.external_reference!==chargeId)throw new PlatformError(409,'A preferência não corresponde ao checkout salvo.');
+ const callback=typeof preference.notification_url==='string'?preference.notification_url:'';
+ let callbackUrl='';try{const u=new URL(callback);callbackUrl=u.origin+u.pathname;}catch{}
+ return {sellerId:String(seller.id),testSeller,applicationId:String(preference.client_id||''),preferenceId:String(charge.preferenceId),notificationUrl:callbackUrl,hasNotificationUrl:Boolean(callbackUrl),createdAt:charge.createdAt||null};
+}

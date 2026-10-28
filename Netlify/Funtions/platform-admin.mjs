@@ -2,7 +2,7 @@ import {confirmTestPayment} from './lib/payment-confirmation.mjs';
 import { randomUUID } from 'node:crypto';
 import { authenticate, failure, json, PlatformError } from './lib/platform-auth.mjs';
 import { METHODS, validatePlan, validateWatermark } from './lib/platform.mjs';
-import { testCheckout } from './lib/mercadopago.mjs';
+import { testCheckout,inspectTestCheckout } from './lib/mercadopago.mjs';
 import { createReadBudget } from './lib/read-budget.mjs';
 import { createInvitation } from './lib/invitations.mjs';
 import {companyDetail,manageCompany} from './lib/company-management.mjs';
@@ -50,6 +50,7 @@ export default async function handler(req) {
       const url=new URL('/cadastro/',base);url.hash='convite='+result.token;
       return json(200,{ok:true,url:url.href,empresaId:result.empresaId});
     }
+    if(input.action==='charge.inspect')return json(200,await inspectTestCheckout({db,chargeId:input.chargeId,token:process.env.MERCADO_PAGO_TEST_ACCESS_TOKEN}));
     if(input.action==='charge.verify'){
       const result=await confirmTestPayment({db,chargeId:input.chargeId,token:process.env.MERCADO_PAGO_TEST_ACCESS_TOKEN});
       overviewReads.invalidate();return json(200,result);
