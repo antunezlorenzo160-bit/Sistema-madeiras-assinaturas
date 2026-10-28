@@ -43,7 +43,13 @@ function render(){
   const active=state.subscriptions.filter(s=>s.status==='active');$('total-active').textContent=active.length;
   $('total-monthly').textContent=money(Math.round(active.reduce((sum,s)=>{const p=state.plans.find(p=>p.id===s.planId);return sum+(p?(p.interval==='yearly'?p.amountCents/12:p.amountCents):0);},0)));
   companyManagement.render(state);
-  list('plans-list',state.plans,(host,p)=>record(host,p.name,p.interval==='monthly'?'Mensal':'Anual — pagamento único pelos 12 meses',money(p.amountCents)));
+  list('plans-list',state.plans,(host,p)=>{
+    record(host,p.name,p.interval==='monthly'?'Mensal':'Anual — pagamento único pelos 12 meses',money(p.amountCents));
+    if(state.plans.some(other=>other.id!==p.id&&other.name===p.name&&other.amountCents===p.amountCents&&other.interval===p.interval)){
+      const button=document.createElement('button');button.type='button';button.className='secondary';button.textContent='Remover cópia sem vínculo';
+      button.onclick=async()=>{button.disabled=true;try{const result=await api({action:'plan.removeDuplicates',planId:p.id});await refresh(true);status(result.removed?'Plano duplicado excluído. Os planos com assinaturas ou pagamentos foram preservados.':'Não há mais cópias para remover.');}catch(error){status(error.message,true);}finally{button.disabled=false;}};host.append(button);
+    }
+  });
   const labels={trial:'Em teste',active:'Ativa',past_due:'Pendente',canceled:'Cancelada'};
   list('subscriptions-list',state.subscriptions,(host,s)=>record(host,state.companies.find(c=>c.id===s.empresaId)?.name||s.empresaId,s.status==='trial'?companyManagement.trialLabel(s):state.plans.find(p=>p.id===s.planId)?.name||'Sem plano',(labels[s.status]||s.status)+(s.renewalPreference==='automatic'?' • Renovação automática: preferência de simulação':' • Renovação manual')+(s.testPayment?.status==='approved'?' • Pagamento de teste validado':'')));
   for(const [id,items]of [['subscription-company',state.companies],['subscription-plan',state.plans],['charge-company',state.companies]]){

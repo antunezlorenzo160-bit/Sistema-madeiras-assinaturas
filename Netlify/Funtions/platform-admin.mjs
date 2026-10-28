@@ -1,3 +1,4 @@
+import {removePlanDuplicates} from './lib/plan-duplicates.mjs';
 import {confirmTestPayment} from './lib/payment-confirmation.mjs';
 import { randomUUID } from 'node:crypto';
 import { authenticate, failure, json, PlatformError } from './lib/platform-auth.mjs';
@@ -50,6 +51,7 @@ export default async function handler(req) {
       const url=new URL('/cadastro/',base);url.hash='convite='+result.token;
       return json(200,{ok:true,url:url.href,empresaId:result.empresaId});
     }
+    if(input.action==='plan.removeDuplicates'){const result=await removePlanDuplicates(db,input.planId,uid);overviewReads.invalidate();return json(200,result);}
     if(input.action==='charge.inspect')return json(200,await inspectTestCheckout({db,chargeId:input.chargeId,token:process.env.MERCADO_PAGO_TEST_ACCESS_TOKEN}));
     if(input.action==='charge.verify'){
       const result=await confirmTestPayment({db,chargeId:input.chargeId,token:process.env.MERCADO_PAGO_TEST_ACCESS_TOKEN});
