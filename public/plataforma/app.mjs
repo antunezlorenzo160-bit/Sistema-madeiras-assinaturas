@@ -57,6 +57,14 @@ function render(){
   list('plans-list',state.plans,(host,p)=>{
     record(host,p.name,p.interval==='monthly'?'Mensal':'Anual — pagamento único pelos 12 meses',money(p.amountCents));
     const edit=document.createElement('button');edit.type='button';edit.className='secondary';edit.textContent='Editar';edit.onclick=()=>editPlan(p);host.append(edit);
+    const remove=document.createElement('button');remove.type='button';remove.className='secondary';remove.textContent='Excluir';remove.setAttribute('aria-label','Excluir plano '+p.name);
+    remove.onclick=async()=>{
+      if(!window.confirm('Excluir o plano “'+p.name+'” ('+(p.interval==='yearly'?'anual':'mensal')+')? O sistema só exclui planos sem vínculos.'))return;
+      remove.disabled=true;
+      try{await api({action:'plan.delete',planId:p.id,expectedRevision:Number(p.updatedAt||0)});if(editingPlan?.id===p.id)resetPlanEditor();await refresh(true);status('Plano excluído. Os demais planos e cadastros foram preservados.');}
+      catch(error){status(error.message,true);}finally{remove.disabled=false;}
+    };host.append(remove);
+
     if(state.plans.some(other=>other.id!==p.id&&other.name===p.name&&other.amountCents===p.amountCents&&other.interval===p.interval)){
       const button=document.createElement('button');button.type='button';button.className='secondary';button.textContent='Remover cópia sem vínculo';
       button.onclick=async()=>{button.disabled=true;try{const result=await api({action:'plan.removeDuplicates',planId:p.id});await refresh(true);status(result.removed?'Plano duplicado excluído. Os planos com assinaturas ou pagamentos foram preservados.':'Não há mais cópias para remover.');}catch(error){status(error.message,true);}finally{button.disabled=false;}};host.append(button);

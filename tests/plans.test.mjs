@@ -26,3 +26,19 @@ test('renaming current plans is atomic, preserves adjusted prices and ids, and n
  assert.equal(records.get(root+'/pro').name,'SM PRO');assert.equal(records.get(root+'/archived').name,'Sistema');
  const before=writes.length;assert.equal((await renameCurrentPlansToSM(db,'owner',20)).renamed,0);assert.equal(writes.length,before);
 });
+
+function deletionSetup(referenceCollection){
+ const path='plataforma_admin/billing/plans/accidental',records=new Map([[path,{name:'Sistema completo 0.00',amountCents:0,interval:'yearly',updatedAt:7}],['plataforma_admin/billing/plans/keep',{name:'SM',amountCents:0,interval:'yearly'}]]),writes=[];
+ const db={doc:path=>({path}),collection:path=>({where:(key,op,value)=>({limit:()=>({query:true,path,value})})}),runTransaction:async fn=>{
+  let writing=false;return fn({get:async ref=>{assert(!writing);if(ref.query)return {size:ref.path.endsWith('/'+referenceCollection)?1:0};const data=structuredClone(records.get(ref.path));return {exists:!!data,data:()=>data};},delete:ref=>{writing=true;records.delete(ref.path);writes.push(ref.path);},create:(ref,data)=>{writing=true;records.set(ref.path,data);writes.push(ref.path);}});
+ }};return {db,records,writes,path,input:{planId:'accidental',expectedRevision:7}};
+}
+test('an individually selected unused plan can be deleted without affecting SM or prices',async()=>{
+ const {deleteUnusedPlan}=await import('../Netlify/Funtions/lib/plans.mjs'),s=deletionSetup();await deleteUnusedPlan(s.db,s.input,'owner');assert.equal(s.records.has(s.path),false);assert.equal(s.records.get('plataforma_admin/billing/plans/keep').name,'SM');assert.equal(s.writes.length,2);
+ const before=s.writes.length;assert.equal((await deleteUnusedPlan(s.db,s.input,'owner')).alreadyDeleted,true);assert.equal(s.writes.length,before);
+});
+test('subscriptions, payments, requests and guaranteed periods each prevent deletion',async()=>{
+ const {deleteUnusedPlan}=await import('../Netlify/Funtions/lib/plans.mjs');
+ for(const collection of ['subscriptions','charges','contract_requests','test_contract_periods']){const s=deletionSetup(collection);await assert.rejects(deleteUnusedPlan(s.db,s.input,'owner'),/não foi excluído/);assert.equal(s.records.has(s.path),true);assert.equal(s.writes.length,0);}
+ const s=deletionSetup();await assert.rejects(deleteUnusedPlan(s.db,{...s.input,expectedRevision:6},'owner'),/mudou/);assert.equal(s.writes.length,0);
+});

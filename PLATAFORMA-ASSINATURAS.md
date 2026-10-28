@@ -225,3 +225,14 @@ proprietário. Planos inativos e outras categorias não são alterados.
 Históricos de solicitações e pagamentos conservam o texto original. A vigência exibe
 o nome atual do plano quando disponível, mantendo intactos os valores e datas do
 snapshot contratado. Mensal e anual são diferenciados pela periodicidade na interface.
+
+## Excluir um plano criado por engano
+
+Cada plano possui Editar e Excluir. A exclusão individual não exige nome igual a
+outro plano. O proprietário confirma o nome e a periodicidade na interface. A API
+`plan.delete` valida ID e revisão atual e, em transação, confere assinaturas,
+pagamentos, solicitações e vigências de teste. Qualquer vínculo impede a exclusão;
+nenhum registro é migrado ou apagado em cascata. Sem vínculos, somente o documento
+do plano é excluído, com auditoria. Repetir uma exclusão já concluída é inofensivo.
+A remoção de duplicatas usa a mesma verificação de vínculos. O deploy disponibiliza
+o controle; a exclusão ocorre apenas pelo clique na conta autenticada do proprietário.

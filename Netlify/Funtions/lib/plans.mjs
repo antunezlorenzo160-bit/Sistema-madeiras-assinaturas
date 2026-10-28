@@ -26,3 +26,21 @@ export async function renameCurrentPlansToSM(db,uid,now=Date.now()){
   return {ok:true,renamed:targets.length};
  });
 }
+
+export async function planHasReferences(tx,db,planId){
+ const snapshots=await Promise.all(['subscriptions','charges','contract_requests','test_contract_periods'].map(collection=>tx.get(db.collection(`plataforma_admin/billing/${collection}`).where('planId','==',planId).limit(1))));
+ return snapshots.some(snapshot=>snapshot.size>0);
+}
+export async function deleteUnusedPlan(db,input,uid,now=Date.now()){
+ if(typeof input.planId!=='string'||!/^[-A-Za-z0-9_]{1,120}$/.test(input.planId))throw new PlatformError(400,'Plano inválido.');
+ const ref=db.doc(`plataforma_admin/billing/plans/${input.planId}`);
+ return db.runTransaction(async tx=>{
+  const plan=await tx.get(ref);
+  if(!plan.exists)return {ok:true,alreadyDeleted:true};
+  if(!Number.isSafeInteger(input.expectedRevision)||input.expectedRevision!==Number(plan.data().updatedAt||0))throw new PlatformError(409,'O plano mudou em outra tela. Atualize a lista antes de excluir.');
+  if(await planHasReferences(tx,db,input.planId))throw new PlatformError(409,'Este plano está vinculado a uma assinatura, pagamento, solicitação ou período contratado. Ele não foi excluído para preservar esses registros.');
+  tx.delete(ref);
+  tx.create(db.doc(`plataforma_admin/audit/events/${randomUUID()}`),{action:'plan.delete_unused',planId:input.planId,name:plan.data().name,amountCents:plan.data().amountCents,interval:plan.data().interval,uid,at:now});
+  return {ok:true};
+ });
+}

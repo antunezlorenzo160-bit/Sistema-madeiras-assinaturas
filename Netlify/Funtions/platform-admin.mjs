@@ -1,5 +1,5 @@
 import {startRequestedTestPeriod,assertCheckoutPeriodAvailable} from './lib/contract-periods.mjs';
-import {savePlan,renameCurrentPlansToSM} from './lib/plans.mjs';
+import {savePlan,renameCurrentPlansToSM,deleteUnusedPlan} from './lib/plans.mjs';
 import {removePlanDuplicates} from './lib/plan-duplicates.mjs';
 import {confirmTestPayment} from './lib/payment-confirmation.mjs';
 import { randomUUID } from 'node:crypto';
@@ -56,6 +56,7 @@ export default async function handler(req) {
       return json(200,{ok:true,url:url.href,empresaId:result.empresaId});
     }
     if(input.action==='contract.period.start'){const result=await startRequestedTestPeriod(db,input,uid);overviewReads.invalidate();return json(200,result);}
+    if(input.action==='plan.delete'){const result=await deleteUnusedPlan(db,input,uid);overviewReads.invalidate();return json(200,result);}
     if(input.action==='plan.renameCurrentToSM'){const result=await renameCurrentPlansToSM(db,uid);overviewReads.invalidate();return json(200,result);}
     if(input.action==='plan.save'){const result=await savePlan(db,input,uid);overviewReads.invalidate();return json(200,result);}
     if(input.action==='plan.removeDuplicates'){const result=await removePlanDuplicates(db,input.planId,uid);overviewReads.invalidate();return json(200,result);}
