@@ -92,3 +92,30 @@ html body:not(:has(section#inicio.tab.active)) #avisoPlataformaV707{display:none
   ) :is(span,small,strong){color:inherit!important;text-shadow:none!important;font-weight:inherit!important}
 }
 @media print{#mobileMenuToggle,#mobileMenuBackdrop,#mobileMenuClose{display:none!important}}
+
+/* Calculator: reserve a readable action button and a full row for transfer directions. */
+@media screen and (max-width:760px){
+  html body:not(.modo-linear-real):not(.modo-granel-v384):not(.modo-fechado-v387) #calculadora .quantidade-inline-v254{
+    display:flex!important;flex-wrap:wrap!important;align-items:center!important;
+    width:100%!important;min-width:0!important;gap:8px!important;
+  }
+  html body:not(.modo-linear-real):not(.modo-granel-v384):not(.modo-fechado-v387) #calculadora #btnVerdeOuCorrigirV260{
+    flex:0 0 auto!important;width:auto!important;min-width:112px!important;max-width:100%!important;
+    height:auto!important;min-height:44px!important;max-height:none!important;
+    padding:10px 12px!important;font-size:13px!important;line-height:1.2!important;
+    white-space:normal!important;overflow:visible!important;box-sizing:border-box!important;
+  }
+  html body:not(.modo-linear-real):not(.modo-granel-v384):not(.modo-fechado-v387) #calculadora #transferenciaInlineV257{
+    flex:1 0 100%!important;width:100%!important;min-width:0!important;max-width:100%!important;
+    flex-wrap:nowrap!important;gap:8px!important;box-sizing:border-box!important;
+  }
+  html body:not(.modo-linear-real):not(.modo-granel-v384):not(.modo-fechado-v387) #calculadora #transferenciaInlineV257 label{
+    flex:1 1 0!important;width:auto!important;min-width:0!important;max-width:none!important;
+    height:auto!important;margin:0!important;box-sizing:border-box!important;
+  }
+  html body:not(.modo-linear-real):not(.modo-granel-v384):not(.modo-fechado-v387) #calculadora #transferenciaInlineV257 span{
+    width:100%!important;min-width:0!important;max-width:100%!important;
+    height:auto!important;min-height:44px!important;padding:10px 6px!important;
+    font-size:13px!important;line-height:1.2!important;white-space:normal!important;box-sizing:border-box!important;
+  }
+}
