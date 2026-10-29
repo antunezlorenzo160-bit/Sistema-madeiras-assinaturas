@@ -244,3 +244,22 @@ html body #calculadora #resumoCalculadoraExport #tbLancamentos tr.resumo-total-b
 html body #calculadora #resumoCalculadoraExport #tbLancamentos tr.resumo-total-bloco-v597>td::before{
   display:none!important;content:none!important;
 }
+
+/* Summary export actions stay prominent over the photo background. */
+@media screen{
+ html body #calculadora #resumoCalculadoraExport>.export-actions{
+   display:flex!important;flex-wrap:wrap!important;gap:12px!important;margin:14px 0!important;
+ }
+ html body #calculadora #resumoCalculadoraExport>.export-actions>.btn{
+   min-height:50px!important;min-width:150px!important;width:auto!important;
+   padding:12px 20px!important;font-size:17px!important;line-height:1.25!important;
+   font-weight:600!important;opacity:1!important;text-shadow:none!important;
+   border-radius:10px!important;box-sizing:border-box!important;
+ }
+ html body #calculadora #resumoCalculadoraExport>.export-actions>.btn-secondary{
+   background:#244b3b!important;color:#fff!important;border:1px solid #91b29f!important;
+ }
+ html body #calculadora #resumoCalculadoraExport>.export-actions>.btn-primary{
+   background:#e5b347!important;color:#302713!important;border:1px solid #f6d681!important;
+ }
+}
