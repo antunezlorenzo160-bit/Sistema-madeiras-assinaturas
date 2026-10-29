@@ -1,3 +1,4 @@
+import { applyOfflineBoot } from './offline-boot.mjs';
 import { applyCalculatorSummaryPolicy } from './calculator-summary-policy.mjs';
 import { applyDesktopCalculatorParity } from './desktop-calculator-parity.mjs';
 import { applyLinearCmdp } from './linear-cmdp.mjs';
@@ -29,5 +30,5 @@ app = app.replace(/<style id="mobile-menu-styles">[\s\S]*?<\/script>/, '');
 if (!app.includes('</body>')) throw new Error('Fim da aplicação não encontrado.');
 app = app.replace('</body>', injection + '</body>');
 html = html.slice(0, start) + JSON.stringify(app).replaceAll('</', '<\\/') + html.slice(end);
-writeFileSync(file, html);
+writeFileSync(file, applyOfflineBoot(html));
 console.log('Menu retrátil preparado somente para celular.');
