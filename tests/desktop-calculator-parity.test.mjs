@@ -10,11 +10,11 @@ const c={agruparItensMedida:arr=>arr.map(x=>({...x,_ids:[x.id]})),esc:escape,num
 vm.runInContext(app.slice(app.indexOf('function pcPlanilhaLinearHtml('),app.indexOf('function pcPlanilhaHtml(')),c);
 const rows=[{id:'L1',madeira:'Pinus',produto:'<Ripa>',tipoMedida:'linear',quantidade:2,comprimento:3.1,volume:6.2,comprimentoCobrado:3.5,acrescimoComprimento:.4,compensarPerda:true,encaixe:true,encaixePercentual:10,valor:77},{id:'M3',tipoMedida:'m3',valor:999}];
 test('desktop quotation displays real and billed lengths, service snapshots and CMDP toggle',()=>{
- const view=c.pcPlanilhaLinearHtml(rows,'Orçamento',true,false);assert.match(view,/3.1 m/);assert.match(view,/\+0,40 m/);assert.match(view,/6.20 m/);assert.match(view,/ENC 10%/);assert.match(view,/R\$77.00/);assert.doesNotMatch(view,/999/);assert.match(view,/data-id="L1"/);assert.match(view,/&lt;Ripa&gt;/);
+ const view=c.pcPlanilhaLinearHtml(rows,'Orçamento',true,false);assert.match(view,/3.1 m/);assert.match(view,/\+0,40 m/);assert.match(view,/6.20 m/);assert.match(view,/ENC 10%/);assert.doesNotMatch(view,/R\$/);assert.doesNotMatch(view,/999/);assert.match(view,/data-id="L1"/);assert.match(view,/&lt;Ripa&gt;/);
 });
 test('stock display does not offer quotation adjustment controls or prices',()=>{
  const view=c.pcPlanilhaLinearHtml(rows,'Estoque',false,true);assert.doesNotMatch(view,/<button|R\$|Encaixe/);assert.match(view,/6.20 m/);
 });
-test('load display includes selected services and charged amounts without budget controls',()=>{
- const view=c.pcPlanilhaLinearHtml(rows,'Carga',false,false);assert.match(view,/ENC 10%/);assert.match(view,/R\$77.00/);assert.doesNotMatch(view,/<button/);
+test('load display includes selected services without money or budget controls',()=>{
+ const view=c.pcPlanilhaLinearHtml(rows,'Carga',false,false);assert.match(view,/ENC 10%/);assert.doesNotMatch(view,/R\$/);assert.doesNotMatch(view,/<button/);
 });
