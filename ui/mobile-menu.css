@@ -263,3 +263,14 @@ html body #calculadora #resumoCalculadoraExport #tbLancamentos tr.resumo-total-b
    background:#e5b347!important;color:#302713!important;border:1px solid #f6d681!important;
  }
 }
+
+/* Stock, transfer and planer summaries expose only clear and delete actions. */
+html body #calculadora:has(input[name="destinoLancamento"]:is([value="transferencia"],[value="plaina"],[value="estoque1"],[value="estoque2"]):checked) :is(#btnGuardarResumoCalc,#btnNovoResumoCalc){
+  display:none!important;
+}
+html body #calculadora:has(input[name="destinoLancamento"]:is([value="transferencia"],[value="plaina"],[value="estoque1"],[value="estoque2"]):checked) .row-actions:has(> #btnLimparCampos){
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;
+}
+html body #calculadora:has(input[name="destinoLancamento"]:is([value="transferencia"],[value="plaina"],[value="estoque1"],[value="estoque2"]):checked) :is(#btnLimparCampos,#btnLimparLancamentos){
+  width:100%!important;min-width:0!important;max-width:none!important;grid-column:auto!important;
+}
