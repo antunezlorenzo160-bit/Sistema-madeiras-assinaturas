@@ -33,7 +33,7 @@ self.addEventListener('fetch', event => {
   const request = event.request, url = new URL(request.url);
   if (request.method !== 'GET') return;
   const local = url.origin === self.location.origin;
-  const allowedQuery = [...url.searchParams.keys()].every(key => key === 'atualizacao');
+  const allowedQuery = [...url.searchParams.keys()].every(key => key === 'atualizacao' || key === 'revisao');
   const navigation = local && request.mode === 'navigate' && ['/', '/index.html'].includes(url.pathname) && allowedQuery;
   const module = local && url.pathname === '/toras.mjs' && !url.search;
   const sdk = url.href.startsWith(SDK) && url.pathname.endsWith('.js') && !url.search;

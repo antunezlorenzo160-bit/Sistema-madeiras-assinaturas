@@ -14,10 +14,10 @@ function worker(){
  return {stores,lifecycle,fetchPath,handlers,offline(){online=false},online(){online=true},badNetwork(){status=503},get fetches(){return fetches},get claims(){return claims}};
 }
 test('a fresh worker prepares all assets and starts a new navigation with no open tab or network',async()=>{
- const w=worker();await w.lifecycle('install');await w.lifecycle('activate');assert.equal(w.claims,1);assert.equal(w.fetches,5);w.offline();for(const [path,mode] of [['/','navigate'],['/index.html','navigate'],['/?atualizacao=offline','navigate'],['/toras.mjs','cors'],['https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js','cors']]){const response=await w.fetchPath(path,mode);assert.equal(response.status,200);assert.match(await response.text(),/public-asset/)}
+ const w=worker();await w.lifecycle('install');await w.lifecycle('activate');assert.equal(w.claims,1);assert.equal(w.fetches,5);w.offline();for(const [path,mode] of [['/','navigate'],['/index.html','navigate'],['/?atualizacao=offline','navigate'],['/?revisao=de6521f7','navigate'],['/index.html?revisao=old&atualizacao=offline5','navigate'],['/toras.mjs','cors'],['https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js','cors']]){const response=await w.fetchPath(path,mode);assert.equal(response.status,200);assert.match(await response.text(),/public-asset/)}
 });
 test('API, signature and other private URLs never enter the shell cache',async()=>{
- const w=worker();await w.lifecycle('install');assert.equal(await w.fetchPath('/.netlify/functions/company-contract'),undefined);assert.equal(await w.fetchPath('/?assinatura=private'),undefined);assert.equal(await w.fetchPath('/plataforma/'),undefined);assert.equal(await w.fetchPath('/', 'navigate','POST'),undefined);assert.equal([...w.stores.values()][0].size,5);
+ const w=worker();await w.lifecycle('install');assert.equal(await w.fetchPath('/.netlify/functions/company-contract'),undefined);assert.equal(await w.fetchPath('/?assinatura=private'),undefined);assert.equal(await w.fetchPath('/?revisao=old&assinatura=private'),undefined);assert.equal(await w.fetchPath('/plataforma/'),undefined);assert.equal(await w.fetchPath('/', 'navigate','POST'),undefined);assert.equal([...w.stores.values()][0].size,5);
 });
 test('temporary server errors fall back to the saved shell',async()=>{const w=worker();await w.lifecycle('install');w.badNetwork();assert.equal((await w.fetchPath('/')).status,200)});
 test('preparation repairs an evicted module and reports failure instead of a false ready state',async()=>{
