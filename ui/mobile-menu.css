@@ -274,3 +274,8 @@ html body #calculadora:has(input[name="destinoLancamento"]:is([value="transferen
 html body #calculadora:has(input[name="destinoLancamento"]:is([value="transferencia"],[value="plaina"],[value="estoque1"],[value="estoque2"]):checked) :is(#btnLimparCampos,#btnLimparLancamentos){
   width:100%!important;min-width:0!important;max-width:none!important;grid-column:auto!important;
 }
+
+/* Full-screen production keeps its own Close action clear of navigation. */
+html body:has(#telaProducaoCompartilhada.v628-aberta:not([hidden])) :is(#mobileMenuToggle,#mobileMenuBackdrop,#menuLateralV525){
+  display:none!important;
+}

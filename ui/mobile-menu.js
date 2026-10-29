@@ -65,6 +65,12 @@
   for (const section of document.querySelectorAll('section.tab')) {
     observer.observe(section, { attributes: true, attributeFilter: ['class'] });
   }
+  const production = document.getElementById('telaProducaoCompartilhada');
+  if (production) {
+    new MutationObserver(() => {
+      if (!production.hidden && production.classList.contains('v628-aberta')) setOpen(false);
+    }).observe(production, { attributes: true, attributeFilter: ['class', 'hidden'] });
+  }
   mobile.addEventListener('change', () => { setOpen(false); positionToggle(); });
   document.body.classList.add('mobile-menu-ready');
   setOpen(false);
