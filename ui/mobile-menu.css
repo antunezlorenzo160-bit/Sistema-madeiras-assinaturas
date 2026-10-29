@@ -228,3 +228,19 @@ html body #cadastro #cadRegrasLinearListaV381 .linear-service-fields label:has(i
 html body #cadastro #cadRegrasLinearListaV381 .linear-service-fields input[type="checkbox"]{
   width:18px!important;min-width:18px!important;height:18px!important;padding:0!important;margin:0!important;
 }
+
+/* Block subtotals span the summary instead of inheriting piece-column widths. */
+html body #calculadora #resumoCalculadoraExport .table-wrap>table{
+  width:100%!important;min-width:0!important;max-width:100%!important;table-layout:fixed!important;
+}
+html body #calculadora #resumoCalculadoraExport #tbLancamentos tr.resumo-total-bloco-v597{
+  display:table-row!important;
+}
+html body #calculadora #resumoCalculadoraExport #tbLancamentos tr.resumo-total-bloco-v597>td{
+  display:table-cell!important;width:auto!important;min-width:0!important;max-width:100%!important;
+  white-space:normal!important;overflow-wrap:anywhere!important;word-break:normal!important;
+  text-align:left!important;padding:8px 4px!important;box-sizing:border-box!important;
+}
+html body #calculadora #resumoCalculadoraExport #tbLancamentos tr.resumo-total-bloco-v597>td::before{
+  display:none!important;content:none!important;
+}
