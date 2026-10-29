@@ -18,6 +18,10 @@ for (; end < html.length; end++) {
   if (html[end] === '"') { end++; break; }
 }
 let app = applyCalculatorSummaryPolicy(applyDesktopCalculatorParity(applyLinearCmdp(applyLinearServices(JSON.parse(html.slice(start, end))))));
+const keyboard = readFileSync(new URL('ui/calculator-keyboard.js', root), 'utf8');
+const keyboardPattern = /(<script id="v118-atalho-espaco-lancar-pc">)[\s\S]*?<\/script>/;
+if (!keyboardPattern.test(app)) throw new Error('Atalho da calculadora não encontrado.');
+app = app.replace(keyboardPattern, (_, opening) => opening + keyboard + '</script>');
 const css = readFileSync(new URL('ui/mobile-menu.css', root), 'utf8');
 const js = readFileSync(new URL('ui/mobile-menu.js', root), 'utf8') + '\n' + readFileSync(new URL('ui/package-counter.js', root), 'utf8');
 const injection = `<style id="mobile-menu-styles">${css}</style><script id="mobile-menu-script">${js}</script>`;
