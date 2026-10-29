@@ -216,3 +216,15 @@ html body #calculadora:has(input[name="destinoLancamento"][value="orcamento"]:ch
 html body #calculadora:has(input[name="destinoLancamento"][value="carga"]:checked) #btnNovoResumoCalc{
   display:none!important;
 }
+
+/* Service fields have their own labels, including the wide registration grid. */
+html body #cadastro #cadRegrasLinearListaV381 .linear-service-fields label{
+  display:block!important;font-size:13px!important;line-height:1.3!important;
+  margin:0 0 5px!important;color:var(--text,#f3f5f1)!important;
+}
+html body #cadastro #cadRegrasLinearListaV381 .linear-service-fields label:has(input[type="checkbox"]){
+  display:flex!important;align-items:center!important;gap:6px!important;
+}
+html body #cadastro #cadRegrasLinearListaV381 .linear-service-fields input[type="checkbox"]{
+  width:18px!important;min-width:18px!important;height:18px!important;padding:0!important;margin:0!important;
+}
