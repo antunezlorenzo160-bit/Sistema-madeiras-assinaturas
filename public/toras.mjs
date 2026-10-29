@@ -37,6 +37,30 @@ export function agruparToras(linhas) {
   return [...grupos.values()];
 }
 
+// Keyboard entry uses the same form validation and submit path as the button.
+export function instalarAtalhosToras(form, view) {
+  const fields = ['toraMaoObra','toraCliente','toraEspecie','toraDiametro','toraComprimento','toraQuantidade'];
+  const numeric = new Set(['toraDiametro','toraComprimento','toraQuantidade']);
+  form.addEventListener('keydown', event => {
+    if (event.defaultPrevented || event.isComposing || event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) return;
+    if (!view.matchMedia('(min-width: 901px)').matches) return;
+    const target = event.target;
+    if (!target || !form.contains(target)) return;
+    const index = fields.indexOf(target.id);
+    if (index < 0) return;
+    const enter = event.key === 'Enter';
+    const space = event.code === 'Space' || event.key === ' ' || event.key === 'Spacebar';
+    if (!enter && !(space && numeric.has(target.id))) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.repeat) return;
+    if (enter) {
+      const next = form.querySelector('#' + fields[index + 1 === fields.length ? 3 : index + 1]);
+      next?.focus(); next?.select();
+    } else form.requestSubmit();
+  }, true);
+}
+
 export function iniciarCubagemToras({ document: doc = document, storage, copiar, pdf, observarPrecos, salvarPrecos, observarLista, gravarLinha, salvarIdentificacao }) {
   const abrir = doc.getElementById('btnCubagemToras');
   if (!abrir || doc.getElementById('cubagemToras')) return;
@@ -343,6 +367,7 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
     try { const v = volumeToras(...ler()); el('toraPreview').textContent = 'Por tora: ' + fmt(v.unitario) + ' m³ • Total: ' + fmt(v.total) + ' m³' + (el('toraCobrar').checked && preco !== null ? ' • Mão de obra: ' + moeda(valorMaoObraToras(v.total, preco)) : ''); }
     catch { el('toraPreview').textContent = 'Informe diâmetro e comprimento positivos e quantidade inteira.'; }
   }
+  instalarAtalhosToras(el('formToras'), doc.defaultView);
   el('formToras').addEventListener('input', preview);
   el('formToras').addEventListener('submit', event => {
     event.preventDefault();
@@ -475,3 +500,4 @@ export function criarSincronismoToras({ observar, pendencias, gravar, confirmar 
     salvarIdentificacao: dados => salvar(IDENTIFICACAO, dados),
   };
 }
+
