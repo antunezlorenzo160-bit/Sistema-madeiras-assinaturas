@@ -28,3 +28,18 @@ test('network errors propagate while refreshing a stored token',async()=>{
 test('offline fallback is limited to restoration and keeps cached membership checks',()=>{
  const html=readFileSync(new URL('../public/index.html',import.meta.url),'utf8');assert.ok(html.includes('async function abrirSessaoV492(restaurando=false)'));assert.ok(html.includes('restaurando&&window.__smAuthNetworkUnavailable===true'));assert.ok(html.includes('await lerVinculoOffline(uid);'));assert.ok(html.includes('registro?.bloqueado===true'));assert.ok(html.includes('await authSdk.signInWithEmailAndPassword(auth,email,password)'));assert.ok(html.includes('await abrirSessaoV492();'));
 });
+test('fresh legacy source accepts the offline condition before company onboarding transforms it',async()=>{
+ const {applyOfflineBoot}=await import('../scripts/offline-boot.mjs');
+ const source=`<html><script type="module">const TEMPLATE="";
+   let registration=await window.__smOfflineRegistration;
+async function abrirSessaoV492(){
+ if(!navigator.onLine){
+  const empresaId=expected[uid];
+  if(!empresaId)throw Error('Conta fora deste ensaio.');
+  await lerVinculoOffline(uid);
+ }
+}
+await auth.authStateReady();if(auth.currentUser){$('lembrar').checked=true;await abrirSessaoV492();return}
+</script></html>`;
+ const built=applyOfflineBoot(source);assert.ok(built.includes('restaurando&&window.__smAuthNetworkUnavailable===true'));assert.ok(built.includes("  const empresaId=expected[uid];\n  if(!empresaId)throw Error('Conta fora deste ensaio.');\n  await lerVinculoOffline(uid);"));assert.equal(applyOfflineBoot(built),built);
+});

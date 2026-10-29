@@ -21,9 +21,9 @@ export function applyOfflineBoot(html){
   if(!shell.includes(oldStartup))throw Error('Saved-session startup anchor missing');
   shell=shell.replace(oldStartup,"/* bounded saved-session restoration */ try{out.textContent='Restaurando sessão salva neste aparelho…';await auth.authStateReady();}finally{window.__smConcluirRestauracaoAuth?.();}if(auth.currentUser){$('lembrar').checked=true;await abrirSessaoV492(true);return}");
   shell=shell.replace('async function abrirSessaoV492(){','// OFFLINE_AUTH_STARTUP_V6\nasync function abrirSessaoV492(restaurando=false){');
-  const offlineCheck=" if(!navigator.onLine){\n  await lerVinculoOffline(uid);";
+  const offlineCheck=" if(!navigator.onLine){";
   if(!shell.includes(offlineCheck))throw Error('Saved-account verification anchor missing');
-  shell=shell.replace(offlineCheck," if(!navigator.onLine||(restaurando&&window.__smAuthNetworkUnavailable===true)){\n  await lerVinculoOffline(uid);");
+  shell=shell.replace(offlineCheck," if(!navigator.onLine||(restaurando&&window.__smAuthNetworkUnavailable===true)){");
  }
  return (html.slice(0,end)+shell).replace(/Acesso offline • revisão [45]/,'Acesso offline • revisão 6');
 }
