@@ -84,14 +84,13 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
     <form id="formToras">
       <div class="toras-identificacao"><div><label for="toraMaoObra">Mão de obra (opcional)</label><input id="toraMaoObra" maxlength="100" autocomplete="off"></div>
       <div><label for="toraCliente">Nome do cliente (opcional)</label><input id="toraCliente" maxlength="100" autocomplete="name"></div>
-      <div class="toras-especie-campo"><label for="toraEspecie">Espécie / identificação (opcional)</label><input id="toraEspecie" maxlength="100" autocomplete="off"></div></div>
+      <div class="toras-especie-campo"><label for="toraEspecie">Espécie / identificação (opcional)</label><div class="tora-especie-tarifa"><input id="toraEspecie" maxlength="100" autocomplete="off"><span id="toraTarifa" role="status" aria-live="polite" aria-label="Mão de obra por metro cúbico">— /m³</span></div></div></div>
       <div class="grid3">
         <div><label for="toraDiametro">Diâmetro (cm)</label><input id="toraDiametro" type="number" min="0.01" step="any" inputmode="decimal" required></div>
         <div><label for="toraComprimento">Comprimento (m)</label><input id="toraComprimento" type="number" min="0.01" step="any" inputmode="decimal" required></div>
         <div><label for="toraQuantidade">Quantidade</label><input id="toraQuantidade" type="number" min="1" step="1" inputmode="numeric" value="1" required></div>
       </div>
       <label class="toras-cobrar" style="display:flex;align-items:center;gap:8px"><input id="toraCobrar" type="checkbox" style="width:auto">Calcular mão de obra neste lançamento</label>
-      <p id="toraTarifa" role="status"></p>
       <p id="toraPreview" role="status" aria-live="polite">Informe as medidas.</p>
       <button class="btn btn-primary" type="submit">Adicionar à lista</button>
     </form>
@@ -167,6 +166,9 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
       #cubagemToras .toras-cobrar input{flex:0 0 auto;margin:0!important}
       #cubagemToras #toraTarifa:empty{display:none}
       #cubagemToras #toraTarifa,#cubagemToras #toraPreview{font-size:12px!important;line-height:1.35!important;margin:5px 0!important}
+      #cubagemToras .tora-especie-tarifa{display:flex;align-items:center;gap:10px;min-width:0}
+      #cubagemToras .tora-especie-tarifa #toraEspecie{flex:1 1 0;width:0!important;min-width:0!important}
+      #cubagemToras .tora-especie-tarifa #toraTarifa{flex:0 0 auto;white-space:nowrap;font-size:14px!important;font-weight:600;color:var(--accent2,var(--text,#e7bc64));margin:0!important}
       #cubagemToras #toraAviso{font-size:12px!important;line-height:1.3!important;margin:8px 0!important}
       #cubagemToras .export-actions{flex-wrap:nowrap;gap:6px;margin:8px 0}
       #cubagemToras .export-actions button{flex:1;min-width:0;font-size:13px!important;padding:9px 6px!important;min-height:38px!important}
@@ -265,7 +267,7 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
       precos = config && Array.isArray(config.especies) ? config : {base:null, especies:[]};
       precosProntos = true; try { storage.setItem(precosKey, JSON.stringify(precos)); } catch {}
       renderPrecos(); preview(); el('toraPrecoStatus').textContent = 'Preços sincronizados com a empresa.';
-    }, () => { precosProntos = false; renderPrecos(); el('toraPrecoStatus').textContent = 'Não foi possível carregar os preços da empresa. Confira a conexão.'; });
+    }, () => { precosProntos = false; renderPrecos(); preview(); el('toraPrecoStatus').textContent = 'Não foi possível carregar os preços da empresa. Confira a conexão.'; });
     doc.defaultView.addEventListener('pagehide', () => parar?.(), {once:true});
   } else el('toraPrecoStatus').textContent = 'Cadastro salvo neste dispositivo.';
   const identificacaoKey = 'cubagem_toras_identificacao_v1';
@@ -363,7 +365,8 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
   function ler() { return [Number(el('toraDiametro').value), Number(el('toraComprimento').value), Number(el('toraQuantidade').value)]; }
   function preview() {
     const preco = precoMaoObraToras(precos, el('toraEspecie').value);
-    el('toraTarifa').textContent = el('toraCobrar').checked ? (preco === null ? 'Cadastre um preço base ou específico para esta espécie.' : 'Mão de obra: ' + moeda(preco) + '/m³') : '';
+    el('toraTarifa').textContent = precosProntos && preco !== null ? moeda(preco) + '/m³' : '— /m³';
+    el('toraTarifa').title = !precosProntos ? 'Aguardando os preços da empresa.' : preco === null ? 'Cadastre um preço base ou específico para esta espécie.' : 'Mão de obra por metro cúbico';
     try { const v = volumeToras(...ler()); el('toraPreview').textContent = 'Por tora: ' + fmt(v.unitario) + ' m³ • Total: ' + fmt(v.total) + ' m³' + (el('toraCobrar').checked && preco !== null ? ' • Mão de obra: ' + moeda(valorMaoObraToras(v.total, preco)) : ''); }
     catch { el('toraPreview').textContent = 'Informe diâmetro e comprimento positivos e quantidade inteira.'; }
   }
