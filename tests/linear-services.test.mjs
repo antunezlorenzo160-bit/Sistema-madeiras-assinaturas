@@ -22,7 +22,7 @@ test('legacy products have no service surcharge and no cubic rounding',()=>{
 test('services apply only to quotation/load using saved percentages',()=>{
  let destination='orcamento';const checks={chkEndireitamento:{checked:true},chkAplainamento:{checked:true}};
  const rule={encaixeAtivo:true,frisoAtivo:false,encaixePercentual:12,frisoPercentual:8};
- const c={document:{querySelector:()=>({value:destination})},$:id=>checks[id],regraLinearSelecionadaV381:()=>rule};vm.createContext(c);
+ const c={madeiras:[],document:{querySelector:()=>({value:destination})},$:id=>checks[id],regraLinearSelecionadaV381:()=>rule};vm.createContext(c);
  const start=app.indexOf('function selecionarServicosLinear('),end=app.indexOf('function aplicarCobrancaOrcamento(',start);vm.runInContext(app.slice(start,end),c);
  assert.equal(c.selecionarServicosLinear().encaixe,true);assert.equal(c.selecionarServicosLinear().friso,true);
  destination='estoque1';assert.equal(c.selecionarServicosLinear().encaixe,false);

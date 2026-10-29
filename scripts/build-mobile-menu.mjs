@@ -1,3 +1,4 @@
+import { applyLinearCmdp } from './linear-cmdp.mjs';
 import { applyLinearServices } from './linear-services.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 
@@ -14,7 +15,7 @@ for (; end < html.length; end++) {
   if (html[end] === '\\') { end++; continue; }
   if (html[end] === '"') { end++; break; }
 }
-let app = applyLinearServices(JSON.parse(html.slice(start, end)));
+let app = applyLinearCmdp(applyLinearServices(JSON.parse(html.slice(start, end))));
 const css = readFileSync(new URL('ui/mobile-menu.css', root), 'utf8');
 const js = readFileSync(new URL('ui/mobile-menu.js', root), 'utf8') + '\n' + readFileSync(new URL('ui/package-counter.js', root), 'utf8');
 const injection = `<style id="mobile-menu-styles">${css}</style><script id="mobile-menu-script">${js}</script>`;
