@@ -93,8 +93,8 @@ html body:not(:has(section#inicio.tab.active)) #avisoPlataformaV707{display:none
 }
 @media print{#mobileMenuToggle,#mobileMenuBackdrop,#mobileMenuClose{display:none!important}}
 
-/* Calculator: reserve a readable action button and a full row for transfer directions. */
-@media screen and (max-width:760px){
+/* Calculator: shared readable actions and transfer directions on PC and mobile. */
+@media screen{
   html body:not(.modo-linear-real):not(.modo-granel-v384):not(.modo-fechado-v387) #calculadora .quantidade-inline-v254{
     display:flex!important;flex-wrap:wrap!important;align-items:center!important;
     width:100%!important;min-width:0!important;gap:8px!important;
@@ -196,4 +196,18 @@ html body #calculadora:has(input[name="destinoLancamento"][value="orcamento"]:ch
 }
 html body #calculadora:has(input[name="destinoLancamento"][value="orcamento"]:checked) #btnLimparCampos{
   width:100%!important;max-width:none!important;grid-column:1/-1!important;
+}
+
+/* The PC split workspace uses the same compact package fields as mobile. */
+@media screen and (min-width:761px){
+ html body.calculadora-m2-sem-servicos #calculadora .pc-split-campos .largura-lancar-row,
+ html body.calculadora-m2-sem-servicos #calculadora .pc-split-campos .comprimento-servicos-row{
+   grid-template-columns:minmax(0,1fr) 205px!important;column-gap:12px!important;
+ }
+ html body #calculadora .pc-split-campos #btnContadorCompacto{
+   min-height:44px!important;font-size:14px!important;
+ }
+ html body #calculadora .pc-split-campos .launch-box #btnLancar{
+   min-height:44px!important;
+ }
 }
