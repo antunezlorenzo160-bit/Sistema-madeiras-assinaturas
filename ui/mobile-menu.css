@@ -211,3 +211,8 @@ html body #calculadora:has(input[name="destinoLancamento"][value="orcamento"]:ch
    min-height:44px!important;
  }
 }
+
+/* Load entry uses the existing save/close flow on both screen sizes. */
+html body #calculadora:has(input[name="destinoLancamento"][value="carga"]:checked) #btnNovoResumoCalc{
+  display:none!important;
+}
