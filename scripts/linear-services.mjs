@@ -33,25 +33,10 @@ function cobrarServicosLinear(x){
  const encaixe=x.encaixe?material*Number(x.encaixePercentual||0)/100:0,friso=x.friso?material*Number(x.frisoPercentual||0)/100:0;
  return {...x,compensarPerda:false,comprimentoCobrado:Number(x.comprimento||0),acrescimoComprimento:0,volumeReal:metros,volumeAdicional:0,valorBase:material,valorAdicional:0,precoEndireitamento:0,precoAplainamento:0,valorEncaixe:encaixe,valorFriso:friso,valorEndireitamento:encaixe,valorAplainamento:friso,valorServicos:encaixe+friso,valorMaterial:material,volume:metros,valor:material+encaixe+friso};
 }
-function atualizarDisponibilidadeLinear(){
- const linear=document.body.classList.contains('modo-linear-real'),r=linear?regraLinearSelecionadaV381():null;
- [['chkEndireitamento','encaixe'],['chkAplainamento','friso']].forEach(([id,s])=>{
-  const c=$(id);c.disabled=linear&&r?.[s+'Ativo']!==true;
-  if(c.disabled)c.checked=false;
-  c.title=c.disabled?'Ative este serviço no cadastro do tipo/produto.':'';
- });
-}
-document.addEventListener('change',e=>{
- if(['calcMadeira','tipoLinear'].includes(e.target?.id)&&document.body.classList.contains('modo-linear-real')){
-  $('chkEndireitamento').checked=false;$('chkAplainamento').checked=false;
-  atualizarDisponibilidadeLinear();calcPreview();
- }
-});
-new MutationObserver(atualizarDisponibilidadeLinear).observe(document.body,{attributes:true,attributeFilter:['class']});
 function selecionarServicosLinear(){
  const r=regraLinearSelecionadaV381(),destino=document.querySelector('input[name="destinoLancamento"]:checked')?.value;
  const permitido=destino==='orcamento'||destino==='carga';
- return {encaixe:permitido&&r?.encaixeAtivo===true&&$('chkEndireitamento').checked,friso:permitido&&r?.frisoAtivo===true&&$('chkAplainamento').checked,encaixePercentual:Number(r?.encaixePercentual||0),frisoPercentual:Number(r?.frisoPercentual||0)};
+ return {encaixe:permitido&&$('chkEndireitamento').checked,friso:permitido&&$('chkAplainamento').checked,encaixePercentual:Number(r?.encaixePercentual||0),frisoPercentual:Number(r?.frisoPercentual||0)};
 }
 `;
   replace('function aplicarCobrancaOrcamento(x){',helpers+'function aplicarCobrancaOrcamento(x){');
@@ -63,7 +48,7 @@ function selecionarServicosLinear(){
   replace(`const destino=destinoSelecionado();item.destino=destino;`, `const destino=destinoSelecionado();item.destino=destino;
   if(modoMedida==='linear')Object.assign(item,cobrarServicosLinear({...item,...selecionarServicosLinear()}));`);
   replace(`n(x.precoEndireitamento),n(x.precoAplainamento)].join('|')`, `n(x.precoEndireitamento),n(x.precoAplainamento),x.encaixe?'ENC1':'ENC0',x.friso?'FRI1':'FRI0',n(x.encaixePercentual),n(x.frisoPercentual)].join('|')`);
-  app=app.replaceAll(`linear?' Enc. ':' Endir. '`,`linear?' Encaixe ':' Endir. '`).replaceAll(`linear?' Friz. ':' Apla. '`,`linear?' Friso ':' Apla. '`);
+  app=app.replaceAll(`linear?' Enc. ':' Endir. '`,`linear?' Enc. ':' Endir. '`).replaceAll(`linear?' Friz. ':' Apla. '`,`linear?' Fris. ':' Apla. '`);
   replace(`const serv=tipo==='m3'?(Number(x.valorEndireitamento||0)+Number(x.valorAplainamento||0)):0;`, `const serv=(tipo==='m3'||tipo==='linear')?(Number(x.valorEndireitamento||0)+Number(x.valorAplainamento||0)):0;`);
   replace(`const nomes=[ativo(item.endireitamento)?`, `if(item.tipoMedida==='linear')return servicosLinearTexto(item);
  const nomes=[ativo(item.endireitamento)?`);
