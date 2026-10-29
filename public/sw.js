@@ -1,5 +1,5 @@
 // Cache only the public application shell and its modules, never company/API data.
-const CACHE = 'sm-offline-20261029-5';
+const CACHE = 'sm-offline-20261029-6';
 const SDK = 'https://www.gstatic.com/firebasejs/12.2.1/';
 const CORE = ['/', '/toras.mjs', ...['firebase-app.js','firebase-auth.js','firebase-firestore.js'].map(file => SDK + file)];
 async function prepareCore(force = false) {
@@ -40,18 +40,35 @@ self.addEventListener('fetch', event => {
   if (!navigation && !module && !sdk) return;
   event.respondWith((async () => {
     const cache = await caches.open(CACHE), key = navigation ? '/' : request;
-    if (sdk) { const saved = await cache.match(key); if (saved) return saved; }
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
-    try {
-      const response = await fetch(request, {signal:controller.signal});
-      if (response.ok && response.type !== 'opaque') {
-        await cache.put(key, response.clone()); return response;
-      }
-      return await cache.match(key) || response;
-    } catch (error) {
-      const saved = await cache.match(key); if (saved) return saved;
-      throw error;
-    } finally { clearTimeout(timeout); }
+    const saved = await cache.match(key);
+    // No network probe is needed to return a known public file while offline.
+    if (saved && (self.navigator?.onLine === false || sdk)) return saved;
+    const refresh = (async () => {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+      try {
+        const response = await fetch(request, {signal:controller.signal});
+        if (response.ok && response.type !== 'opaque') {
+          await cache.put(key, response.clone()); return response;
+        }
+        return saved || response;
+      } catch (error) {
+        if (saved) return saved;
+        throw error;
+      } finally { clearTimeout(timeout); }
+    })();
+    // Keep modules immediate, and let a cached page wait at most one second
+    // for a newer online copy. Updating these public files does not read Firestore.
+    if (saved) {
+      event.waitUntil(refresh.catch(() => {}));
+      if (module) return saved;
+      let fallbackTimer;
+      try {
+        return await Promise.race([refresh,new Promise(resolve => {
+          fallbackTimer = setTimeout(() => resolve(saved),1000);
+        })]);
+      } finally { clearTimeout(fallbackTimer); }
+    }
+    return refresh;
   })());
 });
