@@ -7,9 +7,9 @@ function pcPlanilhaLinearHtml(arr,titulo,orc=false,semValor=false){
  if(!grupos.length)return '<div class="pc-preview-sheet"><div class="pc-preview-sheet-title">'+esc(titulo)+'</div><div class="pc-preview-empty">Nenhum item em metro linear neste destino.</div></div>';
  const linhas=grupos.map(x=>{
   const ids=(x._ids||[]).join(','),cmdp=x.compensarPerda===true;
-  const ajuste=cmdp&&Number(x.acrescimoComprimento)>0?'Cobrado: '+numCompOrc(x.comprimentoCobrado)+' m':'—';
+  const ajuste=cmdp&&Number(x.acrescimoComprimento)>0?'+'+Number(x.acrescimoComprimento).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+' m':'—';
   const botao=orc?'<div class="no-print">'+botaoOpcaoOrc(ids,'compensarPerda',cmdp,'CMDP')+'</div>':'';
-  return '<tr><td>'+esc(x.madeira||'')+'<br><small>'+esc(x.produto||'')+'</small></td><td>'+Number(x.quantidade||0)+'</td><td>'+numCompOrc(x.comprimento)+' m</td><td>'+num2(x.volume)+' m</td>'+(orc||!semValor?'<td>'+ajuste+botao+'</td><td>'+esc(servicosLinearTexto(x)||'—')+'</td>':'')+(semValor?'':'<td>'+moeda(x.valor)+'</td>')+'</tr>';
+  return '<tr><td>'+esc(x.madeira||'')+'<br><small>'+esc(x.produto||'')+'</small></td><td>'+Number(x.quantidade||0)+'</td><td>'+numCompOrc(x.comprimento)+' m</td><td>'+num2(x.volume)+' m</td>'+(orc||!semValor?'<td>'+ajuste+botao+'</td><td>'+esc([x.encaixe?'ENC '+Number(x.encaixePercentual||0).toLocaleString('pt-BR')+'%':'',x.friso?'FRI '+Number(x.frisoPercentual||0).toLocaleString('pt-BR')+'%':''].filter(Boolean).join(' + ')||'—')+'</td>':'')+(semValor?'':'<td>'+moeda(x.valor)+'</td>')+'</tr>';
  }).join('');
  const total=itens.reduce((s,x)=>s+Number(x.volume||0),0),valor=itens.reduce((s,x)=>s+Number(x.valor||0),0);
  return '<div class="pc-preview-sheet"><div class="pc-preview-sheet-title">'+esc(titulo)+'</div><div class="pc-preview-table-wrap"><table class="pc-preview-table"><thead><tr><th>Produto</th><th>Peças</th><th>Comprimento real</th><th>Metros reais</th>'+(orc||!semValor?'<th>CMDP</th><th>Serviços</th>':'')+(semValor?'':'<th>Valor</th>')+'</tr></thead><tbody>'+linhas+'</tbody></table></div><div class="pc-preview-total"><div><small>Metros reais</small><strong>'+num2(total)+' m</strong></div>'+(semValor?'':'<div><small>Valor total</small><strong>'+moeda(valor)+'</strong></div>')+'</div></div>';
