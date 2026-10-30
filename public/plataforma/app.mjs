@@ -82,8 +82,8 @@ function render(){
   $('provider-status').textContent=state.testConfigured?'Somente testes':'Aguardando conexão';
   $('provider-text').textContent=state.testConfigured?'Ambiente de testes. Cobranças reais permanecem desativadas.':'Conexão ainda não configurada. Nenhuma cobrança real será feita nesta prévia.';
   list('charges-list',[...(state.charges||[])].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)),(host,c)=>{
-    record(host,money(c.amountCents),c.status==='test_payment_approved'?'Pagamento de teste aprovado e validado no Mercado Pago.':'Checkout de teste criado. Pagamento ainda não confirmado na plataforma.');
-    if(c.status!=='test_payment_approved'){
+    record(host,money(c.amountCents),({test_payment_approved:'Pagamento de teste aprovado e validado no Mercado Pago.',test_free_period:'Período gratuito de teste registrado, sem pagamento.',checkout_creating:'Preparando checkout de teste.',checkout_failed:'Falha ao preparar o checkout. O responsável pode tentar novamente.'})[c.status]||'Checkout de teste criado. Pagamento ainda não confirmado na plataforma.');
+    if(c.status==='test_checkout_created'){
       const verify=document.createElement('button');verify.type='button';verify.className='secondary';verify.textContent='Conferir pagamento de teste';
       verify.onclick=async()=>{verify.disabled=true;status('Consultando pagamento no Mercado Pago…');
         try{const result=await api({action:'charge.verify',chargeId:c.id});await refresh(true);
@@ -93,6 +93,7 @@ function render(){
       };host.append(verify);
     }
     const identity=document.createElement('p');identity.textContent='Criado em: '+(c.createdAt?new Date(c.createdAt).toLocaleString('pt-BR'):'Data não registrada')+' • Operação: '+(c.paymentId||'Ainda não registrada');host.append(identity);
+    if(!c.preferenceId)return;
     const inspect=document.createElement('button');inspect.type='button';inspect.className='secondary';inspect.textContent='Ver configuração do checkout';
     const diagnostic=document.createElement('p');diagnostic.hidden=true;diagnostic.style.whiteSpace='pre-line';
     inspect.onclick=async()=>{inspect.disabled=true;try{

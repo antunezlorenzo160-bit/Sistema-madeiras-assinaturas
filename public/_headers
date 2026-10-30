@@ -10,3 +10,6 @@
 
 /index.html
   Cache-Control: no-cache, max-age=0, must-revalidate
+
+/contratacao/*
+  Cache-Control: no-cache, max-age=0, must-revalidate

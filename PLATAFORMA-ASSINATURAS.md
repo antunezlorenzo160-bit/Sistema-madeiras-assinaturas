@@ -236,3 +236,21 @@ nenhum registro é migrado ou apagado em cascata. Sem vínculos, somente o docum
 do plano é excluído, com auditoria. Repetir uma exclusão já concluída é inofensivo.
 A remoção de duplicatas usa a mesma verificação de vínculos. O deploy disponibiliza
 o controle; a exclusão ocorre apenas pelo clique na conta autenticada do proprietário.
+
+## Pagamento solicitado pelo responsável — 30/10/2026
+
+A página `/contratacao/` agora liga a escolha do plano ao pagamento **somente de teste**:
+
+1. O responsável autenticado registra o plano e a preferência de renovação.
+2. Para renovação manual e valor positivo, pode gerar o checkout de teste e abrir o link do Mercado Pago. O preço e o período são conferidos no servidor; a empresa vem do vínculo, nunca de um ID informado pelo navegador.
+3. O webhook existente ou a conferência autenticada consultam o pagamento no Mercado Pago. Aprovação, vendedor, referência, moeda e valor precisam coincidir antes de registrar o período mensal/anual.
+4. A página mostra o pagamento da solicitação e o período registrado. Sem polling; atualizar/conferir são ações explícitas.
+5. Valor zero inicia um período gratuito de teste sem chamar o provedor.
+
+Uma reserva transacional e uma referência estável por empresa/solicitação impedem checkouts simultâneos por repetição de clique. Após falha/expiração da reserva, a tentativa reutiliza a referência. Solicitações com checkout pendente não podem ser trocadas silenciosamente; o responsável pode conferir a aprovação ou pedir revisão à plataforma. A renovação após o período encerrado aceita nova solicitação e novo checkout. Períodos vigentes e preços já contratados continuam preservados.
+
+A API exige e-mail confirmado, vínculo ativo e conta responsável; não expõe vendedor, credenciais ou pagamentos de outras empresas. A preferência automática não gera checkout pago, pois a autorização de recorrência ainda não existe. Os cartões/contas devem ser de teste.
+
+O acesso gratuito e o estado real dos membros/assinaturas são preservados. **Esta etapa não ativa cobrança de produção, bloqueio por inadimplência nem renovação automática.** Cancelamento/estorno de cobrança real e autorização contratual precisam ser concluídos antes da ativação real.
+
+Validação: nove cenários específicos do checkout da empresa, incluindo geração idempotente, chamadas concorrentes, recuperação de erro, plano gratuito, conferência ponta a ponta com provedor simulado, isolamento entre empresas e renovação. Regressões de contratação, períodos, login, Mercado Pago e webhook passaram. Nenhum pagamento externo foi realizado pelo agente.

@@ -17,6 +17,21 @@ function showRequest(request){
  $('request-card').hidden=!request;if(!request)return;
  $('request-summary').textContent=[request.planName,money(request.amountCents)+(request.interval==='yearly'?' por ano, pago de uma vez':' por mês'),'Renovação desejada: '+(request.renewalPreference==='automatic'?'automática, ainda sem autorização de débito':'manual'),'Valor registrado na solicitação de: '+new Date(request.requestedAt).toLocaleString('pt-BR')].join('\n');
 }
+function showPayment(){
+ const request=state?.request,charge=state?.checkout,period=state?.currentPeriod;
+ const hasRequest=Boolean(request&&(!period?.active||charge));
+ $('payment-card').hidden=!hasRequest;
+ $('checkout-create').hidden=!hasRequest||Boolean(charge&&!['checkout_failed','checkout_creating'].includes(charge.status))||Boolean(period?.active);
+ $('checkout-create').textContent=charge?.status==='checkout_creating'?'Tentar preparar novamente':request?.amountCents===0?'Iniciar período gratuito de teste':'Gerar pagamento de teste';
+ $('checkout-create').disabled=Boolean(request?.amountCents>0&&request.renewalPreference==='automatic');
+ $('checkout-open').hidden=true;$('checkout-verify').hidden=true;
+ const descriptions={checkout_creating:'Preparando checkout. Aguarde e atualize a página.',checkout_failed:'O checkout não foi concluído. Você pode tentar novamente.',test_checkout_created:'Checkout criado. O período só começa após a aprovação ser conferida no Mercado Pago.',test_payment_approved:charge?.periodApplied?'Pagamento de teste aprovado. Período registrado com preço garantido.':'Pagamento aprovado. Confira o período vigente ou entre em contato com a plataforma.',test_free_period:'Período gratuito de teste registrado. Não há pagamento no Mercado Pago.'};
+ $('payment-summary').textContent=charge?descriptions[charge.status]||'Atualize para consultar o pagamento.':request?.amountCents>0&&request.renewalPreference==='automatic'?'A renovação automática ainda é uma preferência futura. Para testar o pagamento único, registre a renovação manual.':request?.amountCents===0?'Este plano é gratuito no valor registrado. Você pode iniciar o período sem pagamento.':'Solicitação registrada. Gere o checkout para testar o pagamento deste plano.';
+ if(charge?.url&&charge.status==='test_checkout_created'){
+  try{const url=new URL(charge.url);if(url.protocol==='https:'&&/^(?:[a-z0-9-]+\.)*mercadopago\.(com|com\.br)$/.test(url.hostname)){$('checkout-open').href=url.href;$('checkout-open').hidden=false;}}catch{}
+ }
+ $('checkout-verify').hidden=charge?.status!=='test_checkout_created';
+}
 function describe(){
  const plan=state?.offers.find(p=>p.id===$('plan').value);
  const monthly=state?.offers.find(p=>p.interval==='monthly');
@@ -43,9 +58,9 @@ async function load(){
  $('plan').replaceChildren();
  if(!result.offers.length){const empty=new Option('Nenhum plano disponível','');empty.disabled=true;$('plan').add(empty);}
  for(const plan of result.offers)$('plan').add(new Option(plan.name+' — '+money(plan.amountCents)+(plan.interval==='yearly'?' por ano':' por mês'),plan.id));
- describe();showPeriod(result.currentPeriod);showRequest(result.request);message('');
+ describe();showPeriod(result.currentPeriod);showRequest(result.request);showPayment();message('');
 }
-async function run(task){if(busy)return;busy=true;document.querySelectorAll('button').forEach(b=>b.disabled=true);try{await task();}catch(error){message(error.code?'Não foi possível entrar. Confira o e-mail e a senha.':error.message);}finally{busy=false;document.querySelectorAll('button').forEach(b=>b.disabled=false);if(state)$('request-submit').disabled=!state.offers.length;}}
+async function run(task){if(busy)return;busy=true;document.querySelectorAll('button').forEach(b=>b.disabled=true);try{await task();}catch(error){message(error.code?'Não foi possível entrar. Confira o e-mail e a senha.':error.message);}finally{busy=false;document.querySelectorAll('button').forEach(b=>b.disabled=false);if(state){$('request-submit').disabled=!state.offers.length;showPayment();}}}
 function showPassword(visible){
  $('password').type=visible?'text':'password';
  $('toggle-password').setAttribute('aria-label',visible?'Ocultar senha':'Mostrar senha');
@@ -71,7 +86,18 @@ onAuthStateChanged(auth,user=>{state=null;$('contract').hidden=true;$('login').h
 $('contract-form').onsubmit=event=>{event.preventDefault();run(async()=>{
  const plan=state?.offers.find(p=>p.id===$('plan').value);if(!plan||!$('acknowledge').checked)throw Error('Confira o plano e marque a confirmação da simulação.');
  const result=await api({planId:plan.id,expectedAmountCents:plan.amountCents,expectedInterval:plan.interval,revision:plan.revision,renewalPreference:$('renewal').value,simulationOnly:true});
- showRequest(result.request);message('Solicitação de teste registrada. Nenhuma cobrança ou alteração no seu acesso foi realizada.');
+ await load();message('Solicitação de teste registrada. Confira abaixo a etapa do pagamento.');
 });};
 $('plan').onchange=describe;$('renewal').onchange=describe;
 $('reload').onclick=()=>run(load);$('logout').onclick=()=>run(()=>signOut(auth));
+
+$('checkout-create').onclick=()=>run(async()=>{
+ if(!state?.request)throw Error('Registre uma solicitação antes de continuar.');
+ await api({action:'checkout.create',simulationOnly:true,expectedRequestedAt:state.request.requestedAt});
+ await load();message('Etapa de teste preparada. Confira o resultado acima.');
+});
+$('checkout-verify').onclick=()=>run(async()=>{
+ if(!state?.checkout)throw Error('Nenhum pagamento disponível.');
+ const result=await api({action:'checkout.verify',chargeId:state.checkout.id});
+ await load();message(result.status==='approved'?'Pagamento de teste aprovado e conferido no servidor.':result.status==='not_found'?'O Mercado Pago ainda não encontrou um pagamento para este checkout.':'Situação no Mercado Pago: '+result.status+'.');
+});
