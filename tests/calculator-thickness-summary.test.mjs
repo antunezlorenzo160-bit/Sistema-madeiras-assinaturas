@@ -14,5 +14,23 @@ test('keeps species and thickness distinct and excludes m²/linear/bulk or missi
  assert.equal(c.totaisEspessuraResumo([]).size,0);
 });
 test('builder includes live subtotal in render function, escapes species and is repeatable',()=>{
- const html=readFileSync(new URL('../public/index.html',import.meta.url),'utf8');assert.ok(html.includes('calculator-thickness-summary-v1'));assert.equal(applyCalculatorThicknessSummary(html),html);const x=item(3,.1,8,'<Pinus>');const row=c.linhaTotalEspessuraResumo(c.totaisEspessuraResumo([x]),c.chaveBlocoResumoV598(x),6);assert.match(row,/&lt;Pinus>/);assert.doesNotMatch(row,/R\$/);assert.throws(()=>applyCalculatorThicknessSummary(''));
+ const html=readFileSync(new URL('../public/index.html',import.meta.url),'utf8');assert.ok(html.includes('calculator-thickness-summary-v1'));const start=html.indexOf('const TEMPLATE=')+15;let end=start+1;for(;end<html.length;end++){if(html[end]==='\\'){end++;continue;}if(html[end]==='"'){end++;break;}}const app=JSON.parse(html.slice(start,end));assert.equal(applyCalculatorThicknessSummary(app),app);const x=item(3,.1,8,'<Pinus>');const row=c.linhaTotalEspessuraResumo(c.totaisEspessuraResumo([x]),c.chaveBlocoResumoV598(x),6);assert.match(row,/&lt;Pinus>/);assert.doesNotMatch(row,/R\$/);assert.throws(()=>applyCalculatorThicknessSummary(''));
+});
+
+vm.runInContext(readFileSync(new URL('../ui/thickness-grouping.js',import.meta.url),'utf8'),c);
+test('alternating 5/8/5 cm stays together across lengths and repeats no subtotal',()=>{
+ const items=[item(3,.1,5),item(3,.2,8),item(4,.3,5),item(3,.4,5),item(4,.5,8)];
+ const ordered=c.organizarBlocosResumoV598(items);
+ assert.deepEqual(Array.from(ordered,x=>x.espessura),[5,5,5,8,8]);
+ assert.deepEqual(Array.from(ordered,x=>x.comprimento),[3,3,4,3,4]);
+ const totals=c.totaisEspessuraResumo(ordered);let html='',previous='';
+ for(const x of ordered){const block=c.chaveBlocoResumoV598(x);if(previous&&previous!==block)html+=c.linhaTotalEspessuraResumo(totals,previous,6);previous=block;}
+ html+=c.linhaTotalEspessuraResumo(totals,previous,6);
+ assert.equal((html.match(/resumo-total-espessura/g)||[]).length,2);
+ assert.match(html,/0,8000 m³/);assert.match(html,/0,7000 m³/);
+ assert.deepEqual(items.map(x=>x.espessura),[5,8,5,5,8]);
+});
+test('reverse order and switching species preserve first appearance within each species',()=>{
+ const ordered=c.organizarBlocosResumoV598([item(3,.1,8),item(4,.2,5),item(3,.3,8,'Pinus'),item(5,.4,8),item(4,.5,5,'Pinus')]);
+ assert.deepEqual(Array.from(ordered,x=>[x.madeira,x.espessura]),[['Garapeira',8],['Garapeira',8],['Garapeira',5],['Pinus',8],['Pinus',5]]);
 });

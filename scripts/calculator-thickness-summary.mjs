@@ -1,5 +1,9 @@
 import {readFileSync} from 'node:fs';
 export function applyCalculatorThicknessSummary(app){
+ const groupingStart=app.indexOf('function organizarBlocosResumoV598(');
+ const groupingEnd=app.indexOf('\n}',groupingStart)+2;
+ if(groupingStart<0||groupingEnd<2)throw new Error('Agrupamento do resumo não encontrado.');
+ app=app.slice(0,groupingStart)+readFileSync(new URL('../ui/thickness-grouping.js',import.meta.url),'utf8').trimEnd()+app.slice(groupingEnd);
  if(app.includes('/* calculator-thickness-summary-v1 */'))return app;
  const target='function renderLancamentos(){';
  const start=app.indexOf(target),end=app.indexOf('\nfunction ',start+target.length);
