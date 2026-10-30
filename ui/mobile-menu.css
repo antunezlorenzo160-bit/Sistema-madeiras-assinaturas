@@ -185,17 +185,16 @@ html body.modo-linear-real #calculadora .comprimento-servicos-row .launch-box{
   justify-self:stretch!important;min-width:0!important;width:100%!important;
 }
 
-/* Quotation entry needs only the clear-fields action in this toolbar. */
+/* Quotation keeps clear-fields and delete-summary actions. */
 html body #calculadora:has(input[name="destinoLancamento"][value="orcamento"]:checked) #btnGuardarResumoCalc,
-html body #calculadora:has(input[name="destinoLancamento"][value="orcamento"]:checked) #btnNovoResumoCalc,
-html body #calculadora:has(input[name="destinoLancamento"][value="orcamento"]:checked) #btnLimparLancamentos{
+html body #calculadora:has(input[name="destinoLancamento"][value="orcamento"]:checked) #btnNovoResumoCalc{
   display:none!important;
 }
 html body #calculadora:has(input[name="destinoLancamento"][value="orcamento"]:checked) .row-actions:has(> #btnLimparCampos){
-  grid-template-columns:minmax(0,1fr)!important;
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;
 }
-html body #calculadora:has(input[name="destinoLancamento"][value="orcamento"]:checked) #btnLimparCampos{
-  width:100%!important;max-width:none!important;grid-column:1/-1!important;
+html body #calculadora:has(input[name="destinoLancamento"][value="orcamento"]:checked) :is(#btnLimparCampos,#btnLimparLancamentos){
+  display:block!important;width:100%!important;min-width:0!important;max-width:none!important;grid-column:auto!important;
 }
 
 /* The PC split workspace uses the same compact package fields as mobile. */
