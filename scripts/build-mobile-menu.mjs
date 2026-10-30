@@ -1,3 +1,4 @@
+import { applyCalculatorLoadDelete } from './calculator-load-delete.mjs';
 import { applyOfflineBoot } from './offline-boot.mjs';
 import { applyCalculatorSummaryPolicy } from './calculator-summary-policy.mjs';
 import { applyDesktopCalculatorParity } from './desktop-calculator-parity.mjs';
@@ -19,6 +20,7 @@ for (; end < html.length; end++) {
   if (html[end] === '"') { end++; break; }
 }
 let app = applyCalculatorSummaryPolicy(applyDesktopCalculatorParity(applyLinearCmdp(applyLinearServices(JSON.parse(html.slice(start, end))))));
+app = applyCalculatorLoadDelete(app);
 const keyboard = readFileSync(new URL('ui/calculator-keyboard.js', root), 'utf8');
 const keyboardPattern = /(<script id="v118-atalho-espaco-lancar-pc">)[\s\S]*?<\/script>/;
 if (!keyboardPattern.test(app)) throw new Error('Atalho da calculadora não encontrado.');
