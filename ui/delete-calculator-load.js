@@ -31,3 +31,31 @@ async function apagarCargaAtualV388(){
     try{calcPreview()}catch(e){}
     try{pcAtualizarPlanilhaDirecionada()}catch(e){}
   }
+
+  async function apagarSomenteResumoCarga(){
+    exigirEscritaPlano();
+    // The calculator summary includes entries from every destination and unit.
+    const ids=lancamentos.map(x=>x.id);
+    if(!ids.length)return alert('Não há itens no resumo para apagar.');
+    if(!confirm('Apagar somente o resumo da calculadora?\n\nOs registros de estoque, orçamento e carregamentos salvos serão preservados.'))return;
+    await ocultarDoResumo(ids);
+    contadorPacotes=0;sessaoPacotes=crypto.randomUUID();salvarContador();
+    try{atualizarPainelPacotes()}catch(e){}
+    try{calcPreview()}catch(e){}
+    try{pcAtualizarPlanilhaDirecionada()}catch(e){}
+    atualizarFluxoCargaV388();
+  }
+
+  function atualizarBotaoApagarResumoCarga(){
+    let button=document.getElementById('btnApagarSomenteResumoCarga');
+    const anchor=document.getElementById('btnLimparLancamentos');
+    if(!button&&anchor){
+      button=document.createElement('button');
+      button.id='btnApagarSomenteResumoCarga';button.type='button';
+      button.className='btn btn-danger';button.textContent='Apagar resumo';
+      button.style.gridColumn='1 / -1';
+      button.addEventListener('click',apagarSomenteResumoCarga);
+      anchor.insertAdjacentElement('afterend',button);
+    }
+    if(button)button.hidden=destinoSelecionado()!=='carga';
+  }
