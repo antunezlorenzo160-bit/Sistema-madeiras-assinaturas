@@ -1,3 +1,4 @@
+import {billingAccessRef,billingAccessState} from './lib/billing-access.mjs';
 import {authenticate,failure,json,PlatformError} from './lib/platform-auth.mjs';
 import {prepareBudgetSchema} from './lib/budget-schema.mjs';
 import configuration from '../../config/budget-active.json' with {type:'json'};
@@ -12,6 +13,9 @@ export default async function handler(req){
     // No tenant or document ID supplied in a request is accepted.
     const member=await db.doc('membros/'+uid).get(),data=member.exists?member.data():null;
     if(data?.ativo!==true||typeof data.empresaId!=='string'||!/^[-A-Za-z0-9_]{1,120}$/.test(data.empresaId))throw new PlatformError(403,'Conta sem empresa ativa.');
+    const policy=await billingAccessRef(db,data.empresaId).get(),access=billingAccessState(policy.exists?policy.data():null);
+    if(!access.read)throw new PlatformError(403,'Acesse Configurações → Planos para renovar.');
+    if(!access.write)return json(200,await prepareBudgetSchema(db,data.empresaId,uid,Date.now(),{readOnly:true}));
     if(!preparing.has(data.empresaId)){
       const promise=prepareBudgetSchema(db,data.empresaId,uid).finally(()=>preparing.delete(data.empresaId));
       preparing.set(data.empresaId,promise);

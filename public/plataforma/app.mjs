@@ -1,4 +1,4 @@
-import {createCompanyManagement} from './company-management.mjs';
+import {createCompanyManagement} from './company-management.mjs?v=billing-access-1';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js';
 import { initializeAuth, browserLocalPersistence, inMemoryPersistence, onAuthStateChanged, signInWithEmailAndPassword, signOut, sendEmailVerification } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
 

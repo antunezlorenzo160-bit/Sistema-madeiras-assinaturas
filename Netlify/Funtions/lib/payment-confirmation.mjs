@@ -1,3 +1,4 @@
+import {readBillingAccessProjection,projectPaidTestAccess} from './billing-access.mjs';
 import {periodFromApprovedCharge} from './contract-periods.mjs';
 import {createHmac,timingSafeEqual} from 'node:crypto';
 import {PlatformError} from './platform.mjs';
@@ -54,8 +55,9 @@ export async function confirmTestPayment({db,paymentId,chargeId,token,request=fe
   const subRef=db.doc(`${billing}/subscriptions/${charge.empresaId}`),periodRef=db.doc(`${billing}/test_contract_periods/${charge.empresaId}`);
   const [sub,currentPeriod]=await Promise.all([tx.get(subRef),tx.get(periodRef)]);
   const period=periodFromApprovedCharge(charge,payment,currentPeriod.exists?currentPeriod.data():null,now);
+  const accessProjection=period?await readBillingAccessProjection(tx,db,charge.empresaId):null;
   tx.update(ref,{status:'test_payment_approved',paymentId:String(payment.id),confirmedAt:now,periodApplied:Boolean(period)});
-  if(period)tx.set(periodRef,period);
+  if(period){tx.set(periodRef,period);projectPaidTestAccess(tx,accessProjection,period,now);}
   // A sandbox payment never activates a real contract, changes access or ends a trial.
   if(sub.exists&&sub.data().planId===charge.planId)tx.set(subRef,{testPayment:{status:'approved',chargeId:ref.id,paymentId:String(payment.id),planId:charge.planId,amountCents:charge.amountCents,confirmedAt:now}},{merge:true});
   tx.create(db.doc(`plataforma_admin/audit/events/payment-test-${payment.id}`),{action:'payment.test.approved',chargeId:ref.id,empresaId:charge.empresaId,paymentId:String(payment.id),at:now,...(period?{period}:{})});

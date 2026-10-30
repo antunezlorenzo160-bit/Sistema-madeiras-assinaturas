@@ -19,9 +19,9 @@ export function trialConfiguration(input,now=Date.now()){
 }
 export async function companyDetail(db,id){
   const refs=companyReferences(db,id);
-  const [company,subscription,profile,members]=await Promise.all([refs.company.get(),refs.subscription.get(),refs.profile.get(),refs.members.get()]);
+  const [company,subscription,profile,members,accessPolicy]=await Promise.all([refs.company.get(),refs.subscription.get(),refs.profile.get(),refs.members.get(),db.doc(`empresas/${id}/acesso/plano`).get()]);
   if(!company.exists)throw new PlatformError(404,'Empresa não encontrada na plataforma.');
-  return {company:{...company.data(),id:company.id},subscription:subscription.exists?subscription.data():null,profile:profile.exists?profile.data():null,
+  return {accessPolicy:accessPolicy.exists?accessPolicy.data():null,company:{...company.data(),id:company.id},subscription:subscription.exists?subscription.data():null,profile:profile.exists?profile.data():null,
     members:members.docs.slice(0,400).map(doc=>({uid:doc.id,ativo:doc.data().ativo===true,suspendedByPlatform:doc.data().suspensoPelaPlataforma===true})),
     membersTruncated:members.size>400};
 }

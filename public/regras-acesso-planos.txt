@@ -1,0 +1,63 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function pertence(empresaId) {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/membros/$(request.auth.uid))
+        && get(/databases/$(database)/documents/membros/$(request.auth.uid)).data.ativo == true
+        && get(/databases/$(database)/documents/membros/$(request.auth.uid)).data.empresaId == empresaId;
+    }
+
+    function janelaValida(p) {
+      return p.endsAt is int && p.graceEndsAt is int && p.consultEndsAt is int
+        && p.endsAt > 0 && p.graceEndsAt == p.endsAt + 432000000
+        && p.consultEndsAt == p.endsAt + 3024000000;
+    }
+    function planoPermite(empresaId, escrita) {
+      let path = /databases/$(database)/documents/empresas/$(empresaId)/acesso/plano;
+      return !exists(path) || get(path).data.enabled != true
+        || (janelaValida(get(path).data)
+          && request.time.toMillis() < (escrita ? get(path).data.graceEndsAt : get(path).data.consultEndsAt));
+    }
+    match /empresas/{empresaId}/acesso/plano {
+      allow get: if pertence(empresaId);
+      allow list, write: if false;
+    }
+
+    match /membros/{uid} {
+      allow get: if request.auth != null && request.auth.uid == uid;
+      allow list, create, update, delete: if false;
+    }
+
+    match /empresas/{empresaId}/dados/{colecao}/registros/{id} {
+      allow read: if pertence(empresaId) && planoPermite(empresaId, false)
+        && colecao in [
+          'sm2_clientes', 'sm2_madeiras', 'sm2_estoque1', 'sm2_estoque2',
+          'sm2_carregamentos', 'sm2_orcamentos_guardados', 'sm2_movimentos',
+          'sm2_servicos', 'sm2_sync_status', 'sm2_resumos_calculadora'
+        ];
+      allow write: if pertence(empresaId) && planoPermite(empresaId, true)
+        && colecao in ['sm2_clientes','sm2_madeiras','sm2_estoque1','sm2_estoque2','sm2_carregamentos','sm2_orcamentos_guardados','sm2_movimentos','sm2_servicos','sm2_sync_status','sm2_resumos_calculadora'];
+    }
+
+    match /empresas/{empresaId}/dados/sm2_orcamento_itens/registros/{id} {
+      allow read: if pertence(empresaId) && planoPermite(empresaId, false);
+      allow delete: if pertence(empresaId) && planoPermite(empresaId, true);
+      allow create, update: if pertence(empresaId) && planoPermite(empresaId, true)
+        && request.resource.data.keys().hasAll(['excluido'])
+        && request.resource.data.excluido is bool;
+    }
+
+    match /empresas/{empresaId}/dados/sm2_empresas_perfis_dev/registros/{id} {
+      allow get: if pertence(empresaId) && id == empresaId;
+      allow create, update: if pertence(empresaId) && planoPermite(empresaId, true)
+        && id == empresaId && request.resource.data.id == empresaId;
+      allow list, delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

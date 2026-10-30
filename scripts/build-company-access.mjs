@@ -1,3 +1,4 @@
+import {applyBillingAccess} from './billing-access-build.mjs';
 import {readFileSync,writeFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
@@ -14,7 +15,7 @@ export function buildCompanyAccess(input=new URL('../public/index.html',import.m
   const helper=readFileSync(new URL('../ui/company-access.js',import.meta.url),'utf8');
   app=app.replace(target,()=>`// COMPANY_ACCESS_V707\n${helper}\nacompanharAcessoEmpresaV707();\n${target}`);
  }
- writeFileSync(file,html.slice(0,start)+JSON.stringify(app).replaceAll('</','<\\/')+html.slice(end));
+ writeFileSync(file,applyBillingAccess(html.slice(0,start)+JSON.stringify(app).replaceAll('</','<\\/')+html.slice(end)));
  console.log('Aviso de teste e acompanhamento de suspensão por vínculo ativo preparados.');
 }
 if(process.argv[1]&&pathToFileURL(resolve(process.argv[1])).href===import.meta.url)buildCompanyAccess(process.argv[2]);

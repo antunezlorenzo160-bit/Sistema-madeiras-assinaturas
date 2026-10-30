@@ -1,3 +1,4 @@
+import {readBillingAccessProjection,projectPaidTestAccess} from './billing-access.mjs';
 import {randomUUID} from 'node:crypto';
 import {PlatformError} from './platform.mjs';
 const root='plataforma_admin/billing';
@@ -35,7 +36,8 @@ export async function startRequestedTestPeriod(db,input,uid,now=Date.now()){
   if(old&&now<old.endsAt)throw new PlatformError(409,'Já existe um período vigente. O preço e a data final serão preservados até o vencimento.');
   if(old&&terms.requestedAt<old.renewalNoticeAt)throw new PlatformError(409,'Peça ao responsável uma nova escolha para a renovação.');
   const period=createTestPeriod(terms,now,{empresaId:input.empresaId,sourceRequestAt:terms.requestedAt,source:'admin_test',createdBy:uid});
-  tx.set(periodRef,period);
+  const accessProjection=await readBillingAccessProjection(tx,db,input.empresaId);
+  tx.set(periodRef,period);projectPaidTestAccess(tx,accessProjection,period,now);
   tx.create(db.doc(`plataforma_admin/audit/events/${randomUUID()}`),{action:'contract.period.start_test',empresaId:input.empresaId,uid,at:now,period});
   return {ok:true,period};
  });

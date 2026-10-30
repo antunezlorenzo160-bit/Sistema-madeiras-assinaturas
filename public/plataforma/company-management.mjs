@@ -1,3 +1,4 @@
+import {billingAccessState} from '../billing-access.mjs';
 export function createCompanyManagement({document,api,onChange,status,confirmAction=message=>window.confirm(message)}){
   const $=id=>document.getElementById(id);let state={companies:[],subscriptions:[],plans:[]};
   const node=(tag,text,cls)=>{const e=document.createElement(tag);if(text)e.textContent=text;if(cls)e.className=cls;return e;};
@@ -25,6 +26,7 @@ export function createCompanyManagement({document,api,onChange,status,confirmAct
       host.append(field('Empresa',profile.nome||company.name),field('CNPJ',profile.cnpj),field('E-mail',profile.email||company.email),
         field('Telefone',profile.telefone),field('Cadastro',date(company.createdAt)),field('Situação',trialLabel(subscription)),
         field('Usuários ativos',data.members.filter(m=>m.ativo).length+' de '+data.members.length+(data.membersTruncated?' (lista parcial)':'')));
+      const accessState=billingAccessState(data.accessPolicy);host.append(field('Fase do plano',({active:'Uso normal',grace:'Tolerância',readonly:'Consultas e exportações',settings:'Somente Configurações / Planos'})[accessState.phase]));
       const plan=state.plans.find(p=>p.id===subscription?.planId);if(plan)host.append(field('Plano',plan.name));
       const access=node('form',null,'management-form'),suspended=company.accessStatus==='suspended';
       access.append(node('h3','Acesso ao sistema'));
@@ -49,6 +51,13 @@ export function createCompanyManagement({document,api,onChange,status,confirmAct
         trial.onsubmit=event=>{event.preventDefault();return action(trial,()=>api({action:'trial.save',empresaId:id,mode:mode.value,endDate:dateInput.value,expectedUpdatedAt:company.updatedAt||company.createdAt||0}));};
         host.append(trial);
       }
+      const simulation=node('form',null,'management-form');simulation.append(node('h3','Testar vencimento do plano'));
+      simulation.append(node('p','Afeta somente esta empresa na prévia. Não muda preços, pagamentos, datas do período contratado nem apaga dados. Para proteção direta no banco, publique as regras de acesso antes do teste.'));
+      const phase=node('select');phase.setAttribute('aria-label','Fase de acesso para teste');for(const [value,text]of [['active','Uso normal'],['grace','Tolerância de 5 dias'],['readonly','Somente consultas e exportações'],['settings','Somente Configurações / Planos'],['payment','Simular restauração após pagamento'],['off','Desligar simulação (acesso de teste livre)']]){const option=node('option',text);option.value=value;phase.append(option);}simulation.append(phase);
+      simulation.append(node('button','Aplicar fase de teste'));
+      simulation.onsubmit=event=>{event.preventDefault();if(!confirmAction('Aplicar '+(phase.options[phase.selectedIndex]?.textContent||phase.value)+' somente à empresa '+company.name+'? Os dados serão preservados.'))return;return action(simulation,()=>api({action:'company.billing_test',empresaId:id,phase:phase.value,expectedUpdatedAt:company.updatedAt||company.createdAt||0}));};
+      const rules=node('a','Abrir regras de acesso do Firestore');rules.href='/regras-acesso-planos.txt';rules.target='_blank';rules.rel='noopener';simulation.append(rules);
+      const copyRules=node('button','Copiar regras do Firestore','secondary');copyRules.type='button';copyRules.onclick=async()=>{try{const response=await fetch('/regras-acesso-planos.txt',{cache:'no-store'});if(!response.ok)throw Error('Não foi possível carregar as regras.');await navigator.clipboard.writeText(await response.text());status('Regras copiadas. Cole em Firebase → Firestore Database → Regras e publique antes de testar.');}catch(error){status(error.message,true);}};simulation.append(copyRules);host.append(simulation);
       host.append(node('p','A suspensão bloqueia operações online. Dados já armazenados offline não são apagados dos aparelhos.','management-note'));
     }catch(error){host.replaceChildren(node('p',error.message,'error'));}
   }

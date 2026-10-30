@@ -1,3 +1,4 @@
+import {simulateBillingAccess} from './lib/billing-access.mjs';
 import {startRequestedTestPeriod,assertCheckoutPeriodAvailable,endFreeTestPeriod,serializeTestPeriods} from './lib/contract-periods.mjs';
 import {savePlan,renameCurrentPlansToSM,deleteUnusedPlan} from './lib/plans.mjs';
 import {removePlanDuplicates} from './lib/plan-duplicates.mjs';
@@ -44,6 +45,7 @@ export default async function handler(req) {
     if (text.length > 400000) throw new PlatformError(413,'Arquivo muito grande.');
     let input; try { input = JSON.parse(text); } catch { throw new PlatformError(400,'Pedido inválido.'); }
     if (!input || typeof input !== 'object') throw new PlatformError(400,'Pedido inválido.');
+    if(input.action==='company.billing_test'){const result=await simulateBillingAccess(db,input,uid);overviewReads.invalidate();return json(200,result);}
     if(input.action==='company.detail')return json(200,await companyDetail(db,input.empresaId));
     if(['company.access','trial.save'].includes(input.action)){
       const result=await manageCompany(db,input,uid);overviewReads.invalidate();return json(200,result);

@@ -1,3 +1,4 @@
+import {readBillingAccessProjection,projectPaidTestAccess} from './billing-access.mjs';
 import {createHash,randomUUID} from 'node:crypto';
 import {PlatformError,requireManualTestCheckout} from './platform.mjs';
 import {companyContext} from './company-contract.mjs';
@@ -29,10 +30,11 @@ export async function createCompanyTestCheckout({db,identity,input,base,token,we
   if(!plan.exists||plan.data().active===false||plan.data().amountCents!==terms.amountCents||plan.data().interval!==terms.interval||!Number.isSafeInteger(terms.amountCents)||terms.amountCents<0||terms.amountCents>100000000||!['monthly','yearly'].includes(terms.interval))throw new PlatformError(409,'O plano mudou. Peça à plataforma para revisar sua solicitação antes do pagamento.');
   if(terms.amountCents>0){requireManualTestCheckout(terms);if(!token||!webhookSecret)throw new PlatformError(503,'A plataforma precisa configurar o pagamento e a confirmação automática de teste.');}
   const data={empresaId:company.empresaId,planId:terms.planId,planName:terms.planName,amountCents:terms.amountCents,interval:terms.interval,mode:'test',source:'company_test',contractPeriodVersion:1,previousPeriodId:period.exists?period.data().id:null,sourceRequestAt:terms.requestedAt,status:terms.amountCents===0?'test_free_period':'checkout_creating',reservedAt:now,createdAt:saved.exists?saved.data().createdAt:now,createdBy:identity.uid};
+  const accessProjection=terms.amountCents===0?await readBillingAccessProjection(tx,db,company.empresaId):null;
   tx.set(ref,data);tx.set(requestRef,{...terms,checkoutId:id});
   if(terms.amountCents===0){
    const free=createTestPeriod(terms,now,{empresaId:company.empresaId,source:'free_test',sourceRequestAt:terms.requestedAt});
-   tx.set(periodRef,free);
+   tx.set(periodRef,free);projectPaidTestAccess(tx,accessProjection,free,now);
    tx.create(db.doc(`plataforma_admin/audit/events/${randomUUID()}`),{action:'contract.free_test_period',empresaId:company.empresaId,uid:identity.uid,at:now,period:free});
   }
   return {id,data};
