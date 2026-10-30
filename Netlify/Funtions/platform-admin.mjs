@@ -1,4 +1,4 @@
-import {startRequestedTestPeriod,assertCheckoutPeriodAvailable,endFreeTestPeriod} from './lib/contract-periods.mjs';
+import {startRequestedTestPeriod,assertCheckoutPeriodAvailable,endFreeTestPeriod,serializeTestPeriods} from './lib/contract-periods.mjs';
 import {savePlan,renameCurrentPlansToSM,deleteUnusedPlan} from './lib/plans.mjs';
 import {removePlanDuplicates} from './lib/plan-duplicates.mjs';
 import {confirmTestPayment} from './lib/payment-confirmation.mjs';
@@ -33,7 +33,7 @@ export default async function handler(req) {
         read('subscriptions',root.doc('billing').collection('test_contract_periods').limit(200).get()),
       ]);
       const list = snap => snap.docs.map(d=>({...d.data(),id:d.id}));
-      return {plans:list(plans),companies:list(companies),subscriptions:list(subscriptions),charges:list(charges),contractRequests:list(contractRequests),testPeriods:list(testPeriods),
+      return {plans:list(plans),companies:list(companies),subscriptions:list(subscriptions),charges:list(charges),contractRequests:list(contractRequests),testPeriods:serializeTestPeriods(testPeriods),
         watermark:watermark.exists?watermark.data():{widthMm:180,opacity:.04,image:''},
         methods:METHODS.map(id=>({id,status:process.env.MERCADO_PAGO_TEST_ACCESS_TOKEN?'test_available':'not_connected'})),provider:'mercadopago',testConfigured:Boolean(process.env.MERCADO_PAGO_TEST_ACCESS_TOKEN),livePayments:false,webhookConfigured:Boolean(process.env.MERCADO_PAGO_TEST_WEBHOOK_SECRET)};
       });

@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {periodEnd,createTestPeriod,periodView,assertCheckoutPeriodAvailable,periodFromApprovedCharge,startRequestedTestPeriod,endFreeTestPeriod} from '../Netlify/Funtions/lib/contract-periods.mjs';
+import {periodEnd,createTestPeriod,periodView,assertCheckoutPeriodAvailable,periodFromApprovedCharge,startRequestedTestPeriod,endFreeTestPeriod,serializeTestPeriods} from '../Netlify/Funtions/lib/contract-periods.mjs';
 const at=value=>Date.parse(value),terms={planId:'annual',planName:'Completo Anual',amountCents:200000,interval:'yearly'};
 test('annual price remains locked after catalog adjustment; the new price is shown only for renewal',()=>{
  const start=at('2026-10-28T10:00:00-03:00'),period=createTestPeriod(terms,start),newPlan={name:'Anual',amountCents:250000,interval:'yearly',active:true};
@@ -49,4 +49,11 @@ test('paid, non-test and stale periods can never be ended by the free-test opera
  for(const change of [{amountCents:19990},{source:'payment_test'},{mode:'live'},{id:'new-id'}]){
   const s=setup(),p=createTestPeriod({...terms,amountCents:0},Date.now(),{source:'free_test',empresaId:'company'});s.records.set('plataforma_admin/billing/test_contract_periods/company',{...p,...change});await assert.rejects(endFreeTestPeriod(s.db,{empresaId:'company',expectedPeriodId:p.id},'owner'));assert.equal(s.writes.length,0);
  }
+});
+
+test('admin overview preserves the period version ID so the end-free-test button can complete',async()=>{
+ const s=setup(),now=Date.now(),period=createTestPeriod({...terms,amountCents:0},now,{empresaId:'company',source:'free_test'});s.records.set('plataforma_admin/billing/test_contract_periods/company',period);
+ const view=serializeTestPeriods({docs:[{id:'company',data:()=>period}]})[0];assert.equal(view.id,period.id);assert.equal(view.empresaId,'company');assert.notEqual(view.id,view.empresaId);
+ await endFreeTestPeriod(s.db,{empresaId:view.empresaId,expectedPeriodId:view.id},'owner',now+1000);
+ const ended=s.records.get('plataforma_admin/billing/test_contract_periods/company');assert.equal(ended.simulationEndedAt,now+1000);assert.equal(periodView(ended,null,now+1001).active,false);
 });

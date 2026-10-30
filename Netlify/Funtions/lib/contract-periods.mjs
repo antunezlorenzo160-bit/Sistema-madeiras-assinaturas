@@ -69,3 +69,8 @@ export async function endFreeTestPeriod(db,input,uid,now=Date.now()){
   return {ok:true};
  });
 }
+
+// Period identity is a version UUID; its Firestore document ID is the company.
+export function serializeTestPeriods(snapshot){
+ return snapshot.docs.map(document=>({...document.data(),empresaId:document.id}));
+}
