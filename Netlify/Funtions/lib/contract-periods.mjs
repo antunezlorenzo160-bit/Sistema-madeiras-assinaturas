@@ -51,3 +51,21 @@ export function periodFromApprovedCharge(charge,payment,existing,now){
  const startsAt=Number.isFinite(approved)&&approved<=now+300000?Math.max(approved,existing?.endsAt||0):now;
  return createTestPeriod(charge,startsAt,{empresaId:charge.empresaId,source:'payment_test',paymentId:String(payment.id)});
 }
+
+// Owner-only operation routed through platform-admin. Never shortens a paid period.
+export async function endFreeTestPeriod(db,input,uid,now=Date.now()){
+ if(!validId(input.empresaId)||!validId(input.expectedPeriodId))throw new PlatformError(400,'Período inválido.');
+ return db.runTransaction(async tx=>{
+  const ref=db.doc(`${root}/test_contract_periods/${input.empresaId}`);
+  const [snapshot,company]=await Promise.all([tx.get(ref),tx.get(db.doc(`${root}/companies/${input.empresaId}`))]);
+  if(!snapshot.exists||!company.exists)throw new PlatformError(404,'Simulação não encontrada.');
+  const period=snapshot.data();
+  if(period.id!==input.expectedPeriodId)throw new PlatformError(409,'O período mudou. Atualize a lista.');
+  if(period.mode!=='test'||period.source!=='free_test'||period.amountCents!==0)throw new PlatformError(409,'Somente uma simulação gratuita pode ser encerrada para novo teste. Períodos pagos são preservados.');
+  if(period.simulationEndedAt||now>=period.endsAt)return {ok:true,unchanged:true};
+  const ended={...period,originalEndsAt:period.endsAt,originalRenewalNoticeAt:period.renewalNoticeAt,endsAt:now,renewalNoticeAt:now,simulationEndedAt:now,simulationEndedBy:uid};
+  tx.set(ref,ended);
+  tx.create(db.doc(`plataforma_admin/audit/events/${randomUUID()}`),{action:'contract.free_test.end',empresaId:input.empresaId,uid,at:now,previousPeriod:period});
+  return {ok:true};
+ });
+}

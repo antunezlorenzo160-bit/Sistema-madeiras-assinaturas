@@ -47,6 +47,13 @@ function render(){
     record(host,r.companyName||r.empresaId,(r.planName||'Plano')+' • '+(r.interval==='yearly'?'Anual':'Mensal')+' • Renovação '+(r.renewalPreference==='automatic'?'automática, apenas preferência':'manual')+' • Solicitado em '+new Date(r.requestedAt).toLocaleString('pt-BR'),money(r.amountCents));
     const current=(state.testPeriods||[]).find(p=>p.empresaId===r.empresaId);
     if(current){const info=document.createElement('p');info.textContent='Período de teste: '+money(current.amountCents)+' até '+new Date(current.endsAt).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'})+'. Preço garantido até essa data.';host.append(info);}
+    if(current?.mode==='test'&&current.source==='free_test'&&current.amountCents===0&&Date.now()<current.endsAt){
+      const end=document.createElement('button');end.type='button';end.className='secondary';end.textContent='Encerrar simulação gratuita para novo teste';
+      end.onclick=async()=>{
+        if(!window.confirm('Encerrar somente a simulação gratuita de '+(r.companyName||r.empresaId)+' para permitir um novo teste? O acesso da empresa será preservado.'))return;
+        end.disabled=true;try{await api({action:'contract.period.end_free_test',empresaId:r.empresaId,expectedPeriodId:current.id});await refresh(true);status('Simulação gratuita encerrada. Na página de planos da empresa, atualize e registre uma nova solicitação para testar o pagamento.');}catch(error){status(error.message,true);}finally{end.disabled=false;}
+      };host.append(end);
+    }
     if(!current||Date.now()>=current.endsAt){
       const start=document.createElement('button');start.type='button';start.className='secondary';start.textContent='Iniciar período de teste com preço garantido';
       start.onclick=async()=>{start.disabled=true;try{await api({action:'contract.period.start',empresaId:r.empresaId,expectedRequestedAt:r.requestedAt});await refresh(true);status('Período de teste registrado. O preço está garantido até o vencimento. Nenhuma cobrança real ou alteração de acesso foi realizada.');}catch(error){status(error.message,true);}finally{start.disabled=false;}};host.append(start);

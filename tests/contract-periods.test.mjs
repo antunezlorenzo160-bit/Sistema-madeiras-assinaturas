@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {periodEnd,createTestPeriod,periodView,assertCheckoutPeriodAvailable,periodFromApprovedCharge,startRequestedTestPeriod} from '../Netlify/Funtions/lib/contract-periods.mjs';
+import {periodEnd,createTestPeriod,periodView,assertCheckoutPeriodAvailable,periodFromApprovedCharge,startRequestedTestPeriod,endFreeTestPeriod} from '../Netlify/Funtions/lib/contract-periods.mjs';
 const at=value=>Date.parse(value),terms={planId:'annual',planName:'Completo Anual',amountCents:200000,interval:'yearly'};
 test('annual price remains locked after catalog adjustment; the new price is shown only for renewal',()=>{
  const start=at('2026-10-28T10:00:00-03:00'),period=createTestPeriod(terms,start),newPlan={name:'Anual',amountCents:250000,interval:'yearly',active:true};
@@ -36,4 +36,17 @@ test('starting a simulated period is idempotent and does not alter subscriptions
  assert(s.writes.every(p=>p.includes('/test_contract_periods/')||p.includes('/audit/events/')));
  s.records.get('plataforma_admin/billing/contract_requests/company').requestedAt=200;
  await assert.rejects(startRequestedTestPeriod(s.db,{...s.input,expectedRequestedAt:200},'owner',now+1),/vigente/);
+});
+
+test('owner can end only a free simulated period, preserving history and real access',async()=>{
+ const s=setup(),now=at('2026-10-29T10:00:00-03:00'),p=createTestPeriod({...terms,amountCents:0},now,{source:'free_test',empresaId:'company'});
+ s.records.set('plataforma_admin/billing/test_contract_periods/company',p);
+ const input={empresaId:'company',expectedPeriodId:p.id};await endFreeTestPeriod(s.db,input,'owner',now+1000);
+ const ended=s.records.get('plataforma_admin/billing/test_contract_periods/company');assert.equal(ended.endsAt,now+1000);assert.equal(ended.originalEndsAt,p.endsAt);assert.equal(ended.id,p.id);assert.doesNotThrow(()=>assertCheckoutPeriodAvailable(ended,now+1001));
+ assert(s.writes.every(path=>path.includes('/test_contract_periods/')||path.includes('/audit/events/')));const count=s.writes.length;assert.equal((await endFreeTestPeriod(s.db,input,'owner',now+2000)).unchanged,true);assert.equal(s.writes.length,count);
+});
+test('paid, non-test and stale periods can never be ended by the free-test operation',async()=>{
+ for(const change of [{amountCents:19990},{source:'payment_test'},{mode:'live'},{id:'new-id'}]){
+  const s=setup(),p=createTestPeriod({...terms,amountCents:0},Date.now(),{source:'free_test',empresaId:'company'});s.records.set('plataforma_admin/billing/test_contract_periods/company',{...p,...change});await assert.rejects(endFreeTestPeriod(s.db,{empresaId:'company',expectedPeriodId:p.id},'owner'));assert.equal(s.writes.length,0);
+ }
 });

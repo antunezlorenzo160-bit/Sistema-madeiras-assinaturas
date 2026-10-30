@@ -254,3 +254,7 @@ A API exige e-mail confirmado, vínculo ativo e conta responsável; não expõe 
 O acesso gratuito e o estado real dos membros/assinaturas são preservados. **Esta etapa não ativa cobrança de produção, bloqueio por inadimplência nem renovação automática.** Cancelamento/estorno de cobrança real e autorização contratual precisam ser concluídos antes da ativação real.
 
 Validação: nove cenários específicos do checkout da empresa, incluindo geração idempotente, chamadas concorrentes, recuperação de erro, plano gratuito, conferência ponta a ponta com provedor simulado, isolamento entre empresas e renovação. Regressões de contratação, períodos, login, Mercado Pago e webhook passaram. Nenhum pagamento externo foi realizado pelo agente.
+
+### Repetir um teste após período gratuito
+
+Em Assinaturas → Escolhas dos responsáveis, o proprietário pode usar **Encerrar simulação gratuita para novo teste**. Exige confirmação e o ID exato do período. Só aceita período `mode:test`, `source:free_test`, valor zero. Preserva as datas originais e registra auditoria; não exclui pedidos, membros nem muda o acesso gratuito. Depois, o responsável deve atualizar a página de planos e registrar uma nova solicitação. Para testar o Mercado Pago, o plano precisa ter valor positivo e renovação manual. Períodos pagos/de outra origem são recusados no servidor.
