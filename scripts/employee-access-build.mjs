@@ -8,6 +8,15 @@ export function applyEmployeeAccess(html){
  const pure=readFileSync(new URL('../public/employee-permissions.mjs',import.meta.url),'utf8').replaceAll('export ','')+'\n'+readFileSync(new URL('../public/load-access.mjs',import.meta.url),'utf8').replaceAll('export ','');
  const root='<script id="employee-access-root">'+pure+'\n'+readFileSync(new URL('../ui/employee-root.js',import.meta.url),'utf8')+'</script>';
  prefix=prefix.replace(/<script id="employee-access-root">[\s\S]*?<\/script>/,'').replace('<script type="module">',root+'<script type="module">');
+ const startupError='<script id="startup-error-helper">'+readFileSync(new URL('../ui/startup-error.js',import.meta.url),'utf8')+'</script>';
+ prefix=prefix.replace(/<script id="startup-error-helper">[\s\S]*?<\/script>/,'').replace('<script type="module">',startupError+'<script type="module">');
+ if(!shell.includes('// STARTUP_ERROR_STICKY_V1')){
+  shell=shell.replace('window.__v456Error=msg=>{','window.__v456Error=msg=>{\n window.__smShowStartupFailure(msg);');
+  shell=shell.replace('function falhaEntradaV492(e){','function falhaEntradaV492(e){window.__smShowStartupFailure(String(e?.message||e));');
+  shell='\n// STARTUP_ERROR_STICKY_V1\n'+shell;
+ }
+ const errorListener="window.addEventListener('error',e=>parent.__v456Error(String(e.message||'Erro na interface')));";
+ if(app.includes(errorListener))app=app.replace(errorListener,"window.addEventListener('error',e=>{parent.__smShowStartupFailure(String(e.message||'Erro na interface'),'Interface: linha '+e.lineno+', coluna '+e.colno);parent.__v456Error(String(e.message||'Erro na interface'));});\nwindow.addEventListener('unhandledrejection',e=>{parent.__smShowStartupFailure(String(e.reason?.message||e.reason||'Falha ao iniciar'));});");
  if(!shell.includes('// EMPLOYEE_ACCESS_SHELL_V1')){
   const replace=(a,b)=>{if(!shell.includes(a))throw Error('Employee shell anchor: '+a.slice(0,90));shell=shell.replace(a,b);};
   replace('const empresaId=m.data().empresaId;expected[uid]=empresaId;','const empresaId=m.data().empresaId;expected[uid]=empresaId;window.__smSetEmployeeMember(m.data(),uid);');
