@@ -1,3 +1,4 @@
+import {applySplitEmployeePermissions} from './split-employee-permissions.mjs';
 import {readFileSync} from 'node:fs';
 export function applyEmployeeAccess(html){
  const marker='const TEMPLATE=',start=html.indexOf(marker)+marker.length;let end=start+1;
@@ -46,5 +47,6 @@ export function applyEmployeeAccess(html){
  if(helperStart<0||helperEnd<0)throw Error('Employee helper not found.');
  app=app.slice(0,helperStart)+'// EMPLOYEE_ACCESS_FRAME_V1\n'+readFileSync(new URL('../ui/employee-frame.js',import.meta.url),'utf8')+'\n'+app.slice(helperEnd);
  app=app.replace('getItem:k=>parent.__smEmployeeStorageAllowed(String(k))?(durable?storage.getItem(prefix+String(k)):(fallback.get(String(k))??null)):null,','getItem:k=>parent.__smEmployeeStorageValue(String(k),durable?storage.getItem(prefix+String(k)):(fallback.get(String(k))??null)),');
+ app=applySplitEmployeePermissions(app);
  return prefix+JSON.stringify(app).replaceAll('</','<\\/')+shell;
 }

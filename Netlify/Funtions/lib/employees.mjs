@@ -1,6 +1,6 @@
 import {randomBytes,randomUUID,createHash} from 'node:crypto';
 import {PlatformError} from './platform.mjs';
-import {normalizePermissions} from '../../../public/employee-permissions.mjs';
+import {normalizePermissions,expandEmployeePermissions} from '../../../public/employee-permissions.mjs';
 import {billingAccessRef,billingAccessState} from './billing-access.mjs';
 const validId=x=>typeof x==='string'&&/^[-\w]{1,128}$/.test(x);
 export async function employeeOwnerContext(db,identity,read=ref=>ref.get(),write=false,now=Date.now()){
@@ -21,14 +21,14 @@ export async function listEmployees(db,identity){
  const context=await employeeOwnerContext(db,identity);
  const [members,invites]=await Promise.all([db.collection('membros').where('empresaId','==',context.empresaId).limit(101).get(),db.collection(`empresas/${context.empresaId}/convitesFuncionarios`).where('status','==','pending').limit(101).get()]);
  if(members.docs.length>100||invites.docs.length>100)throw new PlatformError(409,'Limite da lista atingido. Entre em contato com a plataforma.');
- return {empresaId:context.empresaId,members:members.docs.filter(d=>d.id!==identity.uid).map(d=>({uid:d.id,name:d.data().nome||'Funcionário',email:d.data().email||'',role:d.data().funcao||'Personalizado',active:d.data().ativo===true,permissions:d.data().permissoes||{},revision:d.data().permissionsRevision||0})),invites:invites.docs.map(d=>({id:d.id,...details(d.data()),expiresAt:d.data().expiresAt,permissions:d.data().permissoes,revision:d.data().createdAt}))};
+ return {empresaId:context.empresaId,members:members.docs.filter(d=>d.id!==identity.uid).map(d=>({uid:d.id,name:d.data().nome||'Funcionário',email:d.data().email||'',role:d.data().funcao||'Personalizado',active:d.data().ativo===true,permissions:expandEmployeePermissions(d.data().permissoes||{},d.data().permissionsVersion||1),revision:d.data().permissionsRevision||0})),invites:invites.docs.map(d=>({id:d.id,...details(d.data()),expiresAt:d.data().expiresAt,permissions:expandEmployeePermissions(d.data().permissoes||{},d.data().permissionsVersion||1),revision:d.data().createdAt}))};
 }
 export async function createEmployeeInvite(db,identity,input,now=Date.now()){
  const data=details(input),permissoes=permissions(input.permissions),token=randomBytes(32).toString('base64url');
  const result=await db.runTransaction(async tx=>{
   const company=await employeeOwnerContext(db,identity,r=>tx.get(r),true,now);
   const ref=inviteRef(db,company.empresaId,token);
-  tx.create(ref,{...data,empresaId:company.empresaId,status:'pending',permissoes,funcao:['Venda','Estoque'].includes(input.role)?input.role:'Personalizado',createdAt:now,createdBy:identity.uid,expiresAt:now+7*86400000});
+  tx.create(ref,{...data,empresaId:company.empresaId,status:'pending',permissionsVersion:2,permissoes,funcao:['Venda','Estoque','Produção'].includes(input.role)?input.role:'Personalizado',createdAt:now,createdBy:identity.uid,expiresAt:now+7*86400000});
   audit(tx,db,{action:'employee.invite',empresaId:company.empresaId,uid:identity.uid,email:data.email,at:now});return {empresaId:company.empresaId};
  });return {...result,token};
 }
@@ -42,7 +42,7 @@ export async function updateEmployee(db,identity,input,now=Date.now()){
   if(m?.empresaId!==context.empresaId||m.papel!=='employee')throw new PlatformError(403,'Funcionário não pertence a esta empresa.');
   if((m.permissionsRevision||0)!==input.revision)throw new PlatformError(409,'As permissões mudaram. Atualize a lista antes de salvar.');
   if(m.suspensoPelaPlataforma===true)throw new PlatformError(403,'O acesso está suspenso pela plataforma.');
-  const next={ativo:input.active,permissoes,permissionsVersion:1,permissionsRevision:input.revision+1,permissionsUpdatedAt:now};
+  const next={ativo:input.active,permissoes,permissionsVersion:2,permissionsRevision:input.revision+1,permissionsUpdatedAt:now};
   tx.set(ref,next,{merge:true});audit(tx,db,{action:'employee.permissions',empresaId:context.empresaId,uid:identity.uid,targetUid:input.uid,previous:{ativo:m.ativo,permissoes:m.permissoes||{}},next,at:now});return {ok:true};
  });
 }
@@ -63,7 +63,7 @@ export async function redeemEmployeeInvite(db,identity,input,now=Date.now()){
   if(!billingAccessState(ownerPolicy.exists?ownerPolicy.data():null,now).write)throw new PlatformError(403,'A empresa precisa renovar o acesso antes de cadastrar funcionários.');
   const owner=await tx.get(db.doc('membros/'+(company.exists&&company.data().ownerUid?company.data().ownerUid:data.createdBy)));
   if(!owner.exists||owner.data().ativo!==true||owner.data().empresaId!==input.empresaId)throw new PlatformError(403,'Empresa sem acesso ativo.');
-  tx.create(member,{empresaId:input.empresaId,ativo:true,papel:'employee',nome:data.name,email:data.email,funcao:data.funcao,permissionsVersion:1,permissoes:permissions(data.permissoes),permissionsRevision:1,criadoEm:now});
+  tx.create(member,{empresaId:input.empresaId,ativo:true,papel:'employee',nome:data.name,email:data.email,funcao:data.funcao,permissionsVersion:2,permissoes:permissions(expandEmployeePermissions(data.permissoes,data.permissionsVersion||1)),permissionsRevision:1,criadoEm:now});
   tx.update(invite,{status:'redeemed',redeemedBy:identity.uid,redeemedAt:now});audit(tx,db,{action:'employee.join',empresaId:input.empresaId,uid:identity.uid,at:now});return {ok:true};
  });
 }

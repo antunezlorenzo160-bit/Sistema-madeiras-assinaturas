@@ -16,7 +16,7 @@ function setup(){
 test('permissions reject unknown fields, fail closed for employees and preserve owner access',()=>{
  for(const input of [{admin:{read:true}},{stock:{read:'yes'}},{stock:{write:true,extra:true}},[]])assert.throws(()=>normalizePermissions(input));
  const permissions=normalizePermissions({stock:{read:true}}),m={ativo:true,papel:'employee',permissionsVersion:1,permissoes:permissions};assert(employeeCan(m,'stock'));assert(!employeeCan(m,'stock',true));assert(!employeeCan(m,'budgets'));assert(!employeeCan({...m,ativo:false},'stock'));assert(!employeeCan({ativo:true,papel:'employee'},'stock'));assert(employeeCan({ativo:true,papel:'admin'},'stock',true));assert(!employeeCollectionCan(m,'unrecognized'));assert(!employeeCollectionCan(m,'sm2_empresas_perfis_dev',true));
- const preset=permissionPreset();assert(preset.catalog.read&&preset.services.read);assert(!preset.stock.read);assert(employeeCollectionCan({...m,permissoes:preset},'sm2_orcamento_itens',true));
+ const preset=permissionPreset();assert(!preset.catalog.read&&preset.services.read);assert(!preset.stock.read);assert(employeeCollectionCan({...m,permissoes:preset},'sm2_orcamento_itens',true));
 });
 test('invitation is tenant-bound, hashed, email verified, single-use and issues no admin access',async()=>{
  const s=setup(),invite=await createEmployeeInvite(s.db,owner,{name:'Vendedor',email:seller.email,permissions:permissionPreset(),role:'Venda'},now);

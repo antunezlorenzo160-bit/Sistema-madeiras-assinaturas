@@ -9,7 +9,7 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/membros/$(request.auth.uid)).data.empresaId == empresaId;
     }
 
-    // EMPLOYEE_PERMISSIONS_V1 — server-managed membership, per-area read/write.
+    // EMPLOYEE_PERMISSIONS_V2 — server-managed membership, per-area read/write.
     function responsavel(empresaId) {
       let path = /databases/$(database)/documents/empresas/$(empresaId);
       return exists(path) && 'ownerUid' in get(path).data
@@ -18,9 +18,10 @@ service cloud.firestore {
     }
     function areaPermite(empresaId, area, escrita) {
       let m = get(/databases/$(database)/documents/membros/$(request.auth.uid)).data;
-      let p = m.get('permissoes', {}).get(area, {});
+      let key = m.get('permissionsVersion', 0) == 1 && area in ['orders', 'production'] ? 'budgets' : area;
+      let p = m.get('permissoes', {}).get(key, {});
       return pertence(empresaId) && (responsavel(empresaId)
-        || (m.get('permissionsVersion', 0) == 1 && p.get('read', false) == true
+        || (m.get('permissionsVersion', 0) in [1, 2] && p.get('read', false) == true
           && (!escrita || p.get('write', false) == true)));
     }
     function areaColecao(colecao) {
@@ -28,7 +29,8 @@ service cloud.firestore {
         : colecao == 'sm2_madeiras' ? 'catalog'
         : colecao in ['sm2_estoque1', 'sm2_estoque2', 'sm2_movimentos'] ? 'stock'
         : colecao == 'sm2_carregamentos' ? 'loads'
-        : colecao in ['sm2_orcamento_itens', 'sm2_orcamentos_guardados'] ? 'budgets'
+        : colecao == 'sm2_orcamento_itens' ? 'budgets'
+        : colecao == 'sm2_orcamentos_guardados' ? 'orders'
         : colecao == 'sm2_servicos' ? 'services'
         : colecao == 'sm2_resumos_calculadora' ? 'calculator' : 'none';
     }
@@ -57,11 +59,29 @@ service cloud.firestore {
       allow read: if pertence(empresaId) && planoPermite(empresaId, false)
         && ((colecao == 'sm2_sync_status')
           || (colecao in ['sm2_clientes','sm2_madeiras','sm2_estoque1','sm2_estoque2','sm2_carregamentos','sm2_orcamentos_guardados','sm2_movimentos','sm2_servicos','sm2_resumos_calculadora']
-            && areaPermite(empresaId, areaColecao(colecao), false)));
+            && (areaPermite(empresaId, areaColecao(colecao), false)
+              || (colecao == 'sm2_madeiras' && (areaPermite(empresaId, 'calculator', false)
+                || areaPermite(empresaId, 'budgets', false) || areaPermite(empresaId, 'orders', false)
+                || areaPermite(empresaId, 'stock', false) || areaPermite(empresaId, 'loads', false))))));
       allow write: if pertence(empresaId) && planoPermite(empresaId, true)
         && ((colecao == 'sm2_sync_status' && responsavel(empresaId))
-          || (colecao in ['sm2_clientes','sm2_madeiras','sm2_estoque1','sm2_estoque2','sm2_carregamentos','sm2_orcamentos_guardados','sm2_movimentos','sm2_servicos','sm2_resumos_calculadora']
+          || (colecao in ['sm2_clientes','sm2_madeiras','sm2_estoque1','sm2_estoque2','sm2_carregamentos','sm2_movimentos','sm2_servicos','sm2_resumos_calculadora']
             && areaPermite(empresaId, areaColecao(colecao), true)));
+    }
+
+    function camposProducao() {
+      return ['producaoStatus', 'producaoIniciadaEm', 'producaoPausadaEm', 'producaoRetomadaEm',
+        'producaoFinalizadaEm', 'producaoResponsavel', 'observacaoProducao',
+        'observacaoProducaoAtualizadaEm', 'materiaisUsadosProducao'];
+    }
+    match /empresas/{empresaId}/dados/sm2_orcamentos_guardados/registros/{id} {
+      allow create: if areaPermite(empresaId, 'orders', true) && planoPermite(empresaId, true)
+        && (areaPermite(empresaId, 'production', true)
+          || !request.resource.data.keys().hasAny(camposProducao()));
+      allow update: if areaPermite(empresaId, 'orders', true) && planoPermite(empresaId, true)
+        && (areaPermite(empresaId, 'production', true)
+          || !request.resource.data.diff(resource.data).affectedKeys().hasAny(camposProducao()));
+      allow delete: if areaPermite(empresaId, 'orders', true) && planoPermite(empresaId, true);
     }
 
     match /empresas/{empresaId}/dados/sm2_orcamento_itens/registros/{id} {

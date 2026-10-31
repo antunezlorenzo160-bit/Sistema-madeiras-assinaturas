@@ -3,7 +3,7 @@
  function selectAll(){code.focus();code.select();code.setSelectionRange(0,source.length);}
  fetch('/regras-acesso-planos.txt',{cache:'no-store'}).then(async response=>{
   if(!response.ok)throw Error();source=await response.text();
-  if(!source.startsWith("rules_version = '2';")||!source.includes('EMPLOYEE_PERMISSIONS_V1')||!source.trimEnd().endsWith('}'))throw Error();
+  if(!source.startsWith("rules_version = '2';")||!source.includes('EMPLOYEE_PERMISSIONS_V2')||!source.trimEnd().endsWith('}'))throw Error();
   code.value=source;copy.disabled=false;select.disabled=false;
   status.textContent='Código completo carregado: '+source.trimEnd().split('\n').length+' linhas. Use o botão Copiar código completo.';
  }).catch(()=>{status.textContent='Não foi possível carregar o código completo. Conecte à internet e atualize esta página.';});

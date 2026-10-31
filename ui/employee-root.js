@@ -20,7 +20,8 @@
  };
  window.__smEmployeeStorageAllowed=key=>{
   if(member?.papel==='admin')return true;
-  const map={madeiras_db_v1:'catalog',clientes:'clients',orcamento_db_v1:'budgets',orcamentos_guardados_v1:'budgets',orcamento_cliente_v1:'budgets',movimentos_db_v1:'stock',estoque1_lancamentos_v1:'stock',estoque2_lancamentos_v1:'stock',carregamentos_lancamentos_v1:'loads',sm2_movimentos:'stock'};
+  const map={madeiras_db_v1:'catalog',clientes:'clients',orcamento_db_v1:'budgets',orcamentos_guardados_v1:'orders',orcamento_cliente_v1:'budgets',movimentos_db_v1:'stock',estoque1_lancamentos_v1:'stock',estoque2_lancamentos_v1:'stock',carregamentos_lancamentos_v1:'loads',sm2_movimentos:'stock'};
+  if(key==='madeiras_db_v1')return employeeCollectionCan(member,'sm2_madeiras');
   for(const [prefix,area] of Object.entries(map))if(String(key).startsWith(prefix))return employeeCan(member,area);
   if(/cubagem_toras|servicos/.test(key))return employeeCan(member,'services');
   if(/lancamentos|resumo|contador|pacotes|base_total_topo/.test(key))return employeeCan(member,'calculator');
