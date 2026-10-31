@@ -75,3 +75,11 @@ Novas peças registram `cargaCriadaPorUid` e `cargaCriadaPorNome` do login real.
 Teste uma carga nova com o funcionário: lance algumas peças, guarde, confira o nome na lista e continue. O administrador deve ver a mesma montagem com esse autor, continuar na calculadora, fechar e conferir. A partir do fechamento, ela sai da lista do funcionário. Confira que romaneio, PDFs, cópia, formulários documentais, exclusão e baixa ficam inacessíveis ao funcionário mesmo que ele também tenha permissão para alterar estoque.
 
 Testes automatizados incluem o fluxo real das funções geradas de lançar/guardar/continuar, identidade autenticada, imutabilidade de autoria, consulta filtrada, bloqueios administrativos, preservação dos documentos históricos e compatibilidade com os demais acessos. Compilação/publicação das regras no Firebase e conferência visual continuam sendo realizadas pelo responsável na prévia; o agente não publicou regras nem alterou cargas reais.
+
+## Visibilidade dos botões permitidos
+
+A interface reaplica a visibilidade quando os menus e atalhos são criados ou reconstruídos depois do login. A ocultação usa `display:none!important` diretamente no elemento para prevalecer sobre os estilos que forçavam os botões a aparecer. O estilo anterior fica registrado no próprio elemento, inclusive para clones, e é restaurado quando a rota é permitida. O controle antigo da simulação local não oculta mais um atalho autorizado pelo vínculo real.
+
+Menu inicial, lateral, navegação do PC, subabas de orçamento/pedidos e destinos da calculadora seguem as permissões. Um destino selecionado que não está liberado é substituído somente depois de avaliar todas as opções. O observador reage a novos elementos e a mudanças nas rotas, sem polling nem novas consultas ao Firebase; as próprias alterações de visibilidade não criam ciclo de atualização.
+
+Esta revisão não altera `firestore.rules` nem o hash de validação das regras publicadas. Testes cobrem menus tardios, clones, prioridade de exibição, preservação de estilos permitidos, seleção da calculadora, ausência de loops e Pedidos liberado com Orçamentos oculto.

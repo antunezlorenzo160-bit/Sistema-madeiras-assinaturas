@@ -40,8 +40,8 @@ function renderEmployeeLoadDrafts(host){
 function employeeLoadControls(){
  if(parent.__smEmployeeMember()?.papel==='admin')return;
  const carga=typeof destinoSelecionado==='function'&&destinoSelecionado()==='carga';
- for(const id of ['btnGuardarResumoCalc','btnNovoResumoCalc','btnLimparLancamentos','btnApagarSomenteResumoCarga'])document.getElementById(id)?.classList.toggle('employee-load-admin-hidden',carga);
- const exportArea=document.querySelector('#resumoCalculadoraExport > .export-actions');exportArea?.classList.toggle('employee-load-admin-hidden',carga);
- for(const id of ['btnPacoteMenos','btnVerdeOuCorrigirV260']){const button=document.getElementById(id);button?.classList.toggle('employee-load-admin-hidden',carga&&(id==='btnPacoteMenos'||button.dataset.modo==='corrigir'));}
- const pending=document.getElementById('painelCargasConferenciaV388');pending?.classList.add('employee-load-admin-hidden');
+ for(const id of ['btnGuardarResumoCalc','btnNovoResumoCalc','btnLimparLancamentos','btnApagarSomenteResumoCarga']){const button=document.getElementById(id);if(button)employeeSetNavigationHidden(button,carga);}
+ const exportArea=document.querySelector('#resumoCalculadoraExport > .export-actions');if(exportArea)employeeSetNavigationHidden(exportArea,carga);
+ for(const id of ['btnPacoteMenos','btnVerdeOuCorrigirV260']){const button=document.getElementById(id);if(button)employeeSetNavigationHidden(button,carga&&(id==='btnPacoteMenos'||button.dataset.modo==='corrigir'));}
+ const pending=document.getElementById('painelCargasConferenciaV388');if(pending)employeeSetNavigationHidden(pending,true);
 }
