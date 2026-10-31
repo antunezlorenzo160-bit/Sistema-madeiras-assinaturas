@@ -9,6 +9,7 @@ import { METHODS, validateWatermark, validateRenewalPreference, requireManualTes
 import { testCheckout,inspectTestCheckout } from './lib/mercadopago.mjs';
 import { createReadBudget } from './lib/read-budget.mjs';
 import { createInvitation } from './lib/invitations.mjs';
+import {recoverLegacyCompany} from './lib/legacy-company.mjs';
 import {companyDetail,manageCompany} from './lib/company-management.mjs';
 
 const ids = value => typeof value === 'string' && /^[A-Za-z0-9_-]{1,120}$/.test(value);
@@ -17,7 +18,8 @@ export default async function handler(req) {
   if (!['GET','POST'].includes(req.method)) return json(405,{error:'Método não permitido.'});
   let stage='authentication',ownerAuthorized=false;
   try {
-    const {db,uid} = await authenticate(req);
+    const identity = await authenticate(req);
+    const {db,uid} = identity;
     ownerAuthorized=true;
     const root = db.collection('plataforma_admin');
     if (req.method === 'GET') {
@@ -45,6 +47,7 @@ export default async function handler(req) {
     if (text.length > 400000) throw new PlatformError(413,'Arquivo muito grande.');
     let input; try { input = JSON.parse(text); } catch { throw new PlatformError(400,'Pedido inválido.'); }
     if (!input || typeof input !== 'object') throw new PlatformError(400,'Pedido inválido.');
+    if(['company.legacy.inspect','company.legacy.recover'].includes(input.action)){const result=await recoverLegacyCompany(db,identity,input);overviewReads.invalidate();return json(200,result);}
     if(input.action==='company.billing_test'){const result=await simulateBillingAccess(db,input,uid);overviewReads.invalidate();return json(200,result);}
     if(input.action==='company.detail')return json(200,await companyDetail(db,input.empresaId));
     if(['company.access','trial.save'].includes(input.action)){

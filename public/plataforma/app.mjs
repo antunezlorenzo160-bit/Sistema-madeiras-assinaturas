@@ -226,3 +226,15 @@ $('invite-form').onsubmit=async event=>{
  catch(error){status(error.message,true);}finally{button.disabled=false;}
 };
 $('invite-copy').onclick=async()=>{try{await navigator.clipboard.writeText($('invite-url').value);$('invite-copy-status').textContent='Link copiado.';}catch{$('invite-url').focus();$('invite-url').select();$('invite-copy-status').textContent='Selecione e copie o link acima.';}};
+
+let legacyCompany=null;
+$('legacy-inspect').onclick=async()=>{
+ $('legacy-inspect').disabled=true;$('legacy-recover').hidden=true;
+ try{legacyCompany=await api({action:'company.legacy.inspect'});$('legacy-detail').textContent=legacyCompany.name+' • Código: '+legacyCompany.empresaId+' • Conta: '+legacyCompany.email+(legacyCompany.alreadyLinked?' • Vínculo administrativo já confirmado.':'');$('legacy-recover').hidden=legacyCompany.alreadyLinked;}
+ catch(error){$('legacy-detail').textContent=error.message;}finally{$('legacy-inspect').disabled=false;}
+};
+$('legacy-recover').onclick=async()=>{
+ if(!legacyCompany)return;$('legacy-recover').disabled=true;
+ try{await api({action:'company.legacy.recover',expectedEmpresaId:legacyCompany.empresaId});$('legacy-recover').hidden=true;await refresh(true);$('legacy-detail').textContent='Empresa vinculada e acesso administrativo recuperado. Abra novamente o sistema de madeiras.';}
+ catch(error){$('legacy-detail').textContent=error.message;}finally{$('legacy-recover').disabled=false;}
+};
