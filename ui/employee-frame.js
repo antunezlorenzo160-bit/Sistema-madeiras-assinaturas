@@ -67,8 +67,13 @@ function employeeUpdateUI(){
   if(host){const link=document.createElement('a');link.id='employee-management-link';link.href='/equipe/';link.target='_blank';link.rel='noopener';link.className='btn btn-primary';link.textContent='Funcionários e permissões';host.prepend(link);}
  }
  for(const [hostId,buttonId] of [['inicio','employee-production-home'],['menuLateralV525','employee-production-menu']]){
-  const host=document.getElementById(hostId);if(host&&!document.getElementById(buttonId)){const b=document.createElement('button');b.id=buttonId;b.type='button';b.className='inicio-atalho-v464';b.dataset.inicioDestino='producao';b.textContent='Produção';b.onclick=employeeOpenProduction;(host.querySelector('.inicio-grid-v464')||host).append(b);}
-  const productionButton=document.getElementById(buttonId);if(productionButton)employeeSetNavigationHidden(productionButton,!parent.__smEmployeeCan('production'));
+  const host=document.getElementById(hostId);if(!host)continue;
+  const candidates=[...host.querySelectorAll('[data-inicio-destino="producao"],[data-lateral-destino="producao"]')];
+  let productionButton=document.getElementById(buttonId)||candidates[0];
+  if(!productionButton){productionButton=document.createElement('button');productionButton.type='button';productionButton.className='inicio-atalho-v464';productionButton.dataset.inicioDestino='producao';productionButton.textContent='Produção';(host.querySelector('.inicio-grid-v464')||host).append(productionButton);}
+  productionButton.id=buttonId;productionButton.onclick=employeeOpenProduction;
+  for(const duplicate of candidates)if(duplicate!==productionButton)duplicate.remove();
+  employeeSetNavigationHidden(productionButton,!parent.__smEmployeeCan('production'));
  }
  if(!owner){
   document.querySelectorAll('[onclick*="abrirTelaProducao"],#btnConfigMobileV425,#btnCadastroEmpresaMobileV425').forEach(el=>employeeSetNavigationHidden(el,el.id.startsWith('btnConfig')||el.id==='btnCadastroEmpresaMobileV425'||!parent.__smEmployeeCan('production')));
