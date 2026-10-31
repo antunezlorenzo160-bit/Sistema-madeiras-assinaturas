@@ -1,5 +1,5 @@
 // Cache only the public application shell and its modules, never company/API data.
-const CACHE = 'sm-offline-billing-access-1';
+const CACHE = 'sm-offline-employee-permissions-1';
 const SDK = 'https://www.gstatic.com/firebasejs/12.2.1/';
 const CORE = ['/', '/toras.mjs', ...['firebase-app.js','firebase-auth.js','firebase-firestore.js'].map(file => SDK + file)];
 async function prepareCore(force = false) {

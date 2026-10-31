@@ -13,3 +13,15 @@
 
 /contratacao/*
   Cache-Control: no-cache, max-age=0, must-revalidate
+
+/equipe/*
+  Cache-Control: no-cache, max-age=0, must-revalidate
+
+/funcionario/*
+  Cache-Control: no-cache, max-age=0, must-revalidate
+
+/employee-permissions.mjs
+  Cache-Control: no-cache, max-age=0, must-revalidate
+
+/regras-acesso-planos.txt
+  Cache-Control: no-cache, max-age=0, must-revalidate

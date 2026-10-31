@@ -5,7 +5,8 @@ export function applyBillingAccess(html){
  let app=JSON.parse(html.slice(start,end)),shell=html.slice(end),prefix=html.slice(0,start);
  const pure=readFileSync(new URL('../public/billing-access.mjs',import.meta.url),'utf8').replaceAll('export ','');
  prefix=prefix.replace(/<script id="billing-access-root">[\s\S]*?<\/script>/,'');
- prefix=prefix.replace('<script type="module">','<script id="billing-access-root">'+pure+'\n'+readFileSync(new URL('../ui/billing-root.js',import.meta.url),'utf8')+'</script><script type="module">');
+ const rootAnchor=prefix.includes('<script id="employee-access-root">')?'<script id="employee-access-root">':'<script type="module">';
+ prefix=prefix.replace(rootAnchor,'<script id="billing-access-root">'+pure+'\n'+readFileSync(new URL('../ui/billing-root.js',import.meta.url),'utf8')+'</script>'+rootAnchor);
  if(!app.includes('// BILLING_ACCESS_FRAME_V1')){
   const replace=(a,b)=>{if(!app.includes(a))throw Error('Billing frame anchor: '+a);app=app.replace(a,b)};
   replace('function setDoc(ref,dados,opcoes){','function setDoc(ref,dados,opcoes){\n exigirEscritaPlano();');
