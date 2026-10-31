@@ -7,10 +7,11 @@ function element(dataset={},display=''){
  const classes=new Set(),properties=new Map();if(display)properties.set('display',{value:display,priority:'important'});
  return {nodeType:1,dataset:{...dataset},classList:{contains:x=>classes.has(x),add:x=>classes.add(x),remove:x=>classes.delete(x),toggle(x,force){const add=force===undefined?!classes.has(x):force;if(add)classes.add(x);else classes.delete(x);return add;}},style:{getPropertyValue:key=>properties.get(key)?.value||'',getPropertyPriority:key=>properties.get(key)?.priority||'',setProperty:(key,value,priority='')=>properties.set(key,{value,priority}),removeProperty:key=>properties.delete(key)},closest(){return this.label||null;}};
 }
-function setup(){
+function setup(ready=true){
  const member={ativo:true,papel:'employee',permissionsVersion:2,permissoes:normalizePermissions({clients:{write:true},calculator:{write:true},budgets:{write:true}})},nav=[],sections=[],inputs=[],events={},observers=[];let updates=0;
  const c={parent:{__smEmployeeMember:()=>member,__smEmployeeCan:(area,write)=>employeeCan(member,area,write)},document:{documentElement:{},head:{append(){}},createElement:()=>element(),querySelectorAll:selector=>selector==='main>section.tab'?sections:selector.startsWith('input[')?inputs:nav,addEventListener:(type,fn)=>events[type]=fn},window:{addEventListener(){}},MutationObserver:class{constructor(callback){this.callback=callback;observers.push(this);}observe(target,options){this.options=options;}},queueMicrotask,setTimeout(){},Event:class{constructor(type,options){this.type=type;this.bubbles=options.bubbles;}}};
  vm.createContext(c);vm.runInContext(readFileSync(new URL('../ui/employee-frame.js',import.meta.url),'utf8'),c);
+ if(ready)vm.runInContext('employeeAppReady=true',c);
  c.employeeUpdateUI=()=>{updates++;c.employeeUpdateNavigationVisibility();c.employeeUpdateDestinationVisibility();};
  return {c,member,nav,sections,inputs,observers,events,updates:()=>updates,flush:()=>new Promise(resolve=>setImmediate(resolve))};
 }
@@ -33,3 +34,14 @@ test('style rewrites cannot expose a denied button and our own visibility update
 });
 
 test('orders-only access shows Pedidos and hides Orçamentos even in PC/header buttons',()=>{const s=setup();s.member.permissoes=normalizePermissions({orders:{read:true}});const orders=element({lateralDestino:'pedidos'}),budget=element({pcnav:'orcamento'}),header=element({tab:'orcamento'});s.nav.push(orders,budget,header);s.c.employeeUpdateNavigationVisibility();assert(!orders.classList.contains('employee-denied'));assert.equal(budget.style.getPropertyValue('display'),'none');assert.equal(header.style.getPropertyValue('display'),'none');assert(s.c.employeeTabAllowed('orcamento'));});
+
+test('startup ignores early mutations until app initialization completes, then applies current permissions',async()=>{
+ const s=setup(false),denied=element({lateralDestino:'estoque'});s.nav.push(denied);
+ s.observers[0].callback([{type:'childList',addedNodes:[denied]}]);await s.flush();assert.equal(s.updates(),0);
+ s.events.DOMContentLoaded();await s.flush();assert.equal(s.updates(),1);assert.equal(denied.style.getPropertyValue('display'),'none');
+});
+test('permission helpers inspect destination without invoking calculator initialization side effects',()=>{
+ const s=setup();s.c.document.querySelector=()=>({value:'estoque1'});
+ s.c.destinoSelecionado=()=>{throw new ReferenceError("Cannot access 'destinoAtual' before initialization");};
+ assert.equal(s.c.employeeSelectedDestination(),'estoque1');assert.equal(s.c.employeeDestinationAllowed(true),false);
+});

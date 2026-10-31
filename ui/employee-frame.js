@@ -1,3 +1,4 @@
+function employeeSelectedDestination(){return document.querySelector('input[name="destinoLancamento"]:checked')?.value||'carga';}
 function employeePath(ref){return String(ref?.path||ref?._query?.path?.canonicalString?.()||'');}
 function employeeReadAllowed(ref){
  const parts=employeePath(ref).split('/');
@@ -37,7 +38,7 @@ function employeeRefreshPanels(){
 }
 function employeeDestinationAllowed(write=false){
  if(!parent.__smEmployeeCan('calculator',write))return false;
- const area=({orcamento:'budgets',carga:'loads',estoque1:'stock',estoque2:'stock',transferencia:'stock',plaina:'stock'})[destinoSelecionado()];
+ const area=({orcamento:'budgets',carga:'loads',estoque1:'stock',estoque2:'stock',transferencia:'stock',plaina:'stock'})[employeeSelectedDestination()];
  return !!area&&parent.__smEmployeeCan(area,write);
 }
 function employeeUpdateUI(){
@@ -73,8 +74,8 @@ function employeeActionAllowed(target){
  if(tab)return employeeNavigationAllowed(control);
  if(control.id==='sairInicioV492')return true;
  if(control.dataset?.employeeContinueLoad)return parent.__smEmployeeCan('loads',true)&&parent.__smEmployeeCan('calculator',true);
- if(typeof destinoSelecionado==='function'&&destinoSelecionado()==='carga'&&(control.id==='btnPacoteMenos'||control.id==='btnVerdeOuCorrigirV260'&&control.dataset?.modo==='corrigir'))return false;
- if(['btnGuardarResumoCalc','btnNovoResumoCalc','btnLimparLancamentos','btnApagarSomenteResumoCarga'].includes(control.id)&&typeof destinoSelecionado==='function'&&destinoSelecionado()==='carga')return false;
+ if(employeeSelectedDestination()==='carga'&&(control.id==='btnPacoteMenos'||control.id==='btnVerdeOuCorrigirV260'&&control.dataset?.modo==='corrigir'))return false;
+ if(['btnGuardarResumoCalc','btnNovoResumoCalc','btnLimparLancamentos','btnApagarSomenteResumoCarga'].includes(control.id)&&employeeSelectedDestination()==='carga')return false;
  if(control.dataset?.orcsub)return parent.__smEmployeeCan(({atual:'budgets',guardados:'orders',entregas:'orders',carregamentos:'loads'})[control.dataset.orcsub]);
  if(control.closest('header,#menuLateralV525')&&/sair|início|inicio|menu/i.test(control.textContent||''))return true;
  if(control.id==='mobileMenuToggle'||control.id==='mobileMenuClose')return true;
@@ -88,8 +89,8 @@ function employeeActionAllowed(target){
  if(!area)return false;
  if(!parent.__smEmployeeCan(area))return false;
  if(area==='loads')return false;
- if(area==='calculator'&&typeof destinoSelecionado==='function'&&destinoSelecionado()==='carga'&&/abrirPecasLinhaV224/.test(inline))return false;
- if(area==='calculator'&&typeof destinoSelecionado==='function'&&destinoSelecionado()==='carga'&&/copiar|gerar\s*pdf|imprimir|exportar/.test(text.toLowerCase()))return false;
+ if(area==='calculator'&&employeeSelectedDestination()==='carga'&&/abrirPecasLinhaV224/.test(inline))return false;
+ if(area==='calculator'&&employeeSelectedDestination()==='carga'&&/copiar|gerar\s*pdf|imprimir|exportar/.test(text.toLowerCase()))return false;
  if(/copiar|gerar\s*pdf|imprimir|exportar/.test(text.toLowerCase())||/^fechar|^voltar/.test(text.toLowerCase())||/abrirPecasLinhaV224/.test(inline))return true;
  if(area==='calculator')return employeeDestinationAllowed(true);
  return parent.__smEmployeeCan(area,true);
@@ -129,8 +130,9 @@ function employeeUpdateDestinationVisibility(){
  }
 }
 let employeeVisibilityScheduled=false;
+let employeeAppReady=false;
 function employeeScheduleVisibility(){
- if(employeeVisibilityScheduled)return;
+ if(!employeeAppReady||employeeVisibilityScheduled)return;
  employeeVisibilityScheduled=true;
  queueMicrotask(()=>{employeeVisibilityScheduled=false;employeeUpdateUI();});
 }
@@ -143,6 +145,7 @@ if(typeof MutationObserver!=='undefined'&&document.documentElement){
  observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['style','data-pcnav','data-tab','data-inicio-destino','data-lateral-destino','data-orcsub']});
 }
 document.addEventListener('change',event=>{if(event.target?.matches?.('input[name="destinoLancamento"]'))employeeScheduleVisibility();});
-document.addEventListener('DOMContentLoaded',employeeScheduleVisibility,{once:true});
-window.addEventListener('load',employeeScheduleVisibility);
-setTimeout(employeeScheduleVisibility,0);
+function employeeStartVisibility(){employeeAppReady=true;employeeScheduleVisibility();}
+document.addEventListener('DOMContentLoaded',employeeStartVisibility,{once:true});
+window.addEventListener('load',employeeStartVisibility);
+if(document.readyState==='complete')setTimeout(employeeStartVisibility,0);

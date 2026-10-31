@@ -39,7 +39,7 @@ function renderEmployeeLoadDrafts(host){
 }
 function employeeLoadControls(){
  if(parent.__smEmployeeMember()?.papel==='admin')return;
- const carga=typeof destinoSelecionado==='function'&&destinoSelecionado()==='carga';
+ const carga=employeeSelectedDestination()==='carga';
  for(const id of ['btnGuardarResumoCalc','btnNovoResumoCalc','btnLimparLancamentos','btnApagarSomenteResumoCarga']){const button=document.getElementById(id);if(button)employeeSetNavigationHidden(button,carga);}
  const exportArea=document.querySelector('#resumoCalculadoraExport > .export-actions');if(exportArea)employeeSetNavigationHidden(exportArea,carga);
  for(const id of ['btnPacoteMenos','btnVerdeOuCorrigirV260']){const button=document.getElementById(id);if(button)employeeSetNavigationHidden(button,carga&&(id==='btnPacoteMenos'||button.dataset.modo==='corrigir'));}
