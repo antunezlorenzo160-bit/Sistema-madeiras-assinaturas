@@ -38,10 +38,16 @@ test('orders-only access shows Pedidos and hides Orçamentos even in PC/header b
 test('startup ignores early mutations until app initialization completes, then applies current permissions',async()=>{
  const s=setup(false),denied=element({lateralDestino:'estoque'});s.nav.push(denied);
  s.observers[0].callback([{type:'childList',addedNodes:[denied]}]);await s.flush();assert.equal(s.updates(),0);
- s.events.DOMContentLoaded();await s.flush();assert.equal(s.updates(),1);assert.equal(denied.style.getPropertyValue('display'),'none');
+ s.c.employeeStartVisibility();await s.flush();assert.equal(s.updates(),1);assert.equal(denied.style.getPropertyValue('display'),'none');
 });
 test('permission helpers inspect destination without invoking calculator initialization side effects',()=>{
  const s=setup();s.c.document.querySelector=()=>({value:'estoque1'});
  s.c.destinoSelecionado=()=>{throw new ReferenceError("Cannot access 'destinoAtual' before initialization");};
  assert.equal(s.c.employeeSelectedDestination(),'estoque1');assert.equal(s.c.employeeDestinationAllowed(true),false);
+});
+
+test('permission UI starts at module completion rather than DOM events that may fire during top-level await',()=>{
+ const helper=readFileSync(new URL('../ui/employee-frame.js',import.meta.url),'utf8');
+ assert(!helper.includes("addEventListener('DOMContentLoaded'"));assert(!helper.includes("addEventListener('load'"));
+ const build=readFileSync(new URL('../scripts/employee-access-build.mjs',import.meta.url),'utf8');assert(build.includes("employeeStartVisibility();\\nparent.__v456Ready("));
 });

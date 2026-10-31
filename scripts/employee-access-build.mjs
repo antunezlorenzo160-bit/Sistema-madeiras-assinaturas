@@ -58,6 +58,7 @@ export function applyEmployeeAccess(html){
  const helperStart=app.indexOf('// EMPLOYEE_ACCESS_FRAME_V1\n'),helperEnd=app.indexOf('const credentialV456=parent.__v456TakeCredentials();',helperStart);
  if(helperStart<0||helperEnd<0)throw Error('Employee helper not found.');
  app=app.slice(0,helperStart)+'// EMPLOYEE_ACCESS_FRAME_V1\n'+readFileSync(new URL('../ui/employee-frame.js',import.meta.url),'utf8')+'\n'+readFileSync(new URL('../public/load-access.mjs',import.meta.url),'utf8').replaceAll('export ','')+'\n'+readFileSync(new URL('../ui/employee-loads.js',import.meta.url),'utf8')+'\n'+app.slice(helperEnd);
+ if(!app.includes('employeeStartVisibility();\nparent.__v456Ready(')){const ready='parent.__v456Ready({empresaId:empresaV456';if(!app.includes(ready))throw Error('Employee initialization completion anchor missing.');app=app.replace(ready,'employeeStartVisibility();\n'+ready);}
  app=app.replace('getItem:k=>parent.__smEmployeeStorageAllowed(String(k))?(durable?storage.getItem(prefix+String(k)):(fallback.get(String(k))??null)):null,','getItem:k=>parent.__smEmployeeStorageValue(String(k),durable?storage.getItem(prefix+String(k)):(fallback.get(String(k))??null)),');
  app=applySplitEmployeePermissions(app);
  app=applyEmployeeLoadAccess(app);

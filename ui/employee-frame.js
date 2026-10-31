@@ -146,6 +146,4 @@ if(typeof MutationObserver!=='undefined'&&document.documentElement){
 }
 document.addEventListener('change',event=>{if(event.target?.matches?.('input[name="destinoLancamento"]'))employeeScheduleVisibility();});
 function employeeStartVisibility(){employeeAppReady=true;employeeScheduleVisibility();}
-document.addEventListener('DOMContentLoaded',employeeStartVisibility,{once:true});
-window.addEventListener('load',employeeStartVisibility);
-if(document.readyState==='complete')setTimeout(employeeStartVisibility,0);
+// Started explicitly by the main module after its awaited initialization.
