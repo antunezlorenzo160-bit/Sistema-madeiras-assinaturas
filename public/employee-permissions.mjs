@@ -38,3 +38,7 @@ export function employeeCollectionCan(member,name,write=false){
  if(name==='sm2_madeiras'&&!write)return ['catalog','calculator','budgets','orders','stock','loads'].some(area=>employeeCan(member,area));
  return employeeCan(member,employeeCollectionArea(name),write);
 }
+export function applyCompanyRole(member,context,uid){
+ if(!member||context?.uid!==uid||context?.empresaId!==member.empresaId||typeof context?.isCompanyOwner!=='boolean')return member;
+ return {...member,papel:context.isCompanyOwner?'admin':member.papel==='admin'?'employee':member.papel,nome:member.nome||context.name,email:member.email||context.email};
+}

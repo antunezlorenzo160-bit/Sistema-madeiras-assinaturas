@@ -9,11 +9,11 @@ export async function productionContext(db,identity,read=ref=>ref.get(),write=fa
  if(!identity.emailVerified)throw new PlatformError(403,'Confirme seu e-mail para acessar a produção.');
  const member=await read(db.doc('membros/'+identity.uid));let m=member.exists?member.data():null;
  if(m?.ativo!==true||!validId(m.empresaId))throw new PlatformError(403,'Conta sem empresa ativa.');
- const company=await read(db.doc('empresas/'+m.empresaId));m=resolveCompanyMemberRole(m,company.exists?company.data():null,identity).member;
+ const company=await read(db.doc('empresas/'+m.empresaId)),resolved=resolveCompanyMemberRole(m,company.exists?company.data():null,identity);m=resolved.member;
  if(!employeeCan(m,'production',write))throw new PlatformError(403,'Sua conta não tem permissão para '+(write?'alterar':'visualizar')+' a produção.');
  const policy=await read(billingAccessRef(db,m.empresaId)),access=billingAccessState(policy.exists?policy.data():null,now);
  if(!access.read||(write&&!access.write))throw new PlatformError(403,'O plano não permite esta ação. Consulte o responsável pela empresa.');
- return {empresaId:m.empresaId,member:m,access};
+ return {empresaId:m.empresaId,member:m,access,roleContext:resolved.roleContext};
 }
 const text=(v,max=200)=>typeof v==='string'?v.slice(0,max):'';
 const number=v=>Number.isFinite(Number(v))?Number(v):0;
@@ -26,7 +26,7 @@ export async function listProduction(db,identity,now=Date.now()){
  const context=await productionContext(db,identity,undefined,false,now),snapshot=await db.collection(root(context.empresaId)).where('status','==','confirmado').limit(501).get();
  if(snapshot.docs.length>500)throw new PlatformError(409,'Há mais de 500 pedidos na fila. Peça ao administrador para revisar a fila.');
  const orders=snapshot.docs.map(d=>productionProjection(d.data(),d.id));orders.sort((a,b)=>a.dataEntrega.localeCompare(b.dataEntrega)||a.ordemFila-b.ordemFila);
- return {orders,canWrite:context.access.write&&employeeCan(context.member,'production',true)};
+ return {orders,roleContext:context.roleContext,canWrite:context.access.write&&employeeCan(context.member,'production',true)};
 }
 export async function updateProduction(db,identity,input,now=Date.now()){
  if(!validId(input.id)||!['start','pause','resume','finish','observation','material'].includes(input.action)||!Number.isSafeInteger(input.revision))throw new PlatformError(400,'Ação de produção inválida.');

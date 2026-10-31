@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
 import {companySession} from '../Netlify/Funtions/lib/company-session.mjs';
-import {employeeCan} from '../public/employee-permissions.mjs';
+import {employeeCan,applyCompanyRole} from '../public/employee-permissions.mjs';
 function dbFor(member,company){const records=new Map([['membros/owner',member],['empresas/tenant',company]]);return {doc:path=>({get:async()=>({exists:records.has(path)&&records.get(path)!==null,data:()=>records.get(path)})})};}
 test('legacy responsible owner without papel is recognized by trusted company ownerUid',async()=>{
  const member={ativo:true,empresaId:'tenant'};assert.equal(employeeCan(member,'calculator'),false);const result=await companySession(dbFor(member,{ownerUid:'owner'}),{uid:'owner',email:'owner@example.com'});assert(result.roleContext.isCompanyOwner);assert.equal(result.member.papel,'admin');for(const area of ['calculator','catalog','stock','orders','production','loads'])assert(employeeCan(result.member,area,true));assert(!Object.hasOwn(member,'papel'));
@@ -31,3 +31,5 @@ test('session binding changes during resolution are rejected rather than using a
 });
 
 test('explicit company owner UID prevails over an old employee role field',async()=>{const m={ativo:true,empresaId:'tenant',papel:'employee',permissionsVersion:2,permissoes:{}};const result=await companySession(dbFor(m,{ownerUid:'owner'}),{uid:'owner'});assert(result.roleContext.isCompanyOwner);assert(employeeCan(result.member,'catalog',true));});
+
+test('standalone production watcher retains verified owner access and never applies another UID context',()=>{const raw={ativo:true,empresaId:'tenant'},proof={uid:'owner',empresaId:'tenant',isCompanyOwner:true};assert(employeeCan(applyCompanyRole(raw,proof,'owner'),'production',true));assert(!employeeCan(applyCompanyRole(raw,proof,'other'),'production',true));assert(!employeeCan(applyCompanyRole({...raw,ativo:false},proof,'owner'),'production',true));});
