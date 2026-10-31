@@ -1,3 +1,4 @@
+import {resolveCompanyMemberRole} from './company-session.mjs';
 import {randomUUID} from 'node:crypto';
 import {employeeCan} from '../../../public/employee-permissions.mjs';
 import {billingAccessRef,billingAccessState} from './billing-access.mjs';
@@ -6,8 +7,10 @@ const validId=x=>typeof x==='string'&&/^[-\w]{1,128}$/.test(x);
 const root=id=>`empresas/${id}/dados/sm2_orcamentos_guardados/registros`;
 export async function productionContext(db,identity,read=ref=>ref.get(),write=false,now=Date.now()){
  if(!identity.emailVerified)throw new PlatformError(403,'Confirme seu e-mail para acessar a produção.');
- const member=await read(db.doc('membros/'+identity.uid)),m=member.exists?member.data():null;
- if(m?.ativo!==true||!validId(m.empresaId)||!employeeCan(m,'production',write))throw new PlatformError(403,'Sua conta não tem permissão para '+(write?'alterar':'visualizar')+' a produção.');
+ const member=await read(db.doc('membros/'+identity.uid));let m=member.exists?member.data():null;
+ if(m?.ativo!==true||!validId(m.empresaId))throw new PlatformError(403,'Conta sem empresa ativa.');
+ const company=await read(db.doc('empresas/'+m.empresaId));m=resolveCompanyMemberRole(m,company.exists?company.data():null,identity).member;
+ if(!employeeCan(m,'production',write))throw new PlatformError(403,'Sua conta não tem permissão para '+(write?'alterar':'visualizar')+' a produção.');
  const policy=await read(billingAccessRef(db,m.empresaId)),access=billingAccessState(policy.exists?policy.data():null,now);
  if(!access.read||(write&&!access.write))throw new PlatformError(403,'O plano não permite esta ação. Consulte o responsável pela empresa.');
  return {empresaId:m.empresaId,member:m,access};

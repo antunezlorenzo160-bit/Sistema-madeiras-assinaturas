@@ -9,7 +9,6 @@
  window.__smResolveCompanyMember=async(data,uid)=>{
   if(!data||data.ativo!==true)throw Error('Vínculo inativo.');
   if(companyRoleContext&&(companyRoleContext.uid!==uid||companyRoleContext.empresaId!==data.empresaId))companyRoleContext=null;
-  if(data.papel==='employee')return data;
   if(!companyRoleContext){try{const saved=JSON.parse(localStorage.getItem('sm_vinculo_confirmado_offline_v1:'+uid)||'null');if(saved?.uid===uid&&saved.empresaId===data.empresaId&&saved.ativo===true&&!saved.bloqueado&&saved.companyRoleContext)window.__smSetCompanyRoleContext(saved.companyRoleContext,uid,data.empresaId);}catch{}}
   const runtime=window.__v470Runtime();
   if(runtime.auth.currentUser?.uid!==uid)throw Error('Sessão alterada. Entre novamente.');

@@ -86,8 +86,10 @@ Esta revisão não altera `firestore.rules` nem o hash de validação das regras
 
 ## Reconhecimento do responsável em contas antigas
 
-A interface confirma o perfil administrativo pelo UID do responsável da empresa quando o vínculo legado não tem `papel`, ou antes de abrir uma sessão administrativa. A API autenticada `/company-session` lê somente o próprio vínculo e a empresa vinculada; não recebe empresa livre do navegador e não altera documentos. A precedência é a mesma das regras: `ownerUid` explícito, ou `papel: admin` legado quando não existe esse campo. O e-mail de proprietário da plataforma não promove um funcionário de outra empresa.
+Antes de abrir a interface, a sessão confirma o perfil pelo UID do responsável da empresa, sem depender apenas do campo `papel` do vínculo. A API autenticada `/company-session` lê somente o próprio vínculo e a empresa vinculada; não recebe empresa livre do navegador e não altera documentos. A precedência é a mesma das regras: `ownerUid` explícito, ou `papel: admin` legado quando não existe esse campo. O e-mail de proprietário da plataforma não promove um funcionário de outra empresa.
 
 A confirmação fica ligada ao UID e à empresa e é reaplicada quando chega o observador do vínculo cru, evitando rebaixamento incorreto e ciclos de recarga. A sessão offline conserva a confirmação anteriormente validada; trocar de conta ou de empresa limpa o contexto administrativo, sem apagar filas ou registros. Falhas transitórias usam somente a confirmação já salva para o mesmo vínculo. A confirmação online é uma consulta curta de metadados, sem polling ou leitura das coleções operacionais.
 
 A tela inicial mostra conta e perfil conectado. As regras do Firebase e o hash publicado não mudaram nesta correção. Testes verificam responsável sem papel, isolamento, funcionário com e-mail parecido com administrador, precedência do proprietário real, bloqueio de vínculo inativo, retorno do observador, troca de conta e mudança de sessão durante a confirmação.
+
+A API da fila de produção e a preparação de orçamento usam a mesma resolução de responsável por UID. Assim, corrigir o perfil da interface não deixa o administrador bloqueado nas ações autenticadas do servidor. A consulta da produção mantém a validação dentro da transação e continua respeitando a vigência do plano.
