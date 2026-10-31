@@ -69,7 +69,7 @@ export function applyEmployeeAccess(html){
  }
  const helperStart=app.indexOf('// EMPLOYEE_ACCESS_FRAME_V1\n'),helperEnd=app.indexOf('const credentialV456=parent.__v456TakeCredentials();',helperStart);
  if(helperStart<0||helperEnd<0)throw Error('Employee helper not found.');
- app=app.slice(0,helperStart)+'// EMPLOYEE_ACCESS_FRAME_V1\n'+readFileSync(new URL('../ui/employee-frame.js',import.meta.url),'utf8')+'\n'+readFileSync(new URL('../public/load-access.mjs',import.meta.url),'utf8').replaceAll('export ','')+'\n'+readFileSync(new URL('../ui/employee-loads.js',import.meta.url),'utf8')+'\n'+readFileSync(new URL('../ui/employee-production.js',import.meta.url),'utf8')+'\n'+app.slice(helperEnd);
+ app=app.slice(0,helperStart)+'// EMPLOYEE_ACCESS_FRAME_V1\n'+readFileSync(new URL('../ui/employee-frame.js',import.meta.url),'utf8')+'\n'+readFileSync(new URL('../public/load-access.mjs',import.meta.url),'utf8').replaceAll('export ','')+'\n'+readFileSync(new URL('../ui/employee-loads.js',import.meta.url),'utf8')+'\n'+readFileSync(new URL('../ui/employee-production.js',import.meta.url),'utf8')+'\n'+readFileSync(new URL('../public/production-check.mjs',import.meta.url),'utf8').replaceAll('export ','')+'\n'+readFileSync(new URL('../ui/production-check.js',import.meta.url),'utf8')+'\n'+app.slice(helperEnd);
  if(!app.includes('employeeStartVisibility();\nparent.__v456Ready(')){const ready='parent.__v456Ready({empresaId:empresaV456';if(!app.includes(ready))throw Error('Employee initialization completion anchor missing.');app=app.replace(ready,'employeeStartVisibility();\n'+ready);}
  app=app.replace('getItem:k=>parent.__smEmployeeStorageAllowed(String(k))?(durable?storage.getItem(prefix+String(k)):(fallback.get(String(k))??null)):null,','getItem:k=>parent.__smEmployeeStorageValue(String(k),durable?storage.getItem(prefix+String(k)):(fallback.get(String(k))??null)),');
  app=applySplitEmployeePermissions(app);
@@ -85,5 +85,14 @@ export function applyEmployeeAccess(html){
 
  app=applyEmployeeLoadAccess(app);
  app=applyProductionCalculator(app);
+ if(!app.includes('// PRODUCTION_MATERIAL_CHECK_V1')){
+  const patch=(old,next)=>{if(!app.includes(old))throw Error('Production check anchor: '+old.slice(0,80));app=app.replace(old,next);};
+  patch('const destino=destinoSelecionado();item.destino=destino;', 'const destino=destinoSelecionado();item.destino=destino;\n  const conferenciaMaterialMeta=producaoCalcPendente?{...producaoCalcPendente}:null;');
+  patch('  atualizarTelasAposLancamento(destino);\n  confirmarUsoProducaoAposLancamento(destino);',"  try{registrarConferenciaMaterialAposLancamento(conferenciaMaterialMeta,item);}catch(error){alert('O lançamento foi salvo, mas a conferência do material não foi registrada: '+error.message); }\n  atualizarTelasAposLancamento(destino);\n  confirmarUsoProducaoAposLancamento(destino);");
+  patch('    pedidoId,itemIndex,linhaIndex,tipoLinha,',"    pedidoId,itemIndex,linhaIndex,tipoLinha,\n    totalLinhasConferencia:tipoLinha==='m2'?1:Math.max(1,baixaCalculadaMaterial(item,materiais[chave]||'').linhas.length),");
+  patch('      ${observacaoProducaoHtml(o)}', '      ${productionCheckHtml(o)}\n      ${observacaoProducaoHtml(o)}');
+  app=app.replace('<head>','<head>\n<!-- // PRODUCTION_MATERIAL_CHECK_V1 -->');
+ }
+
  return prefix+JSON.stringify(app).replaceAll('</','<\\/')+shell;
 }
