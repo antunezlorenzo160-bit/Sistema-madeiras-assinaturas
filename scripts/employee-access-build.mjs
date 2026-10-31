@@ -68,10 +68,20 @@ export function applyEmployeeAccess(html){
  }
  const helperStart=app.indexOf('// EMPLOYEE_ACCESS_FRAME_V1\n'),helperEnd=app.indexOf('const credentialV456=parent.__v456TakeCredentials();',helperStart);
  if(helperStart<0||helperEnd<0)throw Error('Employee helper not found.');
- app=app.slice(0,helperStart)+'// EMPLOYEE_ACCESS_FRAME_V1\n'+readFileSync(new URL('../ui/employee-frame.js',import.meta.url),'utf8')+'\n'+readFileSync(new URL('../public/load-access.mjs',import.meta.url),'utf8').replaceAll('export ','')+'\n'+readFileSync(new URL('../ui/employee-loads.js',import.meta.url),'utf8')+'\n'+app.slice(helperEnd);
+ app=app.slice(0,helperStart)+'// EMPLOYEE_ACCESS_FRAME_V1\n'+readFileSync(new URL('../ui/employee-frame.js',import.meta.url),'utf8')+'\n'+readFileSync(new URL('../public/load-access.mjs',import.meta.url),'utf8').replaceAll('export ','')+'\n'+readFileSync(new URL('../ui/employee-loads.js',import.meta.url),'utf8')+'\n'+readFileSync(new URL('../ui/employee-production.js',import.meta.url),'utf8')+'\n'+app.slice(helperEnd);
  if(!app.includes('employeeStartVisibility();\nparent.__v456Ready(')){const ready='parent.__v456Ready({empresaId:empresaV456';if(!app.includes(ready))throw Error('Employee initialization completion anchor missing.');app=app.replace(ready,'employeeStartVisibility();\n'+ready);}
  app=app.replace('getItem:k=>parent.__smEmployeeStorageAllowed(String(k))?(durable?storage.getItem(prefix+String(k)):(fallback.get(String(k))??null)):null,','getItem:k=>parent.__smEmployeeStorageValue(String(k),durable?storage.getItem(prefix+String(k)):(fallback.get(String(k))??null)),');
  app=applySplitEmployeePermissions(app);
+ if(!app.includes('// EMPLOYEE_SHARED_PRODUCTION_V1')){
+  const patch=(old,next)=>{if(!app.includes(old))throw Error('Shared production anchor: '+old.slice(0,80));app=app.replace(old,next);};
+  const oldGuard="if(parent.__smEmployeeMember()?.papel!=='admin'){employeeOpenProduction();return;}";
+  for(const [signature,action] of [['async function iniciarProducaoPedido(id){',"return employeeProductionAction(id,'start');"],['async function finalizarProducaoPedido(id){',"return employeeProductionAction(id,'finish');"],['async function acaoIniciarPausarRetomar(id){',"return employeeProductionAction(id,'toggle');"],['async function salvarObservacaoProducao(el){',"return employeeProductionObservation(el);"],['async function salvarMaterialUsadoProducao(el){',"return employeeProductionMaterial(el);"]])patch(signature+'\n '+oldGuard,signature+"\n if(parent.__smEmployeeMember()?.papel!=='admin'){ "+action+" }");
+  patch("const base=(typeof orcamentosGuardados!=='undefined'&&Array.isArray(orcamentosGuardados))?orcamentosGuardados:[];","const base=parent.__smEmployeeMember()?.papel!=='admin'?employeeProductionOrders:((typeof orcamentosGuardados!=='undefined'&&Array.isArray(orcamentosGuardados))?orcamentosGuardados:[]);");
+  patch("${pronto?`<button class=\"btn\" onclick=\"direcionarPedidoProducaoPC(", "${pronto&&parent.__smEmployeeMember()?.papel==='admin'?`<button class=\"btn\" onclick=\"direcionarPedidoProducaoPC(");
+  patch('  iniciarCaixinhasMaterialUsado();','  iniciarCaixinhasMaterialUsado();\n  employeeProductionControls();');
+  app=app.replace('<head>','<head>\n<!-- // EMPLOYEE_SHARED_PRODUCTION_V1 -->');
+ }
+
  app=applyEmployeeLoadAccess(app);
  return prefix+JSON.stringify(app).replaceAll('</','<\\/')+shell;
 }

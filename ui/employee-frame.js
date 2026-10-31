@@ -28,7 +28,7 @@ function employeePanelArea(element){
  if(element?.closest?.('#orcAtualPainel'))return 'budgets';
  return employeeAreaForTab(element?.closest?.('section.tab')?.id);
 }
-function employeeOpenProduction(){if(parent.__smEmployeeCan('production'))parent.location.assign('/producao/');}
+function employeeOpenProduction(){if(!parent.__smEmployeeCan('production'))return;if(parent.__smEmployeeMember()?.papel==='admin')abrirTelaProducao();else employeeLoadProductionScreen();}
 function employeeRefreshPanels(){
  employeeLoadControls();
  const sub={atual:'budgets',guardados:'orders',entregas:'orders',carregamentos:'loads'};
@@ -70,6 +70,7 @@ function employeeUpdateUI(){
 function employeeActionAllowed(target){
  if(parent.__smEmployeeMember()?.papel==='admin')return true;
  const control=target?.closest?.('button,[role="button"],input[type="submit"],[onclick],a');if(!control)return true;
+ if(control.closest?.('#telaProducaoCompartilhada')){if(control.textContent.trim()==='Fechar'||control.dataset.employeeProductionRefresh)return parent.__smEmployeeCan('production');return employeeProductionWritable&&parent.__smEmployeeCan('production',true)&&!String(control.getAttribute('onclick')||'').includes('direcionarPedidoProducaoPC');}
  const tab=employeeNavigationRoute(control);
  if(tab)return employeeNavigationAllowed(control);
  if(control.id==='sairInicioV492')return true;
