@@ -258,3 +258,15 @@ Validação: nove cenários específicos do checkout da empresa, incluindo gera�
 ### Repetir um teste após período gratuito
 
 Em Assinaturas → Escolhas dos responsáveis, o proprietário pode usar **Encerrar simulação gratuita para novo teste**. Exige confirmação e o ID exato do período. Só aceita período `mode:test`, `source:free_test`, valor zero. Preserva as datas originais e registra auditoria; não exclui pedidos, membros nem muda o acesso gratuito. Depois, o responsável deve atualizar a página de planos e registrar uma nova solicitação. Para testar o Mercado Pago, o plano precisa ter valor positivo e renovação manual. Períodos pagos/de outra origem são recusados no servidor.
+
+### Teste manual de renovação após pagamento aprovado
+
+Em Assinaturas → Escolhas dos responsáveis, **Simular vencimento para testar renovação** aceita somente a vigência atual `mode:test`, `source:payment_test`, com valor positivo e ID de pagamento. Exige confirmação do proprietário e o ID exato da vigência. Encerra a simulação guardando as datas originais e uma cópia auditada do período; preserva cobranças, acesso da empresa, membros e demais dados. Períodos reais, gratuitos ou que mudaram na outra tela são recusados.
+
+1. Na administração, aplique a simulação à empresa do pagamento aprovado.
+2. Em Configurações → Planos, atualize, escolha o plano e registre **renovação manual**.
+3. Gere um novo pagamento de teste e pague com a conta compradora/dados de teste do Mercado Pago.
+4. Aguarde o webhook ou use **Conferir pagamento de teste**. Verifique o novo período e outro ID de operação, conservando o pagamento anterior no histórico.
+5. Repetir a conferência do pagamento anterior não pode substituir ou prolongar o novo período.
+
+O teste automatizado cobre os dois pagamentos aprovados com o provedor simulado, o novo checkout, a troca do período e a preservação do primeiro pagamento e dos membros. A execução pelo comprador no Mercado Pago ainda depende do teste manual acima. Nenhuma cobrança real foi habilitada.

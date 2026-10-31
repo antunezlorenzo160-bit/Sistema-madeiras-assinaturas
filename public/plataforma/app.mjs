@@ -47,6 +47,15 @@ function render(){
     record(host,r.companyName||r.empresaId,(r.planName||'Plano')+' • '+(r.interval==='yearly'?'Anual':'Mensal')+' • Renovação '+(r.renewalPreference==='automatic'?'automática, apenas preferência':'manual')+' • Solicitado em '+new Date(r.requestedAt).toLocaleString('pt-BR'),money(r.amountCents));
     const current=(state.testPeriods||[]).find(p=>p.empresaId===r.empresaId);
     if(current){const info=document.createElement('p');info.textContent='Período de teste: '+money(current.amountCents)+' até '+new Date(current.endsAt).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'})+'. Preço garantido até essa data.';host.append(info);}
+    if(current?.mode==='test'&&current.source==='payment_test'&&current.amountCents>0&&Date.now()<current.endsAt){
+      const simulate=document.createElement('button');simulate.type='button';simulate.className='secondary';simulate.textContent='Simular vencimento para testar renovação';
+      simulate.onclick=async()=>{
+        if(!window.confirm('Simular o vencimento APENAS do período de teste de '+(r.companyName||r.empresaId)+'? As datas originais e o pagamento anterior ficam no histórico. O acesso da empresa será preservado. Nenhuma cobrança real será feita.'))return;
+        simulate.disabled=true;
+        try{await api({action:'contract.period.simulate_paid_expiry',empresaId:r.empresaId,expectedPeriodId:current.id,simulationOnly:true});await refresh(true);status('Vencimento de teste simulado. Abra Configurações → Planos, atualize e registre uma nova escolha com renovação manual. Depois gere outro pagamento de teste.');}
+        catch(error){status(error.message,true);}finally{simulate.disabled=false;}
+      };host.append(simulate);
+    }
     if(current?.mode==='test'&&current.source==='free_test'&&current.amountCents===0&&Date.now()<current.endsAt){
       const end=document.createElement('button');end.type='button';end.className='secondary';end.textContent='Encerrar simulação gratuita para novo teste';
       end.onclick=async()=>{

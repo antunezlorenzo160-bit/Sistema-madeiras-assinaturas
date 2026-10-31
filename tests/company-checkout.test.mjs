@@ -1,3 +1,4 @@
+import {expirePaidTestForRenewal} from '../Netlify/Funtions/lib/contract-periods.mjs';
 import {billingAccessWindow,billingAccessState,BILLING_ACCESS_DAY} from '../public/billing-access.mjs';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
@@ -45,4 +46,19 @@ test('foreign payments never reach provider verification',async()=>{
 test('changing the request is blocked while a checkout is pending, but renewal after expiration is possible',async()=>{
  const s=setup(),r=await createCompanyTestCheckout(s.args);const input={planId:'monthly',expectedAmountCents:19990,expectedInterval:'monthly',revision:1,renewalPreference:'automatic',simulationOnly:true};await assert.rejects(requestCompanyContract(s.args.db,s.args.identity,input,s.args.now+1),/Já existe/);
  s.records.get(`${root}/charges/${r.id}`).status='test_payment_approved';s.records.set(`${root}/test_contract_periods/company`,{id:'old',mode:'test',planId:'monthly',endsAt:s.args.now-1,renewalNoticeAt:s.args.now-500});const renewal=await requestCompanyContract(s.args.db,s.args.identity,{...input,renewalPreference:'manual'},s.args.now+1);assert.equal(renewal.request.checkoutId,undefined);assert.equal(renewal.request.requestedAt,s.args.now+1);
+});
+
+test('paid test renewal completes two distinct approved payments while preserving the first charge and access',async()=>{
+ const s=setup(),first=await createCompanyTestCheckout(s.args);
+ const approve=async(chargeId,id,now)=>{const payment={id,external_reference:chargeId,collector_id:123,currency_id:'BRL',transaction_amount:199.90,status:'approved',live_mode:false,date_approved:new Date(now).toISOString()};return confirmTestPayment({db:s.args.db,chargeId,token:s.args.token,now,request:async url=>({ok:true,json:async()=>url.endsWith('/users/me')?{id:123,tags:['test_user']}:url.includes('/search?')?{results:[payment]}:payment})});};
+ await approve(first.id,456,s.args.now);const original=structuredClone(s.records.get(`${root}/test_contract_periods/company`)),oldCharge=structuredClone(s.records.get(`${root}/charges/${first.id}`)),member=structuredClone(s.records.get('membros/owner'));
+ const simulatedAt=s.args.now+1000;await expirePaidTestForRenewal(s.args.db,{empresaId:'company',expectedPeriodId:original.id,simulationOnly:true},'owner',simulatedAt);
+ const expired=s.records.get(`${root}/test_contract_periods/company`);assert.equal(expired.originalEndsAt,original.endsAt);assert.equal(expired.endsAt,simulatedAt);assert.deepEqual(s.records.get(`${root}/charges/${first.id}`),oldCharge);assert.deepEqual(s.records.get('membros/owner'),member);
+ const choice=await requestCompanyContract(s.args.db,s.args.identity,{planId:'monthly',expectedAmountCents:19990,expectedInterval:'monthly',revision:1,renewalPreference:'manual',simulationOnly:true},simulatedAt+1);
+ const next=await createCompanyTestCheckout({...s.args,now:simulatedAt+2,input:{simulationOnly:true,expectedRequestedAt:choice.request.requestedAt}});assert.notEqual(next.id,first.id);assert.equal(s.calls,2);
+ await approve(next.id,789,simulatedAt+3);const renewed=s.records.get(`${root}/test_contract_periods/company`);assert.notEqual(renewed.id,original.id);assert.equal(renewed.paymentId,'789');assert.equal(renewed.startsAt,simulatedAt+3);assert(renewed.endsAt>renewed.startsAt);
+ await approve(first.id,456,simulatedAt+4);assert.equal(s.records.get(`${root}/test_contract_periods/company`).id,renewed.id);assert.deepEqual(s.records.get(`${root}/charges/${first.id}`),oldCharge);
+});
+test('renewal simulation refuses real, unpaid, stale or unacknowledged periods without changing them',async()=>{
+ for(const change of ['live','free','stale','ack']){const s=setup(),p={id:'period',mode:'test',source:'payment_test',paymentId:'456',amountCents:19000,endsAt:s.args.now+10000,renewalNoticeAt:s.args.now+5000};if(change==='live')p.mode='live';if(change==='free')p.source='free_test';s.records.set(`${root}/test_contract_periods/company`,p);await assert.rejects(expirePaidTestForRenewal(s.args.db,{empresaId:'company',expectedPeriodId:change==='stale'?'different':'period',simulationOnly:change!=='ack'},'owner',s.args.now));assert.equal(s.records.get(`${root}/test_contract_periods/company`),p);}
 });

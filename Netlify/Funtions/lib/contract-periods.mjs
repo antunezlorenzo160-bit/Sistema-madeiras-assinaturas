@@ -76,3 +76,21 @@ export async function endFreeTestPeriod(db,input,uid,now=Date.now()){
 export function serializeTestPeriods(snapshot){
  return snapshot.docs.map(document=>({...document.data(),empresaId:document.id}));
 }
+
+// Explicit platform-owner simulation; never accepts a real period or changes company access.
+export async function expirePaidTestForRenewal(db,input,uid,now=Date.now()){
+ if(!validId(input.empresaId)||!validId(input.expectedPeriodId)||input.simulationOnly!==true)throw new PlatformError(400,'Confira o período de teste antes de simular o vencimento.');
+ return db.runTransaction(async tx=>{
+  const ref=db.doc(`${root}/test_contract_periods/${input.empresaId}`);
+  const [snapshot,company]=await Promise.all([tx.get(ref),tx.get(db.doc(`${root}/companies/${input.empresaId}`))]);
+  if(!snapshot.exists||!company.exists)throw new PlatformError(404,'Período de teste não encontrado.');
+  const period=snapshot.data();
+  if(period.id!==input.expectedPeriodId)throw new PlatformError(409,'O período mudou. Atualize a lista antes de simular.');
+  if(period.mode!=='test'||period.source!=='payment_test'||!Number.isSafeInteger(period.amountCents)||period.amountCents<=0||!/^\d{1,30}$/.test(String(period.paymentId||'')))throw new PlatformError(409,'Esta ação aceita somente um período de pagamento aprovado em ambiente de teste.');
+  if(period.simulationEndedAt||now>=period.endsAt)return {ok:true,unchanged:true};
+  const ended={...period,originalEndsAt:period.endsAt,originalRenewalNoticeAt:period.renewalNoticeAt,endsAt:now,renewalNoticeAt:now,simulationEndedAt:now,simulationEndedBy:uid,renewalTest:true};
+  tx.set(ref,ended);
+  tx.create(db.doc(`plataforma_admin/audit/events/${randomUUID()}`),{action:'contract.paid_test.simulate_expiry',empresaId:input.empresaId,uid,at:now,previousPeriod:period});
+  return {ok:true};
+ });
+}

@@ -49,6 +49,7 @@ function showPeriod(period){
  $('period-renewal').textContent=!period.renewalOpen?'O período está vigente. A revisão do plano será exibida perto da renovação, sem alterar o preço atual.':
   period.priceChanged?'Seu período '+(period.expired?'venceu':'termina')+' em '+date(period.endsAt)+'. Para renovar, confira o novo valor: '+money(period.nextTerms.amountCents)+(period.nextTerms.interval==='yearly'?' por ano.':' por mês.')+' O novo valor só vale para o próximo período. Nenhum débito será feito automaticamente nesta prévia.':
   period.expired?'O período de teste registrado venceu. Você pode revisar o plano para simular a renovação. Seu acesso gratuito não foi bloqueado.':'Seu período está perto do vencimento. Você pode revisar o plano para a próxima renovação.';
+ if(period.renewalTest)$('period-renewal').textContent='Vencimento simulado para testar a renovação. A data final original era '+date(period.originalEndsAt)+'. Escolha o plano novamente e use renovação manual para gerar outro pagamento de teste. O acesso da empresa foi preservado.';
 }
 async function load(){
  message('Consultando planos…');const result=await api();
