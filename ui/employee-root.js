@@ -38,7 +38,7 @@
    member.papel=companyRoleContext.isCompanyOwner?'admin':member.papel==='admin'?'employee':member.papel;
    member.nome=member.nome||companyRoleContext.name;member.email=member.email||companyRoleContext.email;
   }
-  const signature=m=>JSON.stringify([m?.ativo,m?.empresaId,m?.papel,m?.permissionsVersion,m?.permissoes,m?.permissionsRevision]);
+  const signature=m=>JSON.stringify([m?.ativo,m?.empresaId,m?.papel,m?.permissionsVersion,Object.keys(m?.permissoes||{}).sort().map(area=>[area,m.permissoes[area]?.read===true,m.permissoes[area]?.write===true]),m?.permissionsRevision]);
   try{const key='sm_vinculo_confirmado_offline_v1:'+uid,record=JSON.parse(localStorage.getItem(key)||'null');if(record?.uid===uid&&record.empresaId===member?.empresaId)localStorage.setItem(key,JSON.stringify({...record,employeeMember:member,companyRoleContext:companyRoleContext}));}catch{}
   if(previous&&signature(previous)!==signature(member)&&document.querySelector('#holder iframe')){
    document.querySelector('#holder iframe').hidden=true;

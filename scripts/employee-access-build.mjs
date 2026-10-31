@@ -15,6 +15,8 @@ export function applyEmployeeAccess(html){
   shell=shell.replace('function falhaEntradaV492(e){','function falhaEntradaV492(e){window.__smShowStartupFailure(String(e?.message||e));');
   shell='\n// STARTUP_ERROR_STICKY_V1\n'+shell;
  }
+ // The parent owns the shared Firebase Auth. Disposing an iframe must not log it out.
+ app=app.replace('try{await signOut(authV456);}catch{}','// Shared authentication is closed only by the parent logout action.');
  const errorListener="window.addEventListener('error',e=>parent.__v456Error(String(e.message||'Erro na interface')));";
  if(app.includes(errorListener))app=app.replace(errorListener,"window.addEventListener('error',e=>{parent.__smShowStartupFailure(String(e.message||'Erro na interface'),'Interface: linha '+e.lineno+', coluna '+e.colno);parent.__v456Error(String(e.message||'Erro na interface'));});\nwindow.addEventListener('unhandledrejection',e=>{parent.__smShowStartupFailure(String(e.reason?.message||e.reason||'Falha ao iniciar'));});");
  if(!shell.includes('// EMPLOYEE_ACCESS_SHELL_V1')){

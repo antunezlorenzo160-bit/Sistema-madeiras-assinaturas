@@ -33,3 +33,17 @@ test('session binding changes during resolution are rejected rather than using a
 test('explicit company owner UID prevails over an old employee role field',async()=>{const m={ativo:true,empresaId:'tenant',papel:'employee',permissionsVersion:2,permissoes:{}};const result=await companySession(dbFor(m,{ownerUid:'owner'}),{uid:'owner'});assert(result.roleContext.isCompanyOwner);assert(employeeCan(result.member,'catalog',true));});
 
 test('standalone production watcher retains verified owner access and never applies another UID context',()=>{const raw={ativo:true,empresaId:'tenant'},proof={uid:'owner',empresaId:'tenant',isCompanyOwner:true};assert(employeeCan(applyCompanyRole(raw,proof,'owner'),'production',true));assert(!employeeCan(applyCompanyRole(raw,proof,'other'),'production',true));assert(!employeeCan(applyCompanyRole({...raw,ativo:false},proof,'owner'),'production',true));});
+
+test('same employee permissions received with different Firestore key ordering do not reload the session',()=>{
+ const {c,calls}=root();
+ c.window.__smSetEmployeeMember({ativo:true,empresaId:'tenant',papel:'employee',permissionsVersion:2,permissoes:{calculator:{read:true,write:true},stock:{read:true,write:false}}},'worker');
+ c.window.__smSetEmployeeMember({ativo:true,empresaId:'tenant',papel:'employee',permissionsVersion:2,permissoes:{stock:{write:false,read:true},calculator:{write:true,read:true}}},'worker');
+ assert.equal(calls.reload,0);
+ c.window.__smSetEmployeeMember({ativo:true,empresaId:'tenant',papel:'employee',permissionsVersion:2,permissoes:{calculator:{read:false,write:false},stock:{read:true,write:false}}},'worker');assert.equal(calls.reload,1);
+});
+
+test('disposing the generated frame stops listeners and preserves the authenticated account',async()=>{
+ const html=readFileSync(new URL('../public/index.html',import.meta.url),'utf8');const start=html.indexOf('const TEMPLATE=')+15;let end=start+1;for(;end<html.length;end++){if(html[end]==='\\'){end++;continue;}if(html[end]==='"'){end++;break;}}
+ const app=JSON.parse(html.slice(start,end)),body=app.match(/window\.__v456Stop=async\(\)=>\{[\s\S]*?\n\};/)[0];let signouts=0,stops=0;
+ const context={window:{},readyV456:true,authV456:{currentUser:{uid:'worker'}},signOut:async()=>signouts++,diagnosticoLeiturasV700:{stopAll:()=>stops++},encerrarObservadoresV428:()=>stops++,cancelarPerfilEmpresaV424:()=>stops++};vm.createContext(context);vm.runInContext(body,context);await context.window.__v456Stop();assert.equal(stops,3);assert.equal(signouts,0);assert.equal(context.authV456.currentUser.uid,'worker');assert.equal(context.readyV456,false);
+});
