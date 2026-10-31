@@ -1,12 +1,12 @@
 // Cache only the public application shell and its modules, never company/API data.
-const CACHE = 'sm-offline-owner-current-7';
+const CACHE = 'sm-offline-current-release-8';
 const SDK = 'https://www.gstatic.com/firebasejs/12.2.1/';
 const CORE = ['/', '/toras.mjs', ...['firebase-app.js','firebase-auth.js','firebase-firestore.js'].map(file => SDK + file)];
 async function prepareCore(force = false) {
   const cache = await caches.open(CACHE);
   await Promise.all(CORE.map(async url => {
     if (!force && await cache.match(url)) return;
-    const response = await fetch(new Request(new URL(url, self.location.origin).href, {cache:'reload'}));
+    const response = await fetch(new Request(new URL(url, self.location.origin).href, {cache:'no-store'}));
     if (!response.ok || response.type === 'opaque') throw Error('offline-asset-unavailable');
     await cache.put(url, response.clone());
   }));
@@ -33,7 +33,7 @@ self.addEventListener('fetch', event => {
   const request = event.request, url = new URL(request.url);
   if (request.method !== 'GET') return;
   const local = url.origin === self.location.origin;
-  const allowedQuery = [...url.searchParams.keys()].every(key => key === 'atualizacao' || key === 'revisao');
+  const allowedQuery = [...url.searchParams.keys()].every(key => key === 'atualizacao' || key === 'revisao' || key === 'versao_atual');
   const navigation = local && request.mode === 'navigate' && ['/', '/index.html'].includes(url.pathname) && allowedQuery;
   const module = local && url.pathname === '/toras.mjs' && !url.search;
   const sdk = url.href.startsWith(SDK) && url.pathname.endsWith('.js') && !url.search;
@@ -47,7 +47,7 @@ self.addEventListener('fetch', event => {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 5000);
       try {
-        const response = await fetch(request, {signal:controller.signal});
+        const response = await fetch(request, {signal:controller.signal,cache:'no-store'});
         if (response.ok && response.type !== 'opaque') {
           await cache.put(key, response.clone()); return response;
         }
@@ -57,15 +57,14 @@ self.addEventListener('fetch', event => {
         throw error;
       } finally { clearTimeout(timeout); }
     })();
-    // Keep modules immediate, and let a cached page wait at most one second
-    // for a newer online copy. Updating these public files does not read Firestore.
+    // Prefer the current release online. Fall back only if the network fails
+    // or takes over five seconds; explicit offline launches remain immediate.
     if (saved) {
       event.waitUntil(refresh.catch(() => {}));
-      if (module) return saved;
       let fallbackTimer;
       try {
         return await Promise.race([refresh,new Promise(resolve => {
-          fallbackTimer = setTimeout(() => resolve(saved),1000);
+          fallbackTimer = setTimeout(() => resolve(saved),5000);
         })]);
       } finally { clearTimeout(fallbackTimer); }
     }

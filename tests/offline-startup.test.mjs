@@ -29,9 +29,10 @@ test('boot script runs before Firebase and retains account verification and pend
  const html=readFileSync(new URL('../public/index.html',import.meta.url),'utf8'),result=applyOfflineBoot(html);assert.ok(result.indexOf('<script id="offline-boot-v5">')<result.indexOf('<script type="module">'));assert.ok(result.includes('await window.__smPrepararArquivosOffline(tentarNovamente);'));assert.ok(result.includes('await lerVinculoOffline(uid);'));assert.equal(applyOfflineBoot(result),result);
 });
 
-test('slow online connections do not hold the saved page and module until the network timeout',async()=>{
- const w=worker();await w.lifecycle('install');w.slow();const started=Date.now();
- assert.equal((await w.fetchPath('/?revisao=de6521f7')).status,200);assert.ok(Date.now()-started<2500);
- const moduleStarted=Date.now();assert.equal((await w.fetchPath('/toras.mjs','cors')).status,200);assert.ok(Date.now()-moduleStarted<500);
- await w.finish();
+test('online navigation waits for the current release instead of immediately returning stale cached HTML',async()=>{
+ const w=worker();await w.lifecycle('install');w.slow();let resolved=false;
+ const navigation=w.fetchPath('/?versao_atual=current').then(value=>{resolved=true;return value});
+ await new Promise(resolve=>setTimeout(resolve,30));assert.equal(resolved,false);
+ await w.finish();const response=await navigation;assert.match(await response.text(),/versao_atual=current/);
+ w.offline();const saved=await w.fetchPath('/');assert.match(await saved.text(),/versao_atual=current/);
 });

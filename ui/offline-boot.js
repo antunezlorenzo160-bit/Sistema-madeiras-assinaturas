@@ -1,8 +1,9 @@
 // Start preparing cold offline launches before Firebase/login finishes loading.
 (() => {
   if (!('serviceWorker' in navigator) || !('caches' in window)) return;
-  async function registerOffline() {
+  async function registerOffline(force = false) {
     const registration = await navigator.serviceWorker.register('/sw.js?revisao=5', {updateViaCache:'none'});
+    if(force)await registration.update();
     const worker = registration.installing || registration.waiting;
     if (worker && worker.state !== 'activated') await new Promise((resolve,reject) => {
       const changed = () => {
@@ -17,7 +18,7 @@
   window.__smPrepararArquivosOffline = async force => {
     let registration = await window.__smOfflineRegistration;
     if (!registration || force) {
-      window.__smOfflineRegistration = registerOffline();
+      window.__smOfflineRegistration = registerOffline(true);
       registration = await window.__smOfflineRegistration;
     }
     const worker = registration.active;
