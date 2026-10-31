@@ -13,7 +13,8 @@ function employeeAssertWrite(ref){
 function employeeEmptySnapshot(){return {docs:[],size:0,empty:true,metadata:{fromCache:false,hasPendingWrites:false},exists:()=>false,data:()=>undefined,docChanges:()=>[]};}
 function employeeRead(fn){return (ref,...args)=>employeeReadAllowed(ref)?fn(ref,...args):Promise.resolve(employeeEmptySnapshot());}
 function employeeSnapshot(fn){return (ref,...args)=>{if(employeeReadAllowed(ref))return fn(ref,...args);const callback=args.find(x=>typeof x==='function');let stopped=false;queueMicrotask(()=>{if(!stopped)callback?.(employeeEmptySnapshot());});return ()=>{stopped=true;};};}
-function employeeAreaForTab(tab){return ({clientes:'clients',cadastro:'catalog',calculadora:'calculator',orcamento:'budgets',estoque:'stock',historico:'stock',carregamentos:'loads',producao:'budgets',servicos:'services',cubagemToras:'services'})[tab]||null;}
+function employeeAreaForTab(tab){return ({clientes:'clients',cadastro:'catalog',calculadora:'calculator',orcamento:'budgets',estoque:'stock',historico:'stock',movimentacoes:'stock',pedidos:'budgets',carregamentos:'loads',producao:'budgets',servicos:'services',cubagemToras:'services'})[tab]||null;}
+function employeeNavigationRoute(control){return control?.dataset?.pcnav||control?.dataset?.tab||control?.dataset?.inicioDestino||control?.dataset?.lateralDestino||null;}
 function employeeTabAllowed(tab){if(['inicio','sair'].includes(tab))return true;const area=employeeAreaForTab(tab);return area?parent.__smEmployeeCan(area):parent.__smEmployeeMember()?.papel==='admin';}
 function employeeDestinationAllowed(write=false){
  if(!parent.__smEmployeeCan('calculator',write))return false;
@@ -22,7 +23,7 @@ function employeeDestinationAllowed(write=false){
 }
 function employeeUpdateUI(){
  const owner=parent.__smEmployeeMember()?.papel==='admin';
- document.querySelectorAll('[data-pcnav],[data-tab]').forEach(el=>{const tab=el.dataset.pcnav||el.dataset.tab;el.classList.toggle('employee-denied',!employeeTabAllowed(tab));});
+ document.querySelectorAll('[data-pcnav],[data-tab],[data-inicio-destino],[data-lateral-destino]').forEach(el=>{const tab=employeeNavigationRoute(el);el.classList.toggle('employee-denied',!employeeTabAllowed(tab));});
  document.querySelectorAll('main>section.tab').forEach(el=>el.classList.toggle('employee-denied',!employeeTabAllowed(el.id)));
  document.querySelectorAll('input[name="destinoLancamento"]').forEach(input=>{const area=({orcamento:'budgets',carga:'loads',estoque1:'stock',estoque2:'stock',transferencia:'stock',plaina:'stock'})[input.value];const allowed=parent.__smEmployeeCan('calculator')&&parent.__smEmployeeCan(area);input.disabled=!allowed;input.closest('label')?.classList.toggle('employee-denied',!allowed);if(input.checked&&!allowed){const first=[...document.querySelectorAll('input[name="destinoLancamento"]')].find(x=>!x.disabled);if(first){first.checked=true;first.dispatchEvent(new Event('change',{bubbles:true}));}}});
  const old=document.getElementById('tbUsuariosEmpresa');if(old)old.closest('.gestao-usuarios-card')?.classList.add('employee-denied');
@@ -40,8 +41,9 @@ function employeeUpdateUI(){
 function employeeActionAllowed(target){
  if(parent.__smEmployeeMember()?.papel==='admin')return true;
  const control=target?.closest?.('button,[role="button"],input[type="submit"],[onclick],a');if(!control)return true;
- const tab=control.dataset?.pcnav||control.dataset?.tab;
+ const tab=employeeNavigationRoute(control);
  if(tab)return employeeTabAllowed(tab);
+ if(control.id==='sairInicioV492')return true;
  if(control.closest('header,#menuLateralV525')&&/sair|início|inicio|menu/i.test(control.textContent||''))return true;
  if(control.id==='mobileMenuToggle'||control.id==='mobileMenuClose')return true;
  const inline=control.getAttribute('onclick')||'',text=String(control.textContent||'').trim();
