@@ -40,17 +40,24 @@ function employeeDestinationAllowed(write=false){
  const area=({orcamento:'budgets',carga:'loads',estoque1:'stock',estoque2:'stock',transferencia:'stock',plaina:'stock'})[destinoSelecionado()];
  return !!area&&parent.__smEmployeeCan(area,write);
 }
+function employeeShowAccountStatus(){
+ const runtime=parent.__v470Runtime?.(),user=runtime?.auth?.currentUser,member=parent.__smEmployeeMember();
+ const name=user?.uid===boundV456.uid?(user.email||member?.nome||boundV456.uid):(member?.email||member?.nome||boundV456.uid);
+ const admin=member?.papel==='admin';
+ const hasAccess=['clients','catalog','calculator','budgets','orders','production','stock','loads','services'].some(area=>parent.__smEmployeeCan(area));
+ const role=admin?'Administrador da empresa':hasAccess?'Funcionário':'Sem permissões nesta empresa';
+ for(const [host,id] of [[document.getElementById('menuLateralV525'),'employee-menu-account'],[document.querySelector('#inicio .card'),'employee-account-status']]){
+  if(!host)continue;
+  let panel=document.getElementById(id);
+  if(!panel){panel=document.createElement('div');panel.id=id;panel.setAttribute('role','status');panel.style.cssText='display:block!important;padding:10px 12px;margin:8px 0;border-radius:8px;background:#183e2c;color:#fff;font-size:13px;line-height:1.5;overflow-wrap:anywhere;text-shadow:none';host.prepend(panel);}
+  const text='Conta: '+name+'\nPerfil: '+role+'\nVersão do acesso: 7';
+  panel.style.whiteSpace='pre-line';if(panel.textContent!==text)panel.textContent=text;
+ }
+}
 function employeeUpdateUI(){
  employeeRefreshPanels();
  const owner=parent.__smEmployeeMember()?.papel==='admin';
- const accountHost=document.querySelector('#inicio .card');
- if(accountHost){
-  let account=document.getElementById('employee-account-status');
-  if(!account){account=document.createElement('p');account.id='employee-account-status';account.className='note';account.setAttribute('role','status');accountHost.prepend(account);}
-  const user=parent.__v470Runtime?.()?.auth?.currentUser,member=parent.__smEmployeeMember();
-  const name=user?.uid===boundV456.uid?(user.email||member?.nome||boundV456.uid):(member?.email||member?.nome||boundV456.uid);
-  const text='Conta: '+name+' · '+(owner?'Administrador da empresa':'Funcionário');if(account.textContent!==text)account.textContent=text;
- }
+ employeeShowAccountStatus();
  employeeUpdateNavigationVisibility();
  employeeUpdateDestinationVisibility();
  const old=document.getElementById('tbUsuariosEmpresa');if(old){const card=old.closest('.gestao-usuarios-card');if(card)employeeSetNavigationHidden(card,true);}
