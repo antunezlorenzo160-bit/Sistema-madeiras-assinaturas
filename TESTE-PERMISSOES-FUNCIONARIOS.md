@@ -83,3 +83,11 @@ A interface reaplica a visibilidade quando os menus e atalhos são criados ou re
 Menu inicial, lateral, navegação do PC, subabas de orçamento/pedidos e destinos da calculadora seguem as permissões. Um destino selecionado que não está liberado é substituído somente depois de avaliar todas as opções. O observador reage a novos elementos e a mudanças nas rotas, sem polling nem novas consultas ao Firebase; as próprias alterações de visibilidade não criam ciclo de atualização.
 
 Esta revisão não altera `firestore.rules` nem o hash de validação das regras publicadas. Testes cobrem menus tardios, clones, prioridade de exibição, preservação de estilos permitidos, seleção da calculadora, ausência de loops e Pedidos liberado com Orçamentos oculto.
+
+## Reconhecimento do responsável em contas antigas
+
+A interface confirma o perfil administrativo pelo UID do responsável da empresa quando o vínculo legado não tem `papel`, ou antes de abrir uma sessão administrativa. A API autenticada `/company-session` lê somente o próprio vínculo e a empresa vinculada; não recebe empresa livre do navegador e não altera documentos. A precedência é a mesma das regras: `ownerUid` explícito, ou `papel: admin` legado quando não existe esse campo. O e-mail de proprietário da plataforma não promove um funcionário de outra empresa.
+
+A confirmação fica ligada ao UID e à empresa e é reaplicada quando chega o observador do vínculo cru, evitando rebaixamento incorreto e ciclos de recarga. A sessão offline conserva a confirmação anteriormente validada; trocar de conta ou de empresa limpa o contexto administrativo, sem apagar filas ou registros. Falhas transitórias usam somente a confirmação já salva para o mesmo vínculo. A confirmação online é uma consulta curta de metadados, sem polling ou leitura das coleções operacionais.
+
+A tela inicial mostra conta e perfil conectado. As regras do Firebase e o hash publicado não mudaram nesta correção. Testes verificam responsável sem papel, isolamento, funcionário com e-mail parecido com administrador, precedência do proprietário real, bloqueio de vínculo inativo, retorno do observador, troca de conta e mudança de sessão durante a confirmação.

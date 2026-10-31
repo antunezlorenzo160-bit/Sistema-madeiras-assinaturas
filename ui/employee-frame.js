@@ -43,6 +43,14 @@ function employeeDestinationAllowed(write=false){
 function employeeUpdateUI(){
  employeeRefreshPanels();
  const owner=parent.__smEmployeeMember()?.papel==='admin';
+ const accountHost=document.querySelector('#inicio .card');
+ if(accountHost){
+  let account=document.getElementById('employee-account-status');
+  if(!account){account=document.createElement('p');account.id='employee-account-status';account.className='note';account.setAttribute('role','status');accountHost.prepend(account);}
+  const user=parent.__v470Runtime?.()?.auth?.currentUser,member=parent.__smEmployeeMember();
+  const name=user?.uid===boundV456.uid?(user.email||member?.nome||boundV456.uid):(member?.email||member?.nome||boundV456.uid);
+  const text='Conta: '+name+' · '+(owner?'Administrador da empresa':'Funcionário');if(account.textContent!==text)account.textContent=text;
+ }
  employeeUpdateNavigationVisibility();
  employeeUpdateDestinationVisibility();
  const old=document.getElementById('tbUsuariosEmpresa');if(old){const card=old.closest('.gestao-usuarios-card');if(card)employeeSetNavigationHidden(card,true);}

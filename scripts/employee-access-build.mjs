@@ -17,6 +17,17 @@ export function applyEmployeeAccess(html){
   replace('window.__smSetAccessPolicy(cachedPolicy);\n return dados;',"window.__smSetAccessPolicy(cachedPolicy);\n window.__smSetEmployeeMember(dados,uid);\n return dados;");
   shell='\n// EMPLOYEE_ACCESS_SHELL_V1\n'+shell;
  }
+ if(!shell.includes('// COMPANY_OWNER_SESSION_V1')){
+  const target='expected[uid]=empresaId;window.__smSetEmployeeMember(m.data(),uid);';
+  if(!shell.includes(target))throw Error('Owner session member anchor missing.');
+  shell=shell.replace(target,'expected[uid]=empresaId;const resolvedMember=await window.__smResolveCompanyMember(m.data(),uid);window.__smSetEmployeeMember(resolvedMember,uid);');
+  const offline='window.__smSetEmployeeMember(dados,uid);';
+  if(!shell.includes(offline))throw Error('Owner session offline anchor missing.');
+  shell=shell.replace(offline,"if(registro.companyRoleContext)window.__smSetCompanyRoleContext(registro.companyRoleContext,uid,empresaId);\n window.__smSetEmployeeMember(dados,uid);");
+  shell=shell.replace('employeeMember:window.__smEmployeeMember?.()||null}', 'employeeMember:window.__smEmployeeMember?.()||null,companyRoleContext:window.__smGetCompanyRoleContext?.()||null}');
+  shell='\n// COMPANY_OWNER_SESSION_V1\n'+shell;
+ }
+ if(!shell.includes('window.__smClearEmployeeSession?.();'))shell=shell.replace('async function close(){','async function close(){\n window.__smClearEmployeeSession?.();');
  if(!app.includes('// EMPLOYEE_ACCESS_FRAME_V1')){
   const replace=(a,b)=>{if(!app.includes(a))throw Error('Employee frame anchor: '+a.slice(0,100));app=app.replace(a,b);};
   replace("const prefix='sm_v462_principal:'+ctx.empresaId+':';", "const prefix='sm_v462_principal:'+ctx.empresaId+':'+(parent.__smEmployeeMember()?.papel==='admin'?'':'employee:'+ctx.uid+':');");
