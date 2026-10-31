@@ -58,15 +58,51 @@ service cloud.firestore {
     match /empresas/{empresaId}/dados/{colecao}/registros/{id} {
       allow read: if pertence(empresaId) && planoPermite(empresaId, false)
         && ((colecao == 'sm2_sync_status')
-          || (colecao in ['sm2_clientes','sm2_madeiras','sm2_estoque1','sm2_estoque2','sm2_carregamentos','sm2_orcamentos_guardados','sm2_movimentos','sm2_servicos','sm2_resumos_calculadora']
+          || (colecao in ['sm2_clientes','sm2_madeiras','sm2_estoque1','sm2_estoque2','sm2_orcamentos_guardados','sm2_movimentos','sm2_servicos','sm2_resumos_calculadora']
             && (areaPermite(empresaId, areaColecao(colecao), false)
               || (colecao == 'sm2_madeiras' && (areaPermite(empresaId, 'calculator', false)
                 || areaPermite(empresaId, 'budgets', false) || areaPermite(empresaId, 'orders', false)
                 || areaPermite(empresaId, 'stock', false) || areaPermite(empresaId, 'loads', false))))));
       allow write: if pertence(empresaId) && planoPermite(empresaId, true)
         && ((colecao == 'sm2_sync_status' && responsavel(empresaId))
-          || (colecao in ['sm2_clientes','sm2_madeiras','sm2_estoque1','sm2_estoque2','sm2_carregamentos','sm2_movimentos','sm2_servicos','sm2_resumos_calculadora']
+          || (colecao in ['sm2_clientes','sm2_madeiras','sm2_estoque1','sm2_estoque2','sm2_movimentos','sm2_servicos','sm2_resumos_calculadora']
             && areaPermite(empresaId, areaColecao(colecao), true)));
+    }
+
+    // EMPLOYEE_LOAD_DRAFTS_V1: employees only read and keep drafts in montagem.
+    function camposAdministrativosCarga() {
+      return ['dadosClienteCargaV407', 'dadosTransporteCargaV414', 'dadosFiscalCargaV559',
+        'financeiroOriginalV403', 'financeiroCopiaV403', 'copiaComercialPercentualV400',
+        'copiaComercialPercentualV399', 'copiaComercialAtualizadaEmV400',
+        'copiaComercialAtualizadaEmV399', 'cargaConferidaPor', 'cargaConferidaPorUid',
+        'cargaFechadaPor', 'cargaFechadaPorUid'];
+    }
+    function nomeFuncionarioCarga() {
+      let m = get(/databases/$(database)/documents/membros/$(request.auth.uid)).data;
+      return m.get('nome', '') != '' ? m.nome
+        : m.get('email', '') != '' ? m.email : request.auth.uid;
+    }
+    function montagemCarga(d) {
+      return d.get('cargaStatus', '') == 'montagem'
+        && d.get('cargaFechadaEm', null) == null && d.get('cargaBaixadaEm', null) == null
+        && d.get('cargaConferidaPor', '') in ['', null];
+    }
+    match /empresas/{empresaId}/dados/sm2_carregamentos/registros/{id} {
+      allow read: if pertence(empresaId) && planoPermite(empresaId, false)
+        && (responsavel(empresaId) || (areaPermite(empresaId, 'loads', false)
+          && resource.data.cargaStatus == 'montagem'));
+      allow create: if pertence(empresaId) && planoPermite(empresaId, true)
+        && (responsavel(empresaId) || (areaPermite(empresaId, 'loads', true)
+          && montagemCarga(request.resource.data) && request.resource.data.cargaFluxoV388 == true
+          && request.resource.data.grupoCargaId is string && request.resource.data.grupoCargaId.size() > 0
+          && request.resource.data.cargaCriadaPorUid == request.auth.uid
+          && request.resource.data.cargaCriadaPorNome == nomeFuncionarioCarga()
+          && !request.resource.data.keys().hasAny(camposAdministrativosCarga())));
+      allow update: if pertence(empresaId) && planoPermite(empresaId, true)
+        && (responsavel(empresaId) || (areaPermite(empresaId, 'loads', true)
+          && montagemCarga(resource.data) && montagemCarga(request.resource.data)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['atualizadoEm', 'ocultoResumo'])));
+      allow delete: if pertence(empresaId) && planoPermite(empresaId, true) && responsavel(empresaId);
     }
 
     function camposProducao() {

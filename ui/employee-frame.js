@@ -11,8 +11,8 @@ function employeeAssertWrite(ref){
  if(parts[0]!=='empresas'||parts[1]!==empresaV456||parts[2]!=='dados'||!parent.__smEmployeeCollectionCan(parts[3],true))throw Object.assign(Error('Você não tem permissão para alterar esta área.'),{code:'permission-denied'});
 }
 function employeeEmptySnapshot(){return {docs:[],size:0,empty:true,metadata:{fromCache:false,hasPendingWrites:false},exists:()=>false,data:()=>undefined,docChanges:()=>[]};}
-function employeeRead(fn){return (ref,...args)=>employeeReadAllowed(ref)?fn(ref,...args):Promise.resolve(employeeEmptySnapshot());}
-function employeeSnapshot(fn){return (ref,...args)=>{if(employeeReadAllowed(ref))return fn(ref,...args);const callback=args.find(x=>typeof x==='function');let stopped=false;queueMicrotask(()=>{if(!stopped)callback?.(employeeEmptySnapshot());});return ()=>{stopped=true;};};}
+function employeeRead(fn){return (ref,...args)=>employeeReadAllowed(ref)?Promise.resolve(fn(employeeScopedReadReference(ref),...args)).then(snapshot=>employeeSanitizeLoadRead(ref,snapshot)):Promise.resolve(employeeEmptySnapshot());}
+function employeeSnapshot(fn){return (ref,...args)=>{if(employeeReadAllowed(ref))return fn(employeeScopedReadReference(ref),...args);const callback=args.find(x=>typeof x==='function');let stopped=false;queueMicrotask(()=>{if(!stopped)callback?.(employeeEmptySnapshot());});return ()=>{stopped=true;};};}
 function employeeAreaForTab(tab){return ({clientes:'clients',cadastro:'catalog',calculadora:'calculator',orcamento:'budgets',estoque:'stock',historico:'stock',movimentacoes:'stock',pedidos:'orders',carregamentos:'loads',producao:'production',servicos:'services',cubagemToras:'services'})[tab]||null;}
 function employeeNavigationRoute(control){return control?.dataset?.pcnav||control?.dataset?.tab||control?.dataset?.inicioDestino||control?.dataset?.lateralDestino||null;}
 function employeeTabAllowed(tab){if(tab==='orcamento')return ['budgets','orders','loads'].some(area=>parent.__smEmployeeCan(area));if(['inicio','sair'].includes(tab))return true;const area=employeeAreaForTab(tab);return area?parent.__smEmployeeCan(area):parent.__smEmployeeMember()?.papel==='admin';}
@@ -29,6 +29,7 @@ function employeePanelArea(element){
 }
 function employeeOpenProduction(){if(parent.__smEmployeeCan('production'))parent.location.assign('/producao/');}
 function employeeRefreshPanels(){
+ employeeLoadControls();
  const sub={atual:'budgets',guardados:'orders',entregas:'orders',carregamentos:'loads'};
  for(const [id,area] of Object.entries({orcAtualPainel:'budgets',orcGuardadosPainel:'orders',orcEntregasPainel:'orders',orcCarregamentosPainelV392:'loads'}))document.getElementById(id)?.classList.toggle('employee-denied',!parent.__smEmployeeCan(area));
  document.querySelectorAll('.orc-subtab-btn').forEach(b=>b.classList.toggle('employee-denied',!parent.__smEmployeeCan(sub[b.dataset.orcsub])));
@@ -67,10 +68,14 @@ function employeeActionAllowed(target){
  const tab=employeeNavigationRoute(control);
  if(tab)return employeeNavigationAllowed(control);
  if(control.id==='sairInicioV492')return true;
+ if(control.dataset?.employeeContinueLoad)return parent.__smEmployeeCan('loads',true)&&parent.__smEmployeeCan('calculator',true);
+ if(typeof destinoSelecionado==='function'&&destinoSelecionado()==='carga'&&(control.id==='btnPacoteMenos'||control.id==='btnVerdeOuCorrigirV260'&&control.dataset?.modo==='corrigir'))return false;
+ if(['btnGuardarResumoCalc','btnNovoResumoCalc','btnLimparLancamentos','btnApagarSomenteResumoCarga'].includes(control.id)&&typeof destinoSelecionado==='function'&&destinoSelecionado()==='carga')return false;
  if(control.dataset?.orcsub)return parent.__smEmployeeCan(({atual:'budgets',guardados:'orders',entregas:'orders',carregamentos:'loads'})[control.dataset.orcsub]);
  if(control.closest('header,#menuLateralV525')&&/sair|início|inicio|menu/i.test(control.textContent||''))return true;
  if(control.id==='mobileMenuToggle'||control.id==='mobileMenuClose')return true;
  const inline=control.getAttribute('onclick')||'',text=String(control.textContent||'').trim();
+ if(/^(fechar|cancelar|voltar)$/i.test(text)&&control.closest('dialog,[role="dialog"],.modal'))return true;
  if(control.id==='btnCubagemToras')return parent.__smEmployeeCan('services');
  if(/abrirTelaProducao/.test(inline))return parent.__smEmployeeCan('production');
  if(control.closest('.tabs,.modo-medida,.bitola-tabs,.madeira-filtro-tabs')||control.matches('.estoque-tipo-btn,.planilha-estoque-btn,.estoque-tab-btn,.estoque-subtab-btn'))return true;
@@ -78,12 +83,15 @@ function employeeActionAllowed(target){
  const area=dialog?.id==='cubagemToras'?'services':dialog?'production':employeePanelArea(control);
  if(!area)return false;
  if(!parent.__smEmployeeCan(area))return false;
+ if(area==='loads')return false;
+ if(area==='calculator'&&typeof destinoSelecionado==='function'&&destinoSelecionado()==='carga'&&/abrirPecasLinhaV224/.test(inline))return false;
+ if(area==='calculator'&&typeof destinoSelecionado==='function'&&destinoSelecionado()==='carga'&&/copiar|gerar\s*pdf|imprimir|exportar/.test(text.toLowerCase()))return false;
  if(/copiar|gerar\s*pdf|imprimir|exportar/.test(text.toLowerCase())||/^fechar|^voltar/.test(text.toLowerCase())||/abrirPecasLinhaV224/.test(inline))return true;
  if(area==='calculator')return employeeDestinationAllowed(true);
  return parent.__smEmployeeCan(area,true);
 }
 document.addEventListener('click',event=>{if(employeeActionAllowed(event.target)){queueMicrotask(employeeRefreshPanels);return;}event.preventDefault();event.stopImmediatePropagation();alert('Seu administrador não liberou esta ação para sua conta.');},true);
 document.addEventListener('submit',event=>{if(employeeActionAllowed(event.submitter||event.target.querySelector('button[type="submit"],button')) )return;event.preventDefault();event.stopImmediatePropagation();alert('Você tem acesso somente à consulta nesta área.');},true);
-const employeeStyle=document.createElement('style');employeeStyle.textContent='.employee-denied{display:none!important}';document.head.append(employeeStyle);
+const employeeStyle=document.createElement('style');employeeStyle.textContent='.employee-denied,.employee-load-admin-hidden{display:none!important}';document.head.append(employeeStyle);
 window.addEventListener('load',employeeUpdateUI);
 setTimeout(employeeUpdateUI,0);

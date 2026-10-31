@@ -15,7 +15,8 @@
  };
  window.__smEmployeeStorageValue=(key,value)=>{
   if(!window.__smEmployeeStorageAllowed(key))return null;
-  if(member?.papel!=='admin'&&key==='lancamentos_db_v1'){try{return JSON.stringify(JSON.parse(value||'[]').filter(x=>employeeCan(member,({orcamento:'budgets',carga:'loads',estoque1:'stock',estoque2:'stock',transferencia:'stock',plaina:'stock'})[x.destino]||'calculator')));}catch{return null;}}
+  if(member?.papel!=='admin'&&key==='carregamentos_lancamentos_v1'){try{return JSON.stringify(JSON.parse(value||'[]').filter(isLoadDraft));}catch{return null;}}
+  if(member?.papel!=='admin'&&key==='lancamentos_db_v1'){try{return JSON.stringify(JSON.parse(value||'[]').filter(x=>(x.destino!=='carga'||isLoadDraft(x))&&employeeCan(member,({orcamento:'budgets',carga:'loads',estoque1:'stock',estoque2:'stock',transferencia:'stock',plaina:'stock'})[x.destino]||'calculator')));}catch{return null;}}
   return value;
  };
  window.__smEmployeeStorageAllowed=key=>{

@@ -61,3 +61,17 @@ Vínculos antigos (permissionsVersion 1) mantêm o antigo acesso combinado até 
 6. Publique as regras, salve as escolhas de um funcionário existente e repita os testes no celular e PC. As condições do plano continuam prevalecendo.
 
 Validação automatizada cobre a matriz independente, a compatibilidade com vínculos antigos, projeção sem campos financeiros, etapas da produção, revisões concorrentes, material apagado, vínculo revogado, plano bloqueado, isolamento e controles de navegação. O emulador Firestore e o navegador visual não estavam disponíveis neste ambiente, conforme explicado acima; a validação publicada depende do teste no Firebase e na prévia.
+
+## Carregamentos dos funcionários — montagem e autoria real
+
+Funcionários com Carregamentos → Alterar e Calculadora → Alterar podem lançar peças, **Guardar carregamento** em montagem e **Continuar carregamento**. Não fecham, conferem, dão baixa, excluem, copiam, imprimem, geram romaneio ou preparam documentos/cópia comercial. A lista do funcionário contém somente montagens e o botão Continuar; o administrador mantém a tela completa.
+
+As regras retiram `sm2_carregamentos` da autorização genérica. A leitura do funcionário exige `cargaStatus == montagem` (consulta filtrada por igualdade, sem novo índice composto). Criação exige montagem, UID/nome do vínculo autenticado e ausência de campos administrativos. Atualizações de itens existentes em montagem permitem apenas metadados de atualização/ocultação do resumo, preservando o autor. Exclusão, fechamento, conferência e alterações de cliente/transporte/fiscal/financeiro são do administrador. Os controles do aplicativo também interrompem essas ações antes de alterar os arrays ou enfileirar gravações.
+
+Novas peças registram `cargaCriadaPorUid` e `cargaCriadaPorNome` do login real. Quando duas pessoas adicionam peças à mesma montagem, ambas são mostradas como participantes. Fechamento/conferência também registram o UID do administrador. A indicação Carregado por não usa mais o nome de quem fechou. Registros antigos sem UID/nome de criação ficam como **Autor não registrado na versão anterior**; não há atribuição presumida nem regravação do histórico.
+
+**Ativação:** copie e publique novamente as regras completas em `/regras/`, que agora incluem `EMPLOYEE_LOAD_DRAFTS_V1`. Depois atualize a lista da equipe e reabra o sistema com a conta do funcionário. As permissões existentes de montagem continuam sendo usadas; não é necessário gerar outro convite.
+
+Teste uma carga nova com o funcionário: lance algumas peças, guarde, confira o nome na lista e continue. O administrador deve ver a mesma montagem com esse autor, continuar na calculadora, fechar e conferir. A partir do fechamento, ela sai da lista do funcionário. Confira que romaneio, PDFs, cópia, formulários documentais, exclusão e baixa ficam inacessíveis ao funcionário mesmo que ele também tenha permissão para alterar estoque.
+
+Testes automatizados incluem o fluxo real das funções geradas de lançar/guardar/continuar, identidade autenticada, imutabilidade de autoria, consulta filtrada, bloqueios administrativos, preservação dos documentos históricos e compatibilidade com os demais acessos. Compilação/publicação das regras no Firebase e conferência visual continuam sendo realizadas pelo responsável na prévia; o agente não publicou regras nem alterou cargas reais.

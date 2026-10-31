@@ -1,10 +1,11 @@
+import {applyEmployeeLoadAccess} from './employee-load-access-build.mjs';
 import {applySplitEmployeePermissions} from './split-employee-permissions.mjs';
 import {readFileSync} from 'node:fs';
 export function applyEmployeeAccess(html){
  const marker='const TEMPLATE=',start=html.indexOf(marker)+marker.length;let end=start+1;
  for(;end<html.length;end++){if(html[end]==='\\'){end++;continue;}if(html[end]==='"'){end++;break;}}
  let prefix=html.slice(0,start),app=JSON.parse(html.slice(start,end)),shell=html.slice(end);
- const pure=readFileSync(new URL('../public/employee-permissions.mjs',import.meta.url),'utf8').replaceAll('export ','');
+ const pure=readFileSync(new URL('../public/employee-permissions.mjs',import.meta.url),'utf8').replaceAll('export ','')+'\n'+readFileSync(new URL('../public/load-access.mjs',import.meta.url),'utf8').replaceAll('export ','');
  const root='<script id="employee-access-root">'+pure+'\n'+readFileSync(new URL('../ui/employee-root.js',import.meta.url),'utf8')+'</script>';
  prefix=prefix.replace(/<script id="employee-access-root">[\s\S]*?<\/script>/,'').replace('<script type="module">',root+'<script type="module">');
  if(!shell.includes('// EMPLOYEE_ACCESS_SHELL_V1')){
@@ -45,8 +46,9 @@ export function applyEmployeeAccess(html){
  }
  const helperStart=app.indexOf('// EMPLOYEE_ACCESS_FRAME_V1\n'),helperEnd=app.indexOf('const credentialV456=parent.__v456TakeCredentials();',helperStart);
  if(helperStart<0||helperEnd<0)throw Error('Employee helper not found.');
- app=app.slice(0,helperStart)+'// EMPLOYEE_ACCESS_FRAME_V1\n'+readFileSync(new URL('../ui/employee-frame.js',import.meta.url),'utf8')+'\n'+app.slice(helperEnd);
+ app=app.slice(0,helperStart)+'// EMPLOYEE_ACCESS_FRAME_V1\n'+readFileSync(new URL('../ui/employee-frame.js',import.meta.url),'utf8')+'\n'+readFileSync(new URL('../public/load-access.mjs',import.meta.url),'utf8').replaceAll('export ','')+'\n'+readFileSync(new URL('../ui/employee-loads.js',import.meta.url),'utf8')+'\n'+app.slice(helperEnd);
  app=app.replace('getItem:k=>parent.__smEmployeeStorageAllowed(String(k))?(durable?storage.getItem(prefix+String(k)):(fallback.get(String(k))??null)):null,','getItem:k=>parent.__smEmployeeStorageValue(String(k),durable?storage.getItem(prefix+String(k)):(fallback.get(String(k))??null)),');
  app=applySplitEmployeePermissions(app);
+ app=applyEmployeeLoadAccess(app);
  return prefix+JSON.stringify(app).replaceAll('</','<\\/')+shell;
 }

@@ -1,4 +1,4 @@
-export const EMPLOYEE_AREAS=Object.freeze({clients:'Clientes',catalog:'Cadastro de madeiras',calculator:'Calculadora',budgets:'Orçamentos',orders:'Pedidos',production:'Produção',stock:'Estoque e histórico',loads:'Carregamentos',services:'Serviços e toras'});
+export const EMPLOYEE_AREAS=Object.freeze({clients:'Clientes',catalog:'Cadastro de madeiras',calculator:'Calculadora',budgets:'Orçamentos',orders:'Pedidos',production:'Produção',stock:'Estoque e histórico',loads:'Carregamentos em montagem',services:'Serviços e toras'});
 export function expandEmployeePermissions(input={},version=2){
  const result={...input};
  if(version===1){result.orders={...(input.budgets||{})};result.production={...(input.budgets||{})};}
