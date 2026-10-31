@@ -25,3 +25,6 @@
 
 /regras-acesso-planos.txt
   Cache-Control: no-cache, max-age=0, must-revalidate
+
+/regras/*
+  Cache-Control: no-cache, max-age=0, must-revalidate
