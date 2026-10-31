@@ -270,3 +270,13 @@ Em Assinaturas → Escolhas dos responsáveis, **Simular vencimento para testar 
 5. Repetir a conferência do pagamento anterior não pode substituir ou prolongar o novo período.
 
 O teste automatizado cobre os dois pagamentos aprovados com o provedor simulado, o novo checkout, a troca do período e a preservação do primeiro pagamento e dos membros. A execução pelo comprador no Mercado Pago ainda depende do teste manual acima. Nenhuma cobrança real foi habilitada.
+
+## Preparação de pagamentos reais — renovação manual
+
+A página `/pagamento/` e as funções `company-live-payment` / `mercadopago-live-webhook` são separadas dos testes. Sem as variáveis privadas de produção, ativação explícita, origem HTTPS exata, termos e lista de empresas autorizadas, nenhuma preferência real pode ser criada. A configuração completa está em `public/pagamento/configuracao.txt`; ela pode ser aberta na administração em Pagamentos.
+
+A oferta é validada novamente no servidor, com aceite do responsável, preço, revisão e periodicidade. Uma reserva transacional impede criação concorrente e bloqueia troca de plano enquanto há checkout pendente. Resultado incerto exige revisão; não há repetição automática da criação. O retorno do navegador não libera o plano. Webhook assinado ou conferência autenticada consultam o pagamento no provedor, exigem `live_mode:true` e conferem recebedor, referência, moeda e valor. Cada aprovação é idempotente e registra vigência mensal/anual em `live_contract_periods`, cobrança em `live_charges`, recibo exclusivo do pagamento e auditoria; os registros de teste permanecem separados. O acesso real usa os mesmos cinco dias de tolerância e trinta dias de consulta já implementados.
+
+Estorno/contestação, inclusive estorno parcial, revoga somente a vigência vinculada àquela operação. Não afeta período posterior pago por outra operação. O estorno em si deve ser feito no Mercado Pago, não há execução automática de devolução. Segundo pagamento da mesma preferência fica sinalizado para revisão e não estende a vigência. A simulação de acesso se recusa a substituir uma política real. Planos com cobranças/períodos reais não podem ser excluídos como duplicatas sem vínculo.
+
+Nesta entrega não houve configuração de credenciais reais, ativação no Netlify, pagamento externo nem publicação do site principal. A habilitação e a primeira cobrança controlada dependem da configuração privada e do teste manual documentado. Testes automatizados usam provedor simulado, incluindo dois ciclos pagos, duplicação, isolamento, valores divergentes, contingência e estorno. A recorrência automática continua ausente.

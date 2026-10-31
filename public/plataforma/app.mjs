@@ -38,6 +38,11 @@ function preview(){
   $('wm-preview').style.width=Math.round(Number($('wm-width').value)/210*100)+'%';
 }
 function render(){
+ $('live-payment-config').textContent=state.livePaymentConfiguration?.ready?'Configuração de produção preenchida. Somente empresas autorizadas no servidor podem gerar pagamentos reais.':'Pagamentos reais ainda desativados. Falta configurar: '+(state.livePaymentConfiguration?.missing||[]).join(', ')+'.';
+  list('live-charges-list',[...(state.liveCharges||[])].sort((a,b)=>b.createdAt-a.createdAt),(host,charge)=>{
+    record(host,(state.companies.find(company=>company.id===charge.empresaId)?.name||charge.empresaId)+' • '+money(charge.amountCents),'Pagamento real • '+charge.status+(charge.duplicatePaymentReview?' • Pagamento adicional para conferir':'')+(charge.paymentId?' • Operação '+charge.paymentId:''),charge.periodApplied?'Período aplicado':'');
+    const verify=document.createElement('button');verify.type='button';verify.className='secondary';verify.textContent='Conferir pagamento real';verify.onclick=async()=>{verify.disabled=true;try{const result=await api({action:'payment.live.verify',chargeId:charge.id});await refresh(true);status('Pagamento real: '+result.status);}catch(error){status(error.message,true);}finally{verify.disabled=false;}};host.append(verify);
+  });
   $('subscription-simulation').hidden=true;
   $('total-companies').textContent=state.companies.length;
   const active=state.subscriptions.filter(s=>s.status==='active');$('total-active').textContent=active.length;
@@ -247,3 +252,5 @@ $('legacy-recover').onclick=async()=>{
  try{await api({action:'company.legacy.recover',expectedEmpresaId:legacyCompany.empresaId});$('legacy-recover').hidden=true;await refresh(true);$('legacy-detail').textContent='Empresa vinculada e acesso administrativo recuperado. Abra novamente o sistema de madeiras.';}
  catch(error){$('legacy-detail').textContent=error.message;}finally{$('legacy-recover').disabled=false;}
 };
+
+$('live-payment-inspect').onclick=async()=>{const button=$('live-payment-inspect');button.disabled=true;try{const result=await api({action:'payment.live.inspect'});$('live-payment-inspect-status').textContent='Credencial conferida. Conta recebedora: '+result.collectorId+(result.ready?' • Configuração preenchida.':' • Falta: '+result.missing.join(', '));}catch(error){$('live-payment-inspect-status').textContent=error.message;}finally{button.disabled=false;}};

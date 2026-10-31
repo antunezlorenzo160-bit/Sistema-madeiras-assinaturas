@@ -1,3 +1,4 @@
+import {liveConfiguration,inspectLiveConnection,confirmLivePayment} from './lib/live-payments.mjs';
 import {simulateBillingAccess} from './lib/billing-access.mjs';
 import {expirePaidTestForRenewal,startRequestedTestPeriod,assertCheckoutPeriodAvailable,endFreeTestPeriod,serializeTestPeriods} from './lib/contract-periods.mjs';
 import {savePlan,renameCurrentPlansToSM,deleteUnusedPlan} from './lib/plans.mjs';
@@ -26,7 +27,7 @@ export default async function handler(req) {
       if(new URL(req.url).searchParams.get('refresh')==='1')overviewReads.invalidate();
       const overview = await overviewReads.load(async()=>{
       const read=(name,promise)=>promise.catch(error=>{error.stage=name;throw error;});
-      const [plans,companies,subscriptions,watermark,charges,contractRequests,testPeriods] = await Promise.all([
+      const [plans,companies,subscriptions,watermark,charges,contractRequests,testPeriods,liveCharges] = await Promise.all([
         read('plans',root.doc('billing').collection('plans').limit(200).get()),
         read('companies',root.doc('billing').collection('companies').limit(200).get()),
         read('subscriptions',root.doc('billing').collection('subscriptions').limit(200).get()),
@@ -34,11 +35,12 @@ export default async function handler(req) {
         read('charges',root.doc('billing').collection('charges').limit(100).get()),
         read('subscriptions',root.doc('billing').collection('contract_requests').limit(200).get()),
         read('subscriptions',root.doc('billing').collection('test_contract_periods').limit(200).get()),
+        read('charges',root.doc('billing').collection('live_charges').limit(100).get()),
       ]);
       const list = snap => snap.docs.map(d=>({...d.data(),id:d.id}));
-      return {plans:list(plans),companies:list(companies),subscriptions:list(subscriptions),charges:list(charges),contractRequests:list(contractRequests),testPeriods:serializeTestPeriods(testPeriods),
+      return {plans:list(plans),companies:list(companies),subscriptions:list(subscriptions),charges:list(charges),liveCharges:list(liveCharges),contractRequests:list(contractRequests),testPeriods:serializeTestPeriods(testPeriods),
         watermark:watermark.exists?watermark.data():{widthMm:180,opacity:.04,image:''},
-        methods:METHODS.map(id=>({id,status:process.env.MERCADO_PAGO_TEST_ACCESS_TOKEN?'test_available':'not_connected'})),provider:'mercadopago',testConfigured:Boolean(process.env.MERCADO_PAGO_TEST_ACCESS_TOKEN),livePayments:false,webhookConfigured:Boolean(process.env.MERCADO_PAGO_TEST_WEBHOOK_SECRET)};
+        methods:METHODS.map(id=>({id,status:process.env.MERCADO_PAGO_TEST_ACCESS_TOKEN?'test_available':'not_connected'})),provider:'mercadopago',testConfigured:Boolean(process.env.MERCADO_PAGO_TEST_ACCESS_TOKEN),livePayments:liveConfiguration().ready,livePaymentConfiguration:{ready:liveConfiguration().ready,missing:liveConfiguration().missing},webhookConfigured:Boolean(process.env.MERCADO_PAGO_TEST_WEBHOOK_SECRET)};
       });
       return json(200,overview);
     }
@@ -48,6 +50,8 @@ export default async function handler(req) {
     let input; try { input = JSON.parse(text); } catch { throw new PlatformError(400,'Pedido inválido.'); }
     if (!input || typeof input !== 'object') throw new PlatformError(400,'Pedido inválido.');
     if(['company.legacy.inspect','company.legacy.recover'].includes(input.action)){const result=await recoverLegacyCompany(db,identity,input);overviewReads.invalidate();return json(200,result);}
+    if(input.action==='payment.live.verify'){if(typeof input.chargeId!=='string'||!/^live-[a-f0-9]{48}$/.test(input.chargeId))throw new PlatformError(400,'Pagamento inválido.');const result=await confirmLivePayment({db,config:liveConfiguration(),chargeId:input.chargeId});overviewReads.invalidate();return json(200,result);}
+    if(input.action==='payment.live.inspect')return json(200,await inspectLiveConnection(liveConfiguration()));
     if(input.action==='company.billing_test'){const result=await simulateBillingAccess(db,input,uid);overviewReads.invalidate();return json(200,result);}
     if(input.action==='company.detail')return json(200,await companyDetail(db,input.empresaId));
     if(['company.access','trial.save'].includes(input.action)){

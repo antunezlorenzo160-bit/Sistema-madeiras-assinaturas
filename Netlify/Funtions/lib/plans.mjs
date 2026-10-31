@@ -28,7 +28,7 @@ export async function renameCurrentPlansToSM(db,uid,now=Date.now()){
 }
 
 export async function planHasReferences(tx,db,planId){
- const snapshots=await Promise.all(['subscriptions','charges','contract_requests','test_contract_periods'].map(collection=>tx.get(db.collection(`plataforma_admin/billing/${collection}`).where('planId','==',planId).limit(1))));
+ const snapshots=await Promise.all(['subscriptions','charges','contract_requests','test_contract_periods','live_charges','live_contract_periods'].map(collection=>tx.get(db.collection(`plataforma_admin/billing/${collection}`).where('planId','==',planId).limit(1))));
  return snapshots.some(snapshot=>snapshot.size>0);
 }
 export async function deleteUnusedPlan(db,input,uid,now=Date.now()){

@@ -39,6 +39,6 @@ test('an individually selected unused plan can be deleted without affecting SM o
 });
 test('subscriptions, payments, requests and guaranteed periods each prevent deletion',async()=>{
  const {deleteUnusedPlan}=await import('../Netlify/Funtions/lib/plans.mjs');
- for(const collection of ['subscriptions','charges','contract_requests','test_contract_periods']){const s=deletionSetup(collection);await assert.rejects(deleteUnusedPlan(s.db,s.input,'owner'),/não foi excluído/);assert.equal(s.records.has(s.path),true);assert.equal(s.writes.length,0);}
+ for(const collection of ['subscriptions','charges','contract_requests','test_contract_periods','live_charges','live_contract_periods']){const s=deletionSetup(collection);await assert.rejects(deleteUnusedPlan(s.db,s.input,'owner'),/não foi excluído/);assert.equal(s.records.has(s.path),true);assert.equal(s.writes.length,0);}
  const s=deletionSetup();await assert.rejects(deleteUnusedPlan(s.db,{...s.input,expectedRevision:6},'owner'),/mudou/);assert.equal(s.writes.length,0);
 });
