@@ -1,3 +1,4 @@
+import {applyProductionCalculator} from './production-calculator-build.mjs';
 import {applyEmployeeLoadAccess} from './employee-load-access-build.mjs';
 import {applySplitEmployeePermissions} from './split-employee-permissions.mjs';
 import {readFileSync} from 'node:fs';
@@ -83,5 +84,6 @@ export function applyEmployeeAccess(html){
  }
 
  app=applyEmployeeLoadAccess(app);
+ app=applyProductionCalculator(app);
  return prefix+JSON.stringify(app).replaceAll('</','<\\/')+shell;
 }
