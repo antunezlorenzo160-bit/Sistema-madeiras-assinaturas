@@ -90,4 +90,11 @@ export async function confirmLivePayment({db,config,paymentId,chargeId,request=f
  });
 }
 
-export async function inspectLiveConnection(config,request=fetch){if(!config.token||!config.collectorId)throw new PlatformError(503,'Cadastre a credencial de produção e o ID da conta recebedora no servidor.');await seller(config,request);return {ok:true,collectorId:config.collectorId,ready:config.ready,missing:config.missing};}
+export async function inspectLiveConnection(config,request=fetch){
+ if(!config.token||config.token.startsWith('TEST-'))throw new PlatformError(503,'Cadastre o Access Token de produção no servidor.');
+ const account=await provider(config,'/users/me',null,request);
+ const collectorId=String(account.id||'');
+ if(!/^\d{1,30}$/.test(collectorId)||account.tags?.includes('test_user'))throw new PlatformError(409,'A credencial não pertence a uma conta real de produção.');
+ if(config.collectorId&&config.collectorId!==collectorId)throw new PlatformError(409,'O ID configurado não corresponde à conta recebedora da credencial.');
+ return {ok:true,collectorId,ready:config.ready,missing:config.missing};
+}

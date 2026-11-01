@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {liveConfiguration,createLiveCheckout,confirmLivePayment,liveOverview} from '../Netlify/Funtions/lib/live-payments.mjs';
+import {liveConfiguration,createLiveCheckout,confirmLivePayment,liveOverview,inspectLiveConnection} from '../Netlify/Funtions/lib/live-payments.mjs';
 import {billingAccessState} from '../public/billing-access.mjs';
 const root='plataforma_admin/billing',now=Date.parse('2026-10-31T19:00:00Z');
 function setup(){
@@ -41,4 +41,16 @@ test('expired live plan renews with a new payment while preserving the first per
 });
 test('concurrent create clicks reserve one checkout, and disabling new sales does not block existing confirmations',async()=>{
  const s=setup(),results=await Promise.allSettled([createLiveCheckout(s.args),createLiveCheckout(s.args)]),charge=results.find(result=>result.status==='fulfilled').value;assert.equal(s.calls.filter(call=>call.url.endsWith('/checkout/preferences')).length,1);s.pay(charge.id);s.args.config.ready=false;s.args.config.companies=[];assert.equal((await confirmLivePayment({...s.args,chargeId:charge.id})).status,'approved');
+});
+
+test('owner preflight discovers receiver without prior ID or enabled sales and returns no credentials',async()=>{
+ const config={token:'APP_USR-fake',collectorId:undefined,ready:false,missing:['conta recebedora']},calls=[];
+ const result=await inspectLiveConnection(config,async(url,options)=>{calls.push({url,options});return {ok:true,json:async()=>({id:123,tags:[],email:'private@example.com'})};});
+ assert.equal(result.collectorId,'123');assert.equal(result.ready,false);assert.equal(calls.length,1);assert.equal(calls[0].url,'https://api.mercadopago.com/users/me');assert.equal(calls[0].options.method,'GET');assert(!JSON.stringify(result).includes(config.token));assert(!JSON.stringify(result).includes('private@example.com'));assert.equal(config.collectorId,undefined);
+});
+test('receiver preflight refuses sandbox credentials, test accounts and mismatched configured receiver',async()=>{
+ let calls=0;await assert.rejects(inspectLiveConnection({token:'TEST-fake'},async()=>calls++));assert.equal(calls,0);
+ for(const [config,account] of [[{token:'APP_USR-fake'},{id:123,tags:['test_user']}],[{token:'APP_USR-fake',collectorId:'999'},{id:123,tags:[]}]]){
+  await assert.rejects(inspectLiveConnection(config,async()=>({ok:true,json:async()=>account})));
+ }
 });
