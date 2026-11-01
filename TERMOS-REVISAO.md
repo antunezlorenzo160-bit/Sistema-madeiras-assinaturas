@@ -22,3 +22,7 @@ Após completar a revisão, criar uma nova versão definitiva com outro caminho,
 ## Validação desta alteração
 
 Foram conferidas diretamente a barreira de rascunho, a correspondência de URL com origem/caminho e a rejeição de aceite com versão ou conteúdo antigos, além da sintaxe do script da página. As verificações de URL em execução isolada usaram um substituto de URL para os exemplos controlados. A suíte Node preparada para verificar o conteúdo Git do arquivo e a gravação do aceite não pôde ser executada no ambiente indisponível desta etapa. O deploy do Netlify deve concluir a compilação antes de entregar a prévia. Nenhum pagamento real nem alteração de variáveis de ambiente foi feito pelo agente.
+
+## Região do Firestore informada pelo fornecedor
+
+O fornecedor confirmou que escolheu Estados Unidos ao criar o banco. Essa informação foi incluída no rascunho atual, identificado como rascunho-2026-11-01-r2. Não foi inferido o código exato da região, nem estendida essa localização a autenticação, hospedagem, pagamentos ou todos os serviços dos prestadores. A cópia de revisão anterior preservada e seu manifesto permanecem intactos, ainda sem habilitar cobrança. As condições contratuais de processamento internacional continuam sujeitas a verificação; a informação do país não equivale à certificação de adequação jurídica.
