@@ -34,3 +34,6 @@
 
 /pagamento/*
   Cache-Control: no-cache, max-age=0, must-revalidate
+
+/termos/*
+  Cache-Control: no-cache, max-age=0, must-revalidate
