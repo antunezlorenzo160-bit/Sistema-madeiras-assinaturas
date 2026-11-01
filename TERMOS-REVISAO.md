@@ -26,3 +26,7 @@ Foram conferidas diretamente a barreira de rascunho, a correspondência de URL c
 ## Região do Firestore informada pelo fornecedor
 
 O fornecedor confirmou que escolheu Estados Unidos ao criar o banco. Essa informação foi incluída no rascunho atual, identificado como rascunho-2026-11-01-r2. Não foi inferido o código exato da região, nem estendida essa localização a autenticação, hospedagem, pagamentos ou todos os serviços dos prestadores. A cópia de revisão anterior preservada e seu manifesto permanecem intactos, ainda sem habilitar cobrança. As condições contratuais de processamento internacional continuam sujeitas a verificação; a informação do país não equivale à certificação de adequação jurídica.
+
+## Localização em conferência — correção da revisão anterior
+
+O fornecedor informou dúvida sobre a atribuição de Estados Unidos ao banco deste sistema. Um print mostra southamerica-east1 (São Paulo), mas o cabeçalho com o projeto/banco não está visível. Nenhum dos países será afirmado para o sistema até confirmar o ID estoque-madeiras-cc4d7 e o banco utilizado. A declaração anterior de armazenamento nos EUA foi retirada do rascunho público. A região do print não foi atribuída automaticamente ao projeto de produção. Versão atual: rascunho-2026-11-01-r3, ainda em revisão.
