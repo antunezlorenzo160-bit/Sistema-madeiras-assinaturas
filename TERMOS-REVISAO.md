@@ -18,3 +18,9 @@ Referências oficiais de apoio, consultadas para o texto: CDC (art. 49), Decreto
 - Suporte por e-mail de segunda a sexta, 8h–12h e 13h30–18h, horário de Brasília, exceto feriados. Mensagens recebidas fora do horário são atendidas a partir do próximo período, observados os prazos legais. Não foi estipulado prazo garantido de conclusão.
 - O vencimento não implica exclusão automática. Preservação para reativação depende de necessidade, direitos dos titulares e obrigações legais. Não há compromisso vitalício; encerramento/exclusão são distintos de não renovação.
 - As pendências do rascunho foram atualizadas. Não houve alteração de PAYMENT_TERMS_URL, ativação de pagamento real ou promessa de mecanismos de backup ainda não confirmados.
+
+## Revisão de exclusão e cópias — 01/11/2026
+
+O código de gestão de empresas preserva dados ao suspender o acesso, e os módulos offline mantêm cópias locais e filas. Não foi identificada nas rotas/configuração revisadas uma rotina de exclusão completa da conta ou backup integral agendado. Não houve acesso às configurações externas de backup do Firebase/Google Cloud; não se afirma que elas estejam habilitadas ou desabilitadas.
+
+O rascunho agora descreve o atendimento de pedidos de exclusão por e-mail, verificação proporcional da legitimidade, identificação do escopo e das exceções de conservação, e comunicação do encaminhamento. Trata-se do procedimento proposto, não de uma rotina automatizada já implementada. Diferencia PDF/texto, cache offline e backup integral, sem prometer recuperação ou prazo de restauração não demonstrados. O texto mantém os horários já aprovados e continua rascunho. Nenhuma conta foi excluída, nenhum backup foi ativado e nenhum pagamento real foi habilitado.
