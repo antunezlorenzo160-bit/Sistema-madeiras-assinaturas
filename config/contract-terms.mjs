@@ -1,2 +1,2 @@
-// Keep published terms versions immutable; this review snapshot is not enabled for billing.
-export const CONTRACT_TERMS=Object.freeze({version:'rascunho-2026-11-01',path:'/termos/versoes/revisao-2026-11-01.html',contentId:'git-blob:16612f2efe8f3879a152ddeefe3b9e74f915601d',status:'review'});
+// Published and accepted document versions must remain immutable.
+export const CONTRACT_TERMS=Object.freeze({version:'manual-v1-2026-11-01',path:'/termos/versoes/manual-v1-2026-11-01.html',contentId:'git-blob:d72b16b71aa879d68175869b569cb766e93f9549',status:'published'});

@@ -59,7 +59,7 @@ test('receiver preflight refuses sandbox credentials, test accounts and mismatch
 });
 
 test('review terms cannot enable live checkout even with all environment variables filled',async()=>{
- const s=setup(),c=s.args.config;const config=liveConfiguration({MERCADO_PAGO_LIVE_ENABLED:'true',MERCADO_PAGO_LIVE_ACCESS_TOKEN:c.token,MERCADO_PAGO_LIVE_COLLECTOR_ID:c.collectorId,MERCADO_PAGO_LIVE_WEBHOOK_SECRET:c.secret,MERCADO_PAGO_LIVE_ORIGIN:c.origin,MERCADO_PAGO_LIVE_COMPANY_IDS:'tenant',PAYMENT_TERMS_URL:c.termsUrl});
+ const s=setup(),c=s.args.config;const config=liveConfiguration({MERCADO_PAGO_LIVE_ENABLED:'true',MERCADO_PAGO_LIVE_ACCESS_TOKEN:c.token,MERCADO_PAGO_LIVE_COLLECTOR_ID:c.collectorId,MERCADO_PAGO_LIVE_WEBHOOK_SECRET:c.secret,MERCADO_PAGO_LIVE_ORIGIN:c.origin,MERCADO_PAGO_LIVE_COMPANY_IDS:'tenant',PAYMENT_TERMS_URL:c.termsUrl},{...CONTRACT_TERMS,status:'review'});
  assert.equal(config.ready,false);assert.equal(config.termsReady,false);await assert.rejects(createLiveCheckout({...s.args,config}));assert.equal(s.calls.length,0);
 });
 test('old terms or altered content identity cannot create a payment and acceptance records the exact server version',async()=>{
@@ -70,4 +70,10 @@ test('terms snapshot matches its immutable Git content identity',()=>{
  const html=readFileSync(new URL('../public'+CONTRACT_TERMS.path,import.meta.url));
  assert(html.toString('utf8').includes(CONTRACT_TERMS.version));
  const digest=createHash('sha1').update(Buffer.from('blob '+html.length+'\0')).update(html).digest('hex');assert.equal(CONTRACT_TERMS.contentId,'git-blob:'+digest);
+});
+
+test('published terms version uses the preserved document while an unversioned or foreign URL stays blocked',()=>{
+ const env={MERCADO_PAGO_LIVE_ENABLED:'true',MERCADO_PAGO_LIVE_ACCESS_TOKEN:'APP_USR-fake',MERCADO_PAGO_LIVE_COLLECTOR_ID:'123',MERCADO_PAGO_LIVE_WEBHOOK_SECRET:'fake',MERCADO_PAGO_LIVE_ORIGIN:'https://system.example',MERCADO_PAGO_LIVE_COMPANY_IDS:'tenant',PAYMENT_TERMS_URL:'https://system.example'+CONTRACT_TERMS.path};
+ assert.equal(CONTRACT_TERMS.status,'published');assert.equal(liveConfiguration(env).ready,true);assert.equal(liveConfiguration({...env,MERCADO_PAGO_LIVE_ENABLED:'false'}).ready,false);
+ for(const url of ['https://system.example/termos/','https://other.example'+CONTRACT_TERMS.path])assert.equal(liveConfiguration({...env,PAYMENT_TERMS_URL:url}).ready,false);
 });
