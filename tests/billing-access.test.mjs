@@ -36,3 +36,12 @@ test('read-only schema preparation never scans or migrates company documents',as
  const {prepareBudgetSchema}=await import('../Netlify/Funtions/lib/budget-schema.mjs');
  for(const prepared of [true,false]){let reads=0;const db={doc:()=>({get:async()=>{reads++;return {exists:prepared,data:()=>({version:1})}},set:()=>{throw Error('no writes allowed')}}),collection:()=>{throw Error('no full scan allowed')}};const result=await prepareBudgetSchema(db,'tenant','uid',now,{readOnly:true});assert.equal(result.ready,prepared);assert.equal(result.migrated,0);assert.equal(reads,1)}
 });
+
+
+test('free trial has no grace or read-only period and rejects malformed windows',async()=>{
+ const {freeTrialAccessWindow}=await import('../public/billing-access.mjs');
+ const p=freeTrialAccessWindow(now);assert.equal(billingAccessState(p,now-1).write,true);
+ for(const t of [now,now+1,now+36*DAY]){assert.equal(billingAccessState(p,t).phase,'settings');assert.equal(billingAccessState(p,t).read,false);}
+ assert.equal(billingAccessState({...p,graceEndsAt:now+DAY},now-1).phase,'settings');
+ assert.throws(()=>freeTrialAccessWindow(0));
+});

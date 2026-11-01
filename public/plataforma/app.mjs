@@ -1,4 +1,4 @@
-import {createCompanyManagement} from './company-management.mjs?v=billing-access-1';
+import {createCompanyManagement} from './company-management.mjs?v=free-trial-limit-1';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js';
 import { initializeAuth, browserLocalPersistence, inMemoryPersistence, onAuthStateChanged, signInWithEmailAndPassword, signOut, sendEmailVerification } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
 
@@ -236,7 +236,7 @@ $('charge-form').onsubmit=async event=>{
 
 $('invite-form').onsubmit=async event=>{
  event.preventDefault();const button=event.target.querySelector('button'),f=new FormData(event.target);button.disabled=true;status('Gerando convite…');
- try{const result=await api({action:'invitation.create',name:f.get('name'),email:f.get('email')});const inviteUrl=new URL('/cadastro/',location.origin);inviteUrl.hash=new URL(result.url).hash;$('invite-url').value=inviteUrl.href;$('invite-result').hidden=false;$('invite-copy-status').textContent='';status('Convite pronto. Copie e envie ao responsável.');}
+ try{const result=await api({action:'invitation.create',name:f.get('name'),email:f.get('email'),trialDays:Number(f.get('trialDays'))});const inviteUrl=new URL('/cadastro/',location.origin);inviteUrl.hash=new URL(result.url).hash;$('invite-url').value=inviteUrl.href;$('invite-result').hidden=false;$('invite-copy-status').textContent='';status('Convite pronto. Copie e envie ao responsável.');}
  catch(error){status(error.message,true);}finally{button.disabled=false;}
 };
 $('invite-copy').onclick=async()=>{try{await navigator.clipboard.writeText($('invite-url').value);$('invite-copy-status').textContent='Link copiado.';}catch{$('invite-url').focus();$('invite-url').select();$('invite-copy-status').textContent='Selecione e copie o link acima.';}};

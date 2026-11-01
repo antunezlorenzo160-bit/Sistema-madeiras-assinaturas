@@ -19,7 +19,7 @@ async function complete(){
   const response=await fetch('/.netlify/functions/company-register',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+idToken},body:JSON.stringify({token,name:$('company-name').value.trim()}),signal:controller.signal});
   const data=await response.json();if(!response.ok)throw Error(data.error||'Não foi possível concluir o cadastro.');
   $('register-form').hidden=true;$('forgot-password').hidden=true;$('verification').hidden=true;$('open-system').hidden=false;$('change-account').hidden=true;
-  status('Empresa cadastrada. Seu teste gratuito está liberado, sem prazo definido e sem cobrança automática.');
+  status('Empresa cadastrada. Seu teste gratuito está liberado, pelo prazo definido no convite, sem cobrança automática.');
  }finally{clearTimeout(timer);}
 }
 function showPassword(visible){
@@ -56,3 +56,4 @@ $('confirm').onclick=()=>run(complete);
 $('resend').onclick=()=>run(async()=>{await sendEmailVerification(auth.currentUser);status('Confirmação enviada. Confira também o spam.');});
 $('change-account').onclick=()=>run(async()=>{await signOut(auth);$('verification').hidden=true;$('change-account').hidden=true;status('Entre com o e-mail do convite.');});
 if(!token){$('register-form').hidden=true;status('Este cadastro exige o link completo de convite enviado pelo administrador.');}
+

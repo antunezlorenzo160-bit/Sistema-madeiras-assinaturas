@@ -11,8 +11,8 @@
   let page=document.getElementById('billing-settings-only');
   if(!page){page=document.createElement('main');page.id='billing-settings-only';page.style.cssText='max-width:700px;margin:20px auto;padding:24px;background:#172b20;color:#fff;border-radius:12px';
    const title=document.createElement('h1');title.textContent='Configurações';
-   const text=document.createElement('p');text.textContent='Seu plano venceu e o prazo de consultas terminou. Os dados continuam guardados. Para voltar a usar o sistema, escolha um plano.';
-   const plans=document.createElement('a');plans.href='/contratacao/';plans.textContent='Acessar Planos e renovar';plans.style.cssText='display:inline-block;padding:14px;background:#e5b347;color:#152319;border-radius:8px;margin:12px 0';
+   const text=document.createElement('p');text.textContent='Seu período de acesso terminou. Seus dados estão preservados. Escolha um plano para continuar usando o sistema.';
+   const plans=document.createElement('a');plans.href='/pagamento/';plans.textContent='Acessar Planos e renovar';plans.style.cssText='display:inline-block;padding:14px;background:#e5b347;color:#152319;border-radius:8px;margin:12px 0';
    const exit=document.createElement('button');exit.textContent='Sair da conta';exit.onclick=()=>{const button=document.getElementById('sair');if(button){button.disabled=false;button.click();}};page.append(title,text,plans,document.createElement('br'),exit);document.body.append(page);
   }
   document.querySelector('#holder iframe')?.contentWindow?.__smPausarPorPlano?.();
@@ -41,3 +41,4 @@
  window.__smStopAccessSession=()=>{stopWatch?.();stopWatch=null;session=null;clearTimeout(timer);document.getElementById('billing-settings-only')?.remove();};
  document.addEventListener('visibilitychange',()=>{if(!document.hidden)apply();});
 })();
+

@@ -9,6 +9,7 @@ export default async function handler(req){
     if(text.length>2000)throw new PlatformError(413,'Pedido muito grande.');
     let data;try{data=JSON.parse(text);}catch{throw new PlatformError(400,'Pedido inválido.');}
     const result=await redeemInvitation(identity.db,data?.token,identity,Date.now(),{name:data?.name});
-    return json(200,{ok:true,...result,trialMode:'indefinite'});
+    return json(200,{ok:true,...result});
   }catch(error){return failure(error);}
 }
+

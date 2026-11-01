@@ -10,10 +10,12 @@ export function buildCompanyAccess(input=new URL('../public/index.html',import.m
  if(start<marker.length||html[start]!=='"')throw Error('Aplicação não encontrada.');
  let end=start+1;for(;end<html.length;end++){if(html[end]==='\\'){end++;continue;}if(html[end]==='"'){end++;break;}}
  let app=JSON.parse(html.slice(start,end));
- if(!app.includes('// COMPANY_ACCESS_V707')){
+ const helper=readFileSync(new URL('../ui/company-access.js',import.meta.url),'utf8');
+ if(app.includes('// COMPANY_ACCESS_V707')){
+  app=app.replace(/\/\/ COMPANY_ACCESS_V707\n[\s\S]*?\nacompanharAcessoEmpresaV707\(\);\n/,()=>`// COMPANY_ACCESS_V707\n${helper}\nacompanharAcessoEmpresaV707();\n`);
+ }else{
   const target='parent.__v456Ready({empresaId:empresaV456,uid:boundV456.uid,persistente:window.__v456Local.durable});';
   if(!app.includes(target)||app.indexOf(target)!==app.lastIndexOf(target))throw Error('Confirmação de acesso não encontrada.');
-  const helper=readFileSync(new URL('../ui/company-access.js',import.meta.url),'utf8');
   app=app.replace(target,()=>`// COMPANY_ACCESS_V707\n${helper}\nacompanharAcessoEmpresaV707();\n${target}`);
  }
  writeFileSync(file,applyEmployeeAccess(applyBillingAccess(html.slice(0,start)+JSON.stringify(app).replaceAll('</','<\\/')+html.slice(end))));

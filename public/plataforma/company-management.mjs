@@ -8,7 +8,7 @@ export function createCompanyManagement({document,api,onChange,status,confirmAct
     if(!subscription)return 'Sem assinatura cadastrada';
     if(subscription.status==='trial'){
       if(subscription.trialMode!=='dated')return 'Teste gratuito sem prazo';
-      return Number(subscription.trialEndsAt)>Date.now()?'Teste até '+endDate(subscription.trialEndDate):'Prazo do teste encerrado em '+endDate(subscription.trialEndDate)+' — acesso mantido até decisão do administrador';
+      return Number(subscription.trialEndsAt)>Date.now()?'Teste até '+endDate(subscription.trialEndDate):'Prazo do teste encerrado em '+endDate(subscription.trialEndDate)+' — contrate um plano para continuar';
     }
     return ({active:'Assinatura ativa',past_due:'Assinatura pendente',canceled:'Assinatura cancelada'})[subscription.status]||subscription.status;
   }
@@ -43,10 +43,10 @@ export function createCompanyManagement({document,api,onChange,status,confirmAct
         const trial=node('form',null,'management-form');trial.append(node('h3','Teste gratuito'));
         const modeLabel=node('label','Duração do teste'),mode=node('select');
         for(const [value,text]of [['indefinite','Sem prazo definido'],['dated','Definir data de encerramento']]){const option=node('option',text);option.value=value;mode.append(option);}
-        mode.value=subscription?.trialMode==='dated'?'dated':'indefinite';modeLabel.append(mode);trial.append(modeLabel);
+        mode.value=subscription?.trialMode==='indefinite'?'indefinite':'dated';modeLabel.append(mode);trial.append(modeLabel);
         const dateLabel=node('label','Último dia do teste (horário de Brasília)'),dateInput=node('input');dateInput.type='date';dateInput.value=subscription?.trialEndDate||'';dateLabel.append(dateInput);trial.append(dateLabel);
         const updateDate=()=>{dateLabel.hidden=mode.value!=='dated';dateInput.required=mode.value==='dated';};mode.onchange=updateDate;updateDate();
-        trial.append(node('p','Ao salvar uma data, a empresa recebe um aviso dentro do sistema. A data não gera cobrança nem suspende o acesso automaticamente. Para interromper o acesso, use a opção de suspensão acima.', 'management-note'));
+        trial.append(node('p','Ao terminar o prazo definido, o acesso fica limitado à contratação de um plano. Os dados são preservados e não há cobrança automática. A opção sem prazo mantém o teste liberado até sua decisão.', 'management-note'));
         const save=node('button','Salvar teste gratuito');save.type='submit';trial.append(save);
         trial.onsubmit=event=>{event.preventDefault();return action(trial,()=>api({action:'trial.save',empresaId:id,mode:mode.value,endDate:dateInput.value,expectedUpdatedAt:company.updatedAt||company.createdAt||0}));};
         host.append(trial);
@@ -78,3 +78,4 @@ export function createCompanyManagement({document,api,onChange,status,confirmAct
   $('company-search')?.addEventListener('input',renderList);
   return {render(next){state=next;renderList();},trialLabel};
 }
+

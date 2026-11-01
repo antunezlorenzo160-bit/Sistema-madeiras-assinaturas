@@ -1,3 +1,4 @@
+import {freeTrialAccessWindow} from '../../../public/billing-access.mjs';
 import {randomUUID} from 'node:crypto';
 import {PlatformError} from './platform.mjs';
 const validId=value=>typeof value==='string'&&/^[-A-Za-z0-9_]{1,120}$/.test(value);
@@ -14,7 +15,7 @@ export function trialConfiguration(input,now=Date.now()){
   const date=input.endDate;
   if(typeof date!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(date)||!Number.isFinite(Date.parse(date+'T12:00:00Z'))||new Date(date+'T12:00:00Z').toISOString().slice(0,10)!==date)throw new PlatformError(400,'Informe uma data válida.');
   const end=Date.parse(date+'T23:59:59-03:00');
-  if(end<=now)throw new PlatformError(400,'Escolha uma data futura para avisar a empresa.');
+  if(end<=now)throw new PlatformError(400,'Escolha uma data futura para encerrar o teste.');
   return {trialMode:'dated',trialEndDate:date,trialEndsAt:end,notice:{kind:'trial_end',endDate:date,endsAt:end,updatedAt:now}};
 }
 export async function companyDetail(db,id){
@@ -32,11 +33,13 @@ export async function manageCompany(db,input,uid,now=Date.now()){
   const reason=String(input.reason||'').trim();if(reason.length>300)throw new PlatformError(400,'Use até 300 caracteres no motivo.');
   const trial=input.action==='trial.save'?trialConfiguration(input,now):null;
   return db.runTransaction(async tx=>{
-    const [company,subscription,members]=await Promise.all([tx.get(refs.company),tx.get(refs.subscription),tx.get(refs.members)]);
+    const policyRef=db.doc(`empresas/${id}/acesso/plano`);
+    const [company,subscription,members,policy]=await Promise.all([tx.get(refs.company),tx.get(refs.subscription),tx.get(refs.members),tx.get(policyRef)]);
     if(!company.exists)throw new PlatformError(404,'Empresa não encontrada.');
     if(members.size>400)throw new PlatformError(409,'Esta empresa exige uma operação em lote maior. Nenhuma alteração foi aplicada.');
     if(input.expectedUpdatedAt!==undefined&&Number(company.data().updatedAt||company.data().createdAt||0)!==Number(input.expectedUpdatedAt))throw new PlatformError(409,'O cadastro mudou em outra tela. Atualize os detalhes antes de salvar.');
     if(trial&&subscription.exists&&subscription.data().status!=='trial')throw new PlatformError(409,'Esta assinatura não está em teste gratuito.');
+    if(trial&&policy.exists&&policy.data().mode==='live')throw new PlatformError(409,'O teste gratuito não pode substituir o acesso de um pagamento real.');
     let changed=0;
     if(input.action==='company.access'){
       const suspend=input.accessStatus==='suspended';
@@ -48,6 +51,7 @@ export async function manageCompany(db,input,uid,now=Date.now()){
       tx.set(refs.company,{accessStatus:input.accessStatus,accessReason:reason,updatedAt:now,updatedBy:uid},{merge:true});
     }else{
       const {notice,...configuration}=trial;
+      tx.set(policyRef,trial.trialMode==='dated'?freeTrialAccessWindow(trial.trialEndsAt,{source:'free_trial',updatedAt:now,updatedBy:uid}):{enabled:false,mode:'free_trial',updatedAt:now,updatedBy:uid});
       tx.set(refs.subscription,{empresaId:id,status:'trial',...configuration,automaticBilling:false,updatedAt:now,updatedBy:uid},{merge:true});
       for(const member of members.docs)tx.update(member.ref,{avisoPlataforma:trial.notice,acessoAtualizadoEm:now});
       tx.set(refs.company,{updatedAt:now,updatedBy:uid},{merge:true});
@@ -57,3 +61,4 @@ export async function manageCompany(db,input,uid,now=Date.now()){
     return {ok:true,membersChanged:changed};
   });
 }
+

@@ -49,3 +49,18 @@ test('oversized membership cannot produce a partial suspension',async()=>{
 test('details return company data and bounded membership without reading other tenants',async()=>{
  const {db}=setup();const result=await companyDetail(db,'tenant');assert.equal(result.company.name,'Empresa');assert.equal(result.members.length,3);assert(!result.members.some(m=>m.uid==='other'));
 });
+
+
+test('dated trials restrict at the exact deadline and indefinite explicitly releases only unpaid access',async()=>{
+ const {billingAccessState}=await import('../public/billing-access.mjs');
+ const {db,records}=setup(),path='empresas/tenant/acesso/plano';
+ await manageCompany(db,{action:'trial.save',empresaId:'tenant',mode:'dated',endDate:'2026-11-15'},'owner',now);
+ const policy=records.get(path);assert.equal(policy.mode,'free_trial');
+ assert.equal(billingAccessState(policy,policy.endsAt-1).write,true);
+ assert.equal(billingAccessState(policy,policy.endsAt).phase,'settings');
+ await manageCompany(db,{action:'trial.save',empresaId:'tenant',mode:'indefinite'},'owner',now+1);
+ assert.equal(records.get(path).enabled,false);
+ records.set(path,{enabled:true,mode:'live',endsAt:now+100000});
+ await assert.rejects(manageCompany(db,{action:'trial.save',empresaId:'tenant',mode:'dated',endDate:'2026-11-15'},'owner',now+2),{status:409});
+ assert.equal(records.get(path).mode,'live');
+});
