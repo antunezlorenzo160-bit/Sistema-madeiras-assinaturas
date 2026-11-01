@@ -100,8 +100,8 @@ function render(){
   $('webhook-status').textContent=state.webhookConfigured?'Notificações automáticas configuradas. Novas aprovações de teste serão validadas pelo servidor. Atualize a lista para consultar.':'Confirmação automática aguardando configuração do webhook. Use Conferir pagamento de teste para consultar uma cobrança.';
   $('charge-submit').disabled=!state.testConfigured;
   $('payment-connection').textContent=state.testConfigured?'Credencial de teste cadastrada. O próximo checkout valida a conexão.':'Configure as credenciais de teste no servidor para habilitar.';
-  $('provider-status').textContent=state.testConfigured?'Somente testes':'Aguardando conexão';
-  $('provider-text').textContent=state.testConfigured?'Ambiente de testes. Cobranças reais permanecem desativadas.':'Conexão ainda não configurada. Nenhuma cobrança real será feita nesta prévia.';
+  $('provider-status').textContent=state.livePaymentConfiguration?.ready?'Pagamentos reais habilitados':state.testConfigured?'Ambiente de teste configurado':'Aguardando configuração';
+  $('provider-text').textContent=state.livePaymentConfiguration?.ready?'Pagamentos reais disponíveis para as empresas autorizadas, com renovação manual.':state.testConfigured?'O ambiente de teste está configurado. A configuração de pagamentos reais está incompleta.':'Configure a conexão para receber pagamentos.';
   list('charges-list',[...(state.charges||[])].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)),(host,c)=>{
     record(host,money(c.amountCents),({test_payment_approved:'Pagamento de teste aprovado e validado no Mercado Pago.',test_free_period:'Período gratuito de teste registrado, sem pagamento.',checkout_creating:'Preparando checkout de teste.',checkout_failed:'Falha ao preparar o checkout. O responsável pode tentar novamente.'})[c.status]||'Checkout de teste criado. Pagamento ainda não confirmado na plataforma.');
     if(c.status==='test_checkout_created'){
@@ -254,3 +254,4 @@ $('legacy-recover').onclick=async()=>{
 };
 
 $('live-payment-inspect').onclick=async()=>{const button=$('live-payment-inspect');button.disabled=true;try{const result=await api({action:'payment.live.inspect'});$('live-payment-inspect-status').textContent='Credencial conferida. Conta recebedora: '+result.collectorId+(result.ready?' • Configuração preenchida.':' • Falta: '+result.missing.join(', '));}catch(error){$('live-payment-inspect-status').textContent=error.message;}finally{button.disabled=false;}};
+

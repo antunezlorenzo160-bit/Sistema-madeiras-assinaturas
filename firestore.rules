@@ -36,8 +36,10 @@ service cloud.firestore {
     }
     function janelaValida(p) {
       return p.endsAt is int && p.graceEndsAt is int && p.consultEndsAt is int
-        && p.endsAt > 0 && p.graceEndsAt == p.endsAt + 432000000
-        && p.consultEndsAt == p.endsAt + 3024000000;
+        && p.endsAt > 0
+        && (p.get('mode', '') == 'free_trial'
+          ? p.graceEndsAt == p.endsAt && p.consultEndsAt == p.endsAt
+          : p.graceEndsAt == p.endsAt + 432000000 && p.consultEndsAt == p.endsAt + 3024000000);
     }
     function planoPermite(empresaId, escrita) {
       let path = /databases/$(database)/documents/empresas/$(empresaId)/acesso/plano;
@@ -140,3 +142,4 @@ service cloud.firestore {
     }
   }
 }
+

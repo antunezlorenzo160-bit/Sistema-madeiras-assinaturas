@@ -1,3 +1,4 @@
+import { cleanInterfaceCopy } from './interface-copy.mjs';
 import { applyCalculatorThicknessSummary } from './calculator-thickness-summary.mjs';
 import { applyCalculatorLoadDelete } from './calculator-load-delete.mjs';
 import { applyOfflineBoot } from './offline-boot.mjs';
@@ -21,6 +22,7 @@ for (; end < html.length; end++) {
   if (html[end] === '"') { end++; break; }
 }
 let app = applyCalculatorSummaryPolicy(applyDesktopCalculatorParity(applyLinearCmdp(applyLinearServices(JSON.parse(html.slice(start, end))))));
+app = cleanInterfaceCopy(app);
 app = applyCalculatorLoadDelete(app);
 app = applyCalculatorThicknessSummary(app);
 const keyboard = readFileSync(new URL('ui/calculator-keyboard.js', root), 'utf8');
@@ -36,3 +38,4 @@ app = app.replace('</body>', injection + '</body>');
 html = html.slice(0, start) + JSON.stringify(app).replaceAll('</', '<\\/') + html.slice(end);
 writeFileSync(file, applyOfflineBoot(html));
 console.log('Menu retrátil preparado somente para celular.');
+
