@@ -30,3 +30,7 @@ O fornecedor confirmou que escolheu Estados Unidos ao criar o banco. Essa inform
 ## Localização em conferência — correção da revisão anterior
 
 O fornecedor informou dúvida sobre a atribuição de Estados Unidos ao banco deste sistema. Um print mostra southamerica-east1 (São Paulo), mas o cabeçalho com o projeto/banco não está visível. Nenhum dos países será afirmado para o sistema até confirmar o ID estoque-madeiras-cc4d7 e o banco utilizado. A declaração anterior de armazenamento nos EUA foi retirada do rascunho público. A região do print não foi atribuída automaticamente ao projeto de produção. Versão atual: rascunho-2026-11-01-r3, ainda em revisão.
+
+## Projeto e região conferidos pelo fornecedor — 01/11/2026
+
+O fornecedor enviou a identificação do projeto estoque-madeiras-cc4d7 (nome Estoque-madeiras), o mesmo projeto configurado na prévia, após enviar as telas da localização southamerica-east1 (São Paulo). A revisão atual registra São Paulo, Brasil, somente para o Firestore. A correspondência foi estabelecida pelas telas apresentadas pelo fornecedor, não por consulta autenticada da infraestrutura pelo agente. A localização não é estendida aos demais serviços. Versão do rascunho atual: rascunho-2026-11-01-r4. A cópia de revisão preservada e o status review do manifesto não foram alterados. Editar os termos não altera a configuração ou os dados do banco.
