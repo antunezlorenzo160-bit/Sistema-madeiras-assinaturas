@@ -1,15 +1,18 @@
+import {readFileSync} from 'node:fs';
+import {createHash} from 'node:crypto';
+import {CONTRACT_TERMS} from '../config/contract-terms.mjs';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {liveConfiguration,createLiveCheckout,confirmLivePayment,liveOverview,inspectLiveConnection} from '../Netlify/Funtions/lib/live-payments.mjs';
 import {billingAccessState} from '../public/billing-access.mjs';
 const root='plataforma_admin/billing',now=Date.parse('2026-10-31T19:00:00Z');
 function setup(){
- const config=liveConfiguration({MERCADO_PAGO_LIVE_ENABLED:'true',MERCADO_PAGO_LIVE_ACCESS_TOKEN:'APP_USR-fake-not-a-real-token',MERCADO_PAGO_LIVE_COLLECTOR_ID:'123',MERCADO_PAGO_LIVE_WEBHOOK_SECRET:'fake',MERCADO_PAGO_LIVE_ORIGIN:'https://system.example',MERCADO_PAGO_LIVE_COMPANY_IDS:'tenant',PAYMENT_TERMS_URL:'https://system.example/termos/'}),identity={uid:'owner',emailVerified:true};
+ const config=liveConfiguration({MERCADO_PAGO_LIVE_ENABLED:'true',MERCADO_PAGO_LIVE_ACCESS_TOKEN:'APP_USR-fake-not-a-real-token',MERCADO_PAGO_LIVE_COLLECTOR_ID:'123',MERCADO_PAGO_LIVE_WEBHOOK_SECRET:'fake',MERCADO_PAGO_LIVE_ORIGIN:'https://system.example',MERCADO_PAGO_LIVE_COMPANY_IDS:'tenant',PAYMENT_TERMS_URL:'https://system.example'+CONTRACT_TERMS.path},{...CONTRACT_TERMS,status:'published'}),identity={uid:'owner',emailVerified:true};
  const records=new Map([['membros/owner',{empresaId:'tenant',ativo:true,papel:'admin'}],[`${root}/companies/tenant`,{name:'Empresa',ownerUid:'owner'}],[`${root}/plans/monthly`,{name:'SM',amountCents:19000,interval:'monthly',updatedAt:1,active:true}]]),writes=[],calls=[];let payment=null,chain=Promise.resolve();
  const snapshot=ref=>({id:ref.path.split('/').at(-1),exists:records.has(ref.path),data:()=>structuredClone(records.get(ref.path))});
  const db={doc:path=>({path,get:async()=>snapshot({path})}),collection:path=>({limit:()=>({get:async()=>{const docs=[...records.keys()].filter(key=>key.startsWith(path+'/')).map(path=>snapshot({path}));return {docs,size:docs.length};}})}),runTransaction(fn){const task=chain.then(async()=>{const pending=[];let writing=false;const result=await fn({get:async ref=>{assert(!writing,'all reads precede writes');return snapshot(ref);},set(ref,data,options){writing=true;pending.push([ref.path,options?.merge?{...records.get(ref.path),...structuredClone(data)}:structuredClone(data)]);},update(ref,data){writing=true;assert(records.has(ref.path));pending.push([ref.path,{...records.get(ref.path),...structuredClone(data)}]);},create(ref,data){writing=true;assert(!records.has(ref.path));pending.push([ref.path,structuredClone(data)]);}});for(const [key,data]of pending){records.set(key,data);writes.push(key);}return result;});chain=task.catch(()=>{});return task;}};
  const request=async(url,options)=>{calls.push({url,options});if(url.endsWith('/users/me'))return {ok:true,json:async()=>({id:123,tags:[]})};if(url.endsWith('/checkout/preferences')){const body=JSON.parse(options.body);return {ok:true,json:async()=>({id:'pref',init_point:'https://www.mercadopago.com.br/checkout/start?pref_id=pref',collector_id:123,external_reference:body.external_reference})};}return {ok:true,json:async()=>url.includes('/search?')?{results:payment?[payment]:[]}:payment};};
- const input={planId:'monthly',expectedAmountCents:19000,expectedInterval:'monthly',revision:1,acceptRealPayment:true,termsVersion:'manual-v1',renewalPreference:'manual'};
+ const input={planId:'monthly',expectedAmountCents:19000,expectedInterval:'monthly',revision:1,acceptRealPayment:true,termsVersion:CONTRACT_TERMS.version,termsContentId:CONTRACT_TERMS.contentId,renewalPreference:'manual'};
  const args={db,identity,input,config,origin:config.origin,request,now};
  return {args,records,writes,calls,pay(chargeId,id='456',status='approved'){payment={id,external_reference:chargeId,collector_id:123,live_mode:true,currency_id:'BRL',transaction_amount:190,date_approved:new Date(now).toISOString(),status};return payment;}};
 }
@@ -53,4 +56,18 @@ test('receiver preflight refuses sandbox credentials, test accounts and mismatch
  for(const [config,account] of [[{token:'APP_USR-fake'},{id:123,tags:['test_user']}],[{token:'APP_USR-fake',collectorId:'999'},{id:123,tags:[]}]]){
   await assert.rejects(inspectLiveConnection(config,async()=>({ok:true,json:async()=>account})));
  }
+});
+
+test('review terms cannot enable live checkout even with all environment variables filled',async()=>{
+ const s=setup(),c=s.args.config;const config=liveConfiguration({MERCADO_PAGO_LIVE_ENABLED:'true',MERCADO_PAGO_LIVE_ACCESS_TOKEN:c.token,MERCADO_PAGO_LIVE_COLLECTOR_ID:c.collectorId,MERCADO_PAGO_LIVE_WEBHOOK_SECRET:c.secret,MERCADO_PAGO_LIVE_ORIGIN:c.origin,MERCADO_PAGO_LIVE_COMPANY_IDS:'tenant',PAYMENT_TERMS_URL:c.termsUrl});
+ assert.equal(config.ready,false);assert.equal(config.termsReady,false);await assert.rejects(createLiveCheckout({...s.args,config}));assert.equal(s.calls.length,0);
+});
+test('old terms or altered content identity cannot create a payment and acceptance records the exact server version',async()=>{
+ for(const change of [{termsVersion:'manual-v1'},{termsContentId:'different'}]){const s=setup();await assert.rejects(createLiveCheckout({...s.args,input:{...s.args.input,...change}}));assert.equal(s.calls.length,0);}
+ const s=setup(),charge=await createLiveCheckout(s.args),acceptance=s.records.get(root+'/live_charges/'+charge.id).acceptance;assert.equal(acceptance.version,CONTRACT_TERMS.version);assert.equal(acceptance.contentId,CONTRACT_TERMS.contentId);assert.equal(acceptance.url,s.args.config.origin+CONTRACT_TERMS.path);
+});
+test('terms snapshot matches its immutable Git content identity',()=>{
+ const html=readFileSync(new URL('../public'+CONTRACT_TERMS.path,import.meta.url));
+ assert(html.toString('utf8').includes(CONTRACT_TERMS.version));
+ const digest=createHash('sha1').update(Buffer.from('blob '+html.length+'\0')).update(html).digest('hex');assert.equal(CONTRACT_TERMS.contentId,'git-blob:'+digest);
 });

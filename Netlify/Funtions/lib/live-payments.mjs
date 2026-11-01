@@ -1,3 +1,4 @@
+import {CONTRACT_TERMS} from '../../../config/contract-terms.mjs';
 import {createHash,randomUUID} from 'node:crypto';
 import {PlatformError} from './platform.mjs';
 import {companyContext} from './company-contract.mjs';
@@ -5,7 +6,7 @@ import {periodEnd,NOTICE_DAYS} from './contract-periods.mjs';
 import {billingAccessWindow,BILLING_ACCESS_DAY} from '../../../public/billing-access.mjs';
 const root='plataforma_admin/billing';
 const valid=v=>typeof v==='string'&&/^[-\w]{1,120}$/.test(v);
-export function liveConfiguration(env=process.env){
+export function liveConfiguration(env=process.env,termsDocument=CONTRACT_TERMS){
  const missing=[];
  if(env.MERCADO_PAGO_LIVE_ENABLED!=='true')missing.push('ativação');
  if(!env.MERCADO_PAGO_LIVE_ACCESS_TOKEN||env.MERCADO_PAGO_LIVE_ACCESS_TOKEN.startsWith('TEST-'))missing.push('credencial de produção');
@@ -14,10 +15,12 @@ export function liveConfiguration(env=process.env){
  const https=value=>{try{const u=new URL(value);return u.protocol==='https:'&&!u.username&&!u.password?u:null;}catch{return null;}};
  const site=https(env.MERCADO_PAGO_LIVE_ORIGIN),terms=https(env.PAYMENT_TERMS_URL);
  if(!site||site.pathname!=='/'||site.search||site.hash)missing.push('endereço do sistema');
- if(!terms)missing.push('termos da contratação');
+ const termsReady=termsDocument.status==='published';
+ if(!termsReady)missing.push('conclusão da revisão dos termos');
+ if(!terms||!site||terms.origin!==site.origin||terms.pathname!==termsDocument.path||terms.search||terms.hash)missing.push('endereço da versão dos termos');
  const companies=String(env.MERCADO_PAGO_LIVE_COMPANY_IDS||'').split(',').map(x=>x.trim()).filter(valid);
  if(!companies.length)missing.push('empresa autorizada');
- return {ready:!missing.length,missing,origin:site?.origin||'',termsUrl:terms?.href||'',companies,token:env.MERCADO_PAGO_LIVE_ACCESS_TOKEN,collectorId:env.MERCADO_PAGO_LIVE_COLLECTOR_ID,secret:env.MERCADO_PAGO_LIVE_WEBHOOK_SECRET};
+ return {ready:!missing.length,missing,origin:site?.origin||'',termsUrl:terms?.href||'',termsReady,termsVersion:termsDocument.version,termsContentId:termsDocument.contentId,companies,token:env.MERCADO_PAGO_LIVE_ACCESS_TOKEN,collectorId:env.MERCADO_PAGO_LIVE_COLLECTOR_ID,secret:env.MERCADO_PAGO_LIVE_WEBHOOK_SECRET};
 }
 function enabled(config,empresaId){if(!config.ready||!config.companies.includes(empresaId))throw new PlatformError(503,'Pagamento real ainda não habilitado para esta empresa.');}
 async function provider(config,path,body,request=fetch,method){
@@ -25,17 +28,18 @@ async function provider(config,path,body,request=fetch,method){
  if(!response.ok)throw new PlatformError(502,'O Mercado Pago não confirmou a operação. Consulte o suporte antes de tentar outro pagamento.');return response.json();
 }
 async function seller(config,request){const s=await provider(config,'/users/me',null,request);if(String(s.id)!==config.collectorId||s.tags?.includes('test_user'))throw new PlatformError(409,'A credencial não corresponde à conta de produção autorizada.');}
-const publicCharge=(data,id)=>({id,status:data.status,url:data.url||'',amountCents:data.amountCents,planName:data.planName,interval:data.interval,paymentId:data.paymentId||null,periodApplied:data.periodApplied===true,duplicatePaymentReview:data.duplicatePaymentReview===true,createdAt:data.createdAt,mode:'live'});
+const publicCharge=(data,id)=>({id,status:data.status,url:data.url||'',amountCents:data.amountCents,planName:data.planName,interval:data.interval,paymentId:data.paymentId||null,periodApplied:data.periodApplied===true,duplicatePaymentReview:data.duplicatePaymentReview===true,createdAt:data.createdAt,mode:'live',termsVersion:data.acceptance?.version||'',termsUrl:data.acceptance?.url||''});
 export async function liveOverview(db,identity,config){
  const company=await companyContext(db,identity),catalog=await db.collection(`${root}/plans`).limit(201).get();
  if(catalog.size>200)throw new PlatformError(409,'O catálogo precisa ser revisado.');
  const [period,lock]=await Promise.all([db.doc(`${root}/live_contract_periods/${company.empresaId}`).get(),db.doc(`${root}/live_checkout_locks/${company.empresaId}`).get()]);
  const linked=lock.exists&&valid(lock.data().chargeId)?await db.doc(`${root}/live_charges/${lock.data().chargeId}`).get():null;
- return {company,ready:config.ready&&config.companies.includes(company.empresaId),missing:config.missing,termsUrl:config.termsUrl,period:period.exists?period.data():null,checkout:linked?.exists&&linked.data().empresaId===company.empresaId?publicCharge(linked.data(),linked.id):null,offers:catalog.docs.filter(d=>d.data().active!==false&&Number.isSafeInteger(d.data().amountCents)&&d.data().amountCents>0&&d.data().amountCents<=100000000&&['monthly','yearly'].includes(d.data().interval)).map(d=>({id:d.id,name:d.data().name,amountCents:d.data().amountCents,interval:d.data().interval,revision:Number(d.data().updatedAt||0)}))};
+ return {company,ready:config.ready&&config.companies.includes(company.empresaId),missing:config.missing,termsUrl:config.termsUrl,termsVersion:config.termsVersion,termsContentId:config.termsContentId,termsReady:config.termsReady,period:period.exists?period.data():null,checkout:linked?.exists&&linked.data().empresaId===company.empresaId?publicCharge(linked.data(),linked.id):null,offers:catalog.docs.filter(d=>d.data().active!==false&&Number.isSafeInteger(d.data().amountCents)&&d.data().amountCents>0&&d.data().amountCents<=100000000&&['monthly','yearly'].includes(d.data().interval)).map(d=>({id:d.id,name:d.data().name,amountCents:d.data().amountCents,interval:d.data().interval,revision:Number(d.data().updatedAt||0)}))};
 }
 export async function createLiveCheckout({db,identity,input,config,origin,request=fetch,now=Date.now()}){
- if(!valid(input.planId)||input.acceptRealPayment!==true||input.renewalPreference!=='manual'||input.termsVersion!=='manual-v1')throw new PlatformError(400,'Confira o plano, os termos e a autorização de pagamento real avulso.');
+ if(!valid(input.planId)||input.acceptRealPayment!==true||input.renewalPreference!=='manual'||input.termsVersion!==config.termsVersion||input.termsContentId!==config.termsContentId)throw new PlatformError(400,'Confira o plano, os termos e a autorização de pagamento real avulso.');
  const company=await companyContext(db,identity);enabled(config,company.empresaId);
+ if(config.termsReady!==true)throw new PlatformError(503,'Os termos ainda estão em revisão.');
  if(origin!==config.origin)throw new PlatformError(409,'Abra o endereço autorizado para pagamentos reais.');
  await seller(config,request);
  const reservation=await db.runTransaction(async tx=>{
@@ -46,11 +50,11 @@ export async function createLiveCheckout({db,identity,input,config,origin,reques
   if(!p||p.active===false||!Number.isSafeInteger(p.amountCents)||p.amountCents<=0||p.amountCents>100000000||!['monthly','yearly'].includes(p.interval))throw new PlatformError(409,'Plano indisponível.');
   if(input.expectedAmountCents!==p.amountCents||input.expectedInterval!==p.interval||input.revision!==Number(p.updatedAt||0))throw new PlatformError(409,'O plano mudou. Atualize e confira o preço.');
   if(old?.mode==='live'&&!old.revokedAt&&now<old.endsAt)throw new PlatformError(409,'Seu plano real ainda está vigente. Aguarde o vencimento para renovar.');
-  const id='live-'+createHash('sha256').update(JSON.stringify([company.empresaId,input.planId,p.amountCents,p.interval,Number(p.updatedAt||0),old?.id||null])).digest('hex').slice(0,48),ref=db.doc(`${root}/live_charges/${id}`);
+  const id='live-'+createHash('sha256').update(JSON.stringify([company.empresaId,input.planId,p.amountCents,p.interval,Number(p.updatedAt||0),old?.id||null,config.termsVersion,config.termsContentId])).digest('hex').slice(0,48),ref=db.doc(`${root}/live_charges/${id}`);
   const existing=await tx.get(ref),other=lock.exists&&lock.data().chargeId!==id?await tx.get(db.doc(`${root}/live_charges/${lock.data().chargeId}`)):null;
   if(other?.exists&&['checkout_creating','checkout_ready','checkout_review','pending','in_process'].includes(other.data().status))throw new PlatformError(409,'Já existe um pagamento em aberto. Confira o pagamento anterior antes de escolher outro plano.');
   if(existing.exists){const data=existing.data();if(['checkout_ready','pending','in_process','rejected'].includes(data.status)&&data.url)return {id,data,reused:true};throw new PlatformError(409,'Já existe uma tentativa para esta contratação. Confira seu resultado ou procure o suporte.');}
-  const data={empresaId:company.empresaId,planId:input.planId,planName:String(p.name||'SM'),amountCents:p.amountCents,interval:p.interval,currency:'BRL',mode:'live',status:'checkout_creating',collectorId:config.collectorId,previousPeriodId:old?.id||null,createdAt:now,createdBy:identity.uid,automaticBilling:false,renewalPreference:'manual',acceptance:{uid:identity.uid,at:now,version:input.termsVersion,url:config.termsUrl}};
+  const data={empresaId:company.empresaId,planId:input.planId,planName:String(p.name||'SM'),amountCents:p.amountCents,interval:p.interval,currency:'BRL',mode:'live',status:'checkout_creating',collectorId:config.collectorId,previousPeriodId:old?.id||null,createdAt:now,createdBy:identity.uid,automaticBilling:false,renewalPreference:'manual',acceptance:{uid:identity.uid,at:now,version:config.termsVersion,contentId:config.termsContentId,url:config.termsUrl}};
   tx.set(ref,data);tx.set(lockRef,{chargeId:id,updatedAt:now});return {id,data};
  });
  if(reservation.reused)return publicCharge(reservation.data,reservation.id);

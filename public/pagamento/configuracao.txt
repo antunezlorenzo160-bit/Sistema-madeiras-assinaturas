@@ -29,7 +29,7 @@ MERCADO_PAGO_LIVE_COMPANY_IDS
 
 PAYMENT_TERMS_URL
   URL HTTPS dos termos da contratação aprovados por você, incluindo condições do plano, cancelamento, estorno e contato de suporte.
-  Esta entrega não inventa nem publica termos comerciais em seu nome.
+  A URL precisa corresponder ao documento versionado publicado no manifesto do servidor. O rascunho em /termos/ ainda não habilita cobrança. A revisão deve ser concluída antes de configurar a URL definitiva.
 
 NO MERCADO PAGO
 1. Escolha a aplicação e as credenciais de PRODUÇÃO.

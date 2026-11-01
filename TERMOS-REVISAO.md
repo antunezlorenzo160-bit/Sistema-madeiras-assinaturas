@@ -1,26 +1,24 @@
-# Termos — rascunho para revisão
+# Termos e aceite do pagamento
 
-Página: /termos/. Versão: rascunho-2026-11-01, sem vigência contratual.
+## Situação atual
 
-Texto inicial solicitado pelo proprietário. Não preenche dados pessoais/empresariais por inferência e não altera PAYMENT_TERMS_URL nem habilita pagamento real. O link de revisão fica em Administração → Pagamentos → Pagamentos reais.
+A versão rascunho-2026-11-01 permanece em revisão. Identificação do fornecedor, publicação dos contatos, suporte em horário comercial e regra de preservação para reativação foram autorizados pelo proprietário. Exclusão e cópias foram descritas conforme a verificação do código, sem promessa de backup ou recuperação automática não demonstrados.
 
-Antes de vincular à contratação:
-- Preencher nome/razão social, CPF/CNPJ aplicável, endereço e canal efetivo de atendimento.
-- Aprovar as condições propostas de suporte, cancelamento e conservação dos dados. Confirmar os prazos operacionais, cópias de segurança, fornecedores/regiões e eventual transferência internacional.
-- Revisar a adequação jurídica à atividade. A minuta não pretende afastar direitos legais, o arrependimento aplicável ou a responsabilidade do fornecedor.
-- Publicar versão definitiva identificada, preservar uma cópia imutável dessa versão e alinhar a versão registrada no aceite de pagamento, hoje manual-v1, com a versão efetivamente disponibilizada ao contratante.
-- Configurar PAYMENT_TERMS_URL somente para a versão final revisada. Não usar o rascunho atual para ativar cobrança real.
+Falta confirmar a localização do armazenamento e os detalhes operacionais dos prestadores, inclusive eventual transferência internacional de dados. Não preencher essas informações por suposição. O responsável foi solicitado a informar a localização mostrada no Firestore. A revisão técnica não certifica adequação jurídica individualizada.
 
-Referências oficiais de apoio, consultadas para o texto: CDC (art. 49), Decreto 7.962/2013 (identificação/atendimento no comércio eletrônico), LGPD (bases, direitos, retenção e segurança). Links para os textos oficiais estão no rodapé da página. Nenhuma condição comercial pendente foi aprovada automaticamente.
+## Controle do aceite
 
-## Condições aprovadas pelo fornecedor em 01/11/2026
+- Documento de revisão preservado em /termos/versoes/revisao-2026-11-01.html; ele ainda é rascunho.
+- Manifesto do servidor: config/contract-terms.mjs, com versão, caminho, identificação do conteúdo Git e status review.
+- O checkout exige versão e identificação de conteúdo iguais às do servidor; grava UID, data, versão, conteúdo e URL na aceitação.
+- A mesma identificação entra na referência da contratação, preservando a relação entre preço, aceite e documento. Contratações anteriores exibem o link que foi aceito naquela contratação.
+- Mesmo com todas as variáveis de ambiente preenchidas, status review não habilita cobrança. A página mantém o aceite desabilitado.
+- PAYMENT_TERMS_URL deverá apontar exatamente para o documento versionado publicado no endereço do sistema autorizado, sem consulta ou fragmento. Não configurar este rascunho como termos definitivos.
 
-- Suporte por e-mail de segunda a sexta, 8h–12h e 13h30–18h, horário de Brasília, exceto feriados. Mensagens recebidas fora do horário são atendidas a partir do próximo período, observados os prazos legais. Não foi estipulado prazo garantido de conclusão.
-- O vencimento não implica exclusão automática. Preservação para reativação depende de necessidade, direitos dos titulares e obrigações legais. Não há compromisso vitalício; encerramento/exclusão são distintos de não renovação.
-- As pendências do rascunho foram atualizadas. Não houve alteração de PAYMENT_TERMS_URL, ativação de pagamento real ou promessa de mecanismos de backup ainda não confirmados.
+## Publicação posterior
 
-## Revisão de exclusão e cópias — 01/11/2026
+Após completar a revisão, criar uma nova versão definitiva com outro caminho, preservar o conteúdo publicado e atualizar o manifesto para published. Não sobrescrever um documento já publicado e aceito. Configurar a URL definitiva no Netlify, fazer novo deploy e conferir a conexão antes da primeira cobrança real controlada. A ativação de vendas e a transação de pagamento continuam sendo etapas distintas.
 
-O código de gestão de empresas preserva dados ao suspender o acesso, e os módulos offline mantêm cópias locais e filas. Não foi identificada nas rotas/configuração revisadas uma rotina de exclusão completa da conta ou backup integral agendado. Não houve acesso às configurações externas de backup do Firebase/Google Cloud; não se afirma que elas estejam habilitadas ou desabilitadas.
+## Validação desta alteração
 
-O rascunho agora descreve o atendimento de pedidos de exclusão por e-mail, verificação proporcional da legitimidade, identificação do escopo e das exceções de conservação, e comunicação do encaminhamento. Trata-se do procedimento proposto, não de uma rotina automatizada já implementada. Diferencia PDF/texto, cache offline e backup integral, sem prometer recuperação ou prazo de restauração não demonstrados. O texto mantém os horários já aprovados e continua rascunho. Nenhuma conta foi excluída, nenhum backup foi ativado e nenhum pagamento real foi habilitado.
+Foram conferidas diretamente a barreira de rascunho, a correspondência de URL com origem/caminho e a rejeição de aceite com versão ou conteúdo antigos, além da sintaxe do script da página. As verificações de URL em execução isolada usaram um substituto de URL para os exemplos controlados. A suíte Node preparada para verificar o conteúdo Git do arquivo e a gravação do aceite não pôde ser executada no ambiente indisponível desta etapa. O deploy do Netlify deve concluir a compilação antes de entregar a prévia. Nenhum pagamento real nem alteração de variáveis de ambiente foi feito pelo agente.
