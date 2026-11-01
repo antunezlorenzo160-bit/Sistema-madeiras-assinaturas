@@ -12,3 +12,9 @@ Antes de vincular à contratação:
 - Configurar PAYMENT_TERMS_URL somente para a versão final revisada. Não usar o rascunho atual para ativar cobrança real.
 
 Referências oficiais de apoio, consultadas para o texto: CDC (art. 49), Decreto 7.962/2013 (identificação/atendimento no comércio eletrônico), LGPD (bases, direitos, retenção e segurança). Links para os textos oficiais estão no rodapé da página. Nenhuma condição comercial pendente foi aprovada automaticamente.
+
+## Condições aprovadas pelo fornecedor em 01/11/2026
+
+- Suporte por e-mail de segunda a sexta, 8h–12h e 13h30–18h, horário de Brasília, exceto feriados. Mensagens recebidas fora do horário são atendidas a partir do próximo período, observados os prazos legais. Não foi estipulado prazo garantido de conclusão.
+- O vencimento não implica exclusão automática. Preservação para reativação depende de necessidade, direitos dos titulares e obrigações legais. Não há compromisso vitalício; encerramento/exclusão são distintos de não renovação.
+- As pendências do rascunho foram atualizadas. Não houve alteração de PAYMENT_TERMS_URL, ativação de pagamento real ou promessa de mecanismos de backup ainda não confirmados.
