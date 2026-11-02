@@ -25,5 +25,8 @@ export function applyOfflineBoot(html){
   if(!shell.includes(offlineCheck))throw Error('Saved-account verification anchor missing');
   shell=shell.replace(offlineCheck," if(!navigator.onLine||(restaurando&&window.__smAuthNetworkUnavailable===true)){");
  }
- return (html.slice(0,end)+shell).replace(/Acesso offline • revisão [45]/,'Acesso offline • revisão 6');
+ if(!shell.includes('SAVED_AUTH_DEADLINE_V7')){
+  shell=shell.replace("await auth.authStateReady();","/* SAVED_AUTH_DEADLINE_V7 */ await (async()=>{let authTimer;try{await Promise.race([auth.authStateReady(),new Promise((_,reject)=>{authTimer=setTimeout(()=>reject(Error('A restauração da sessão demorou demais. Confira a internet e recarregue a página. Seus dados locais foram preservados.')),20000);})]);}finally{clearTimeout(authTimer);}})();");
+ }
+ return (html.slice(0,end)+shell).replace(/Acesso offline • revisão [456]/,'Acesso offline • revisão 7');
 }
