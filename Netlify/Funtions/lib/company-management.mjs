@@ -39,7 +39,7 @@ export async function manageCompany(db,input,uid,now=Date.now()){
     if(members.size>400)throw new PlatformError(409,'Esta empresa exige uma operação em lote maior. Nenhuma alteração foi aplicada.');
     if(input.expectedUpdatedAt!==undefined&&Number(company.data().updatedAt||company.data().createdAt||0)!==Number(input.expectedUpdatedAt))throw new PlatformError(409,'O cadastro mudou em outra tela. Atualize os detalhes antes de salvar.');
     if(trial&&subscription.exists&&subscription.data().status!=='trial')throw new PlatformError(409,'Esta assinatura não está em teste gratuito.');
-    if(trial&&policy.exists&&policy.data().mode==='live')throw new PlatformError(409,'O teste gratuito não pode substituir o acesso de um pagamento real.');
+    if(trial&&policy.exists&&['live','owner_exempt'].includes(policy.data().mode))throw new PlatformError(409,'O teste gratuito não pode substituir o acesso de um pagamento real.');
     let changed=0;
     if(input.action==='company.access'){
       const suspend=input.accessStatus==='suspended';

@@ -42,3 +42,13 @@ test('subscriptions, payments, requests and guaranteed periods each prevent dele
  for(const collection of ['subscriptions','charges','contract_requests','test_contract_periods','live_charges','live_contract_periods']){const s=deletionSetup(collection);await assert.rejects(deleteUnusedPlan(s.db,s.input,'owner'),/não foi excluído/);assert.equal(s.records.has(s.path),true);assert.equal(s.writes.length,0);}
  const s=deletionSetup();await assert.rejects(deleteUnusedPlan(s.db,{...s.input,expectedRevision:6},'owner'),/mudou/);assert.equal(s.writes.length,0);
 });
+
+test('archiving a referenced plan preserves prices and payments and rejects stale edits',async()=>{
+ const {archivePlan}=await import('../Netlify/Funtions/lib/plans.mjs');
+ const s=setup(),payment=structuredClone(s.records.get('plataforma_admin/billing/charges/paid'));
+ await assert.rejects(archivePlan(s.db,{planId:'monthly',expectedRevision:9},'owner',20),{status:409});assert.equal(s.writes.length,0);
+ await archivePlan(s.db,{planId:'monthly',expectedRevision:10},'owner',20);
+ assert.equal(s.records.get(s.path).active,false);assert.equal(s.records.get(s.path).amountCents,19990);
+ assert.deepEqual(s.records.get('plataforma_admin/billing/charges/paid'),payment);
+ assert.equal(s.writes.filter(p=>p.includes('/plans/')).length,1);
+});

@@ -1,5 +1,18 @@
 import {randomUUID} from 'node:crypto';
 import {PlatformError,validatePlan} from './platform.mjs';
+export async function archivePlan(db,input,uid,now=Date.now()){
+ if(typeof input.planId!=='string'||!/^[-A-Za-z0-9_]{1,120}$/.test(input.planId))throw new PlatformError(400,'Plano inválido.');
+ const ref=db.doc(`plataforma_admin/billing/plans/${input.planId}`);
+ return db.runTransaction(async tx=>{
+  const plan=await tx.get(ref);
+  if(!plan.exists)throw new PlatformError(404,'Plano não encontrado.');
+  if(!Number.isSafeInteger(input.expectedRevision)||input.expectedRevision!==Number(plan.data().updatedAt||0))throw new PlatformError(409,'O plano mudou. Atualize a lista antes de arquivar.');
+  if(plan.data().active===false)return {ok:true,alreadyArchived:true};
+  tx.set(ref,{active:false,archivedAt:now,updatedAt:Math.max(now,Number(plan.data().updatedAt||0)+1),updatedBy:uid},{merge:true});
+  tx.create(db.doc(`plataforma_admin/audit/events/${randomUUID()}`),{action:'plan.archive',planId:input.planId,uid,at:now});
+  return {ok:true};
+ });
+}
 export async function savePlan(db,input,uid,now=Date.now()){
  if(input.id!==undefined&&(typeof input.id!=='string'||!/^[-A-Za-z0-9_]{1,120}$/.test(input.id)))throw new PlatformError(400,'Plano inválido.');
  let data;try{data=validatePlan(input);}catch(error){throw new PlatformError(400,error.message);}

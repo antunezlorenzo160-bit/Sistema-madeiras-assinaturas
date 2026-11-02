@@ -1,7 +1,8 @@
+import {exemptOwnerCompany} from './lib/owner-exemption.mjs';
 import {liveConfiguration,inspectLiveConnection,confirmLivePayment} from './lib/live-payments.mjs';
 import {simulateBillingAccess} from './lib/billing-access.mjs';
 import {expirePaidTestForRenewal,startRequestedTestPeriod,assertCheckoutPeriodAvailable,endFreeTestPeriod,serializeTestPeriods} from './lib/contract-periods.mjs';
-import {savePlan,renameCurrentPlansToSM,deleteUnusedPlan} from './lib/plans.mjs';
+import {archivePlan,savePlan,renameCurrentPlansToSM,deleteUnusedPlan} from './lib/plans.mjs';
 import {removePlanDuplicates} from './lib/plan-duplicates.mjs';
 import {confirmTestPayment} from './lib/payment-confirmation.mjs';
 import { randomUUID } from 'node:crypto';
@@ -53,6 +54,7 @@ export default async function handler(req) {
     if(input.action==='payment.live.verify'){if(typeof input.chargeId!=='string'||!/^live-[a-f0-9]{48}$/.test(input.chargeId))throw new PlatformError(400,'Pagamento inválido.');const result=await confirmLivePayment({db,config:liveConfiguration(),chargeId:input.chargeId});overviewReads.invalidate();return json(200,result);}
     if(input.action==='payment.live.inspect')return json(200,await inspectLiveConnection(liveConfiguration()));
     if(input.action==='company.billing_test'){const result=await simulateBillingAccess(db,input,uid);overviewReads.invalidate();return json(200,result);}
+    if(input.action==='company.owner_exemption'){const result=await exemptOwnerCompany(db,identity);overviewReads.invalidate();return json(200,result);}
     if(input.action==='company.detail')return json(200,await companyDetail(db,input.empresaId));
     if(['company.access','trial.save'].includes(input.action)){
       const result=await manageCompany(db,input,uid);overviewReads.invalidate();return json(200,result);
@@ -67,6 +69,7 @@ export default async function handler(req) {
     if(input.action==='contract.period.simulate_paid_expiry'){const result=await expirePaidTestForRenewal(db,input,uid);overviewReads.invalidate();return json(200,result);}
     if(input.action==='contract.period.end_free_test'){const result=await endFreeTestPeriod(db,input,uid);overviewReads.invalidate();return json(200,result);}
     if(input.action==='contract.period.start'){const result=await startRequestedTestPeriod(db,input,uid);overviewReads.invalidate();return json(200,result);}
+    if(input.action==='plan.archive'){const result=await archivePlan(db,input,uid);overviewReads.invalidate();return json(200,result);}
     if(input.action==='plan.delete'){const result=await deleteUnusedPlan(db,input,uid);overviewReads.invalidate();return json(200,result);}
     if(input.action==='plan.renameCurrentToSM'){const result=await renameCurrentPlansToSM(db,uid);overviewReads.invalidate();return json(200,result);}
     if(input.action==='plan.save'){const result=await savePlan(db,input,uid);overviewReads.invalidate();return json(200,result);}

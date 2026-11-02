@@ -77,3 +77,37 @@ test('published terms version uses the preserved document while an unversioned o
  assert.equal(CONTRACT_TERMS.status,'published');assert.equal(liveConfiguration(env).ready,true);assert.equal(liveConfiguration({...env,MERCADO_PAGO_LIVE_ENABLED:'false'}).ready,false);
  for(const url of ['https://system.example/termos/','https://other.example'+CONTRACT_TERMS.path])assert.equal(liveConfiguration({...env,PAYMENT_TERMS_URL:url}).ready,false);
 });
+test('owner exemption survives later payment and refund without modifying other tenants',async()=>{
+ const {exemptOwnerCompany}=await import('../Netlify/Funtions/lib/owner-exemption.mjs');
+ const {simulateBillingAccess}=await import('../Netlify/Funtions/lib/billing-access.mjs');
+ const s=setup(),charge=await createLiveCheckout(s.args);s.records.set('empresas/tenant',{ownerUid:'owner'});
+ s.records.set('empresas/other/acesso/plano',{enabled:true,mode:'live'});
+ const other=structuredClone(s.records.get('empresas/other/acesso/plano'));
+ await exemptOwnerCompany(s.args.db,s.args.identity,now);
+ const policy=structuredClone(s.records.get('empresas/tenant/acesso/plano'));
+ assert.equal(policy.mode,'owner_exempt');assert.equal(billingAccessState(policy,now+1000*86400000).write,true);
+ s.pay(charge.id);await confirmLivePayment({...s.args,chargeId:charge.id});
+ assert.equal(s.records.get(`${root}/live_charges/${charge.id}`).status,'approved');assert.deepEqual(s.records.get('empresas/tenant/acesso/plano'),policy);
+ s.pay(charge.id,'456','refunded');await confirmLivePayment({...s.args,chargeId:charge.id});
+ assert.equal(s.records.get(`${root}/live_charges/${charge.id}`).status,'refunded');assert.deepEqual(s.records.get('empresas/tenant/acesso/plano'),policy);
+ assert.deepEqual(s.records.get('empresas/other/acesso/plano'),other);
+ assert.equal((await exemptOwnerCompany(s.args.db,s.args.identity,now+1)).alreadyExempt,true);
+ await assert.rejects(simulateBillingAccess(s.args.db,{empresaId:'tenant',phase:'off',expectedUpdatedAt:now},'owner',now),{status:409});
+});
+test('owner exemption rejects unverified, inactive, suspended and differently owned companies with no writes',async()=>{
+ const {exemptOwnerCompany}=await import('../Netlify/Funtions/lib/owner-exemption.mjs');
+ for(const variation of ['email','inactive','companyOwner','billingOwner','suspended']){
+  const s=setup();s.records.set('empresas/tenant',{ownerUid:'owner'});
+  if(variation==='email')s.args.identity.emailVerified=false;
+  if(variation==='inactive')s.records.get('membros/owner').ativo=false;
+  if(variation==='companyOwner')s.records.get('empresas/tenant').ownerUid='someone';
+  if(variation==='billingOwner')s.records.get(`${root}/companies/tenant`).ownerUid='someone';
+  if(variation==='suspended')s.records.get(`${root}/companies/tenant`).accessStatus='suspended';
+  await assert.rejects(exemptOwnerCompany(s.args.db,s.args.identity,now));assert.equal(s.writes.length,0);
+ }
+});
+test('archived plans disappear from offers and cannot create new real checkouts',async()=>{
+ const s=setup();s.records.get(`${root}/plans/monthly`).active=false;
+ const overview=await liveOverview(s.args.db,s.args.identity,s.args.config);assert.equal(overview.offers.length,0);
+ await assert.rejects(createLiveCheckout(s.args));assert(!s.calls.some(c=>c.url.endsWith('/checkout/preferences')));
+});

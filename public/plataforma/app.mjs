@@ -76,8 +76,12 @@ function render(){
   });
   $('plans-rename-sm').hidden=!state.plans.some(p=>p.active!==false&&['Sistema','Sistema de Madeiras — Completo','Sistema de Madeiras — Completo Anual'].includes(p.name)&&['monthly','yearly'].includes(p.interval));
   list('plans-list',state.plans,(host,p)=>{
-    record(host,p.name,p.interval==='monthly'?'Mensal':'Anual — pagamento único pelos 12 meses',money(p.amountCents));
+    record(host,p.name+(p.active===false?' • Arquivado':''),p.interval==='monthly'?'Mensal':'Anual — pagamento único pelos 12 meses',money(p.amountCents));
     const edit=document.createElement('button');edit.type='button';edit.className='secondary';edit.textContent='Editar';edit.onclick=()=>editPlan(p);host.append(edit);
+    if(p.active!==false){
+      const archive=document.createElement('button');archive.type='button';archive.className='secondary';archive.textContent='Arquivar plano';
+      archive.onclick=async()=>{if(!window.confirm('Retirar o plano “'+p.name+'” de novas contratações? Pagamentos e períodos já registrados serão preservados.'))return;archive.disabled=true;try{await api({action:'plan.archive',planId:p.id,expectedRevision:Number(p.updatedAt||0)});await refresh(true);status('Plano arquivado. Ele não aparece para novas contratações; o histórico foi preservado.');}catch(error){status(error.message,true);}finally{archive.disabled=false;}};host.append(archive);
+    }
     const remove=document.createElement('button');remove.type='button';remove.className='secondary';remove.textContent='Excluir';remove.setAttribute('aria-label','Excluir plano '+p.name);
     remove.onclick=async()=>{
       if(!window.confirm('Excluir o plano “'+p.name+'” ('+(p.interval==='yearly'?'anual':'mensal')+')? O sistema só exclui planos sem vínculos.'))return;
@@ -95,7 +99,7 @@ function render(){
   list('subscriptions-list',state.subscriptions,(host,s)=>record(host,state.companies.find(c=>c.id===s.empresaId)?.name||s.empresaId,s.status==='trial'?companyManagement.trialLabel(s):state.plans.find(p=>p.id===s.planId)?.name||'Sem plano',(labels[s.status]||s.status)+(s.renewalPreference==='automatic'?' • Renovação automática: preferência de simulação':' • Renovação manual')+(s.testPayment?.status==='approved'?' • Pagamento de teste validado':'')));
   for(const [id,items]of [['subscription-company',state.companies],['subscription-plan',state.plans],['charge-company',state.companies]]){
     const select=$(id),current=select.value;select.replaceChildren(new Option('Selecione…',''));
-    items.forEach(item=>select.add(new Option(item.name+(id==='subscription-plan'?' — '+money(item.amountCents)+(item.interval==='yearly'?' por ano':' por mês'):''),item.id)));select.value=current;
+    items.filter(item=>id!=='subscription-plan'||item.active!==false).forEach(item=>select.add(new Option(item.name+(id==='subscription-plan'?' — '+money(item.amountCents)+(item.interval==='yearly'?' por ano':' por mês'):''),item.id)));select.value=current;
   }
   $('webhook-status').textContent=state.webhookConfigured?'Notificações automáticas configuradas. Novas aprovações de teste serão validadas pelo servidor. Atualize a lista para consultar.':'Confirmação automática aguardando configuração do webhook. Use Conferir pagamento de teste para consultar uma cobrança.';
   $('charge-submit').disabled=!state.testConfigured;
@@ -255,3 +259,5 @@ $('legacy-recover').onclick=async()=>{
 
 $('live-payment-inspect').onclick=async()=>{const button=$('live-payment-inspect');button.disabled=true;try{const result=await api({action:'payment.live.inspect'});$('live-payment-inspect-status').textContent='Credencial conferida. Conta recebedora: '+result.collectorId+(result.ready?' • Configuração preenchida.':' • Falta: '+result.missing.join(', '));}catch(error){$('live-payment-inspect-status').textContent=error.message;}finally{button.disabled=false;}};
 
+
+$('owner-exemption').onclick=async()=>{if(!window.confirm('Liberar sua própria empresa sem vencimento de plano? O histórico de pagamentos será preservado.'))return;const button=$('owner-exemption');button.disabled=true;try{const result=await api({action:'company.owner_exemption'});await refresh(true);$('owner-exemption-status').textContent='Isenção ativa para '+result.empresaId+'. Sua empresa não precisa renovar o plano para continuar usando o sistema.';}catch(error){$('owner-exemption-status').textContent=error.message;}finally{button.disabled=false;}};

@@ -10,7 +10,7 @@ export async function simulateBillingAccess(db,input,uid,now=Date.now()){
   const [company,policy]=await Promise.all([tx.get(companyRef),tx.get(policyRef)]);
   if(!company.exists)throw new PlatformError(404,'Empresa não encontrada.');
   if(Number(input.expectedUpdatedAt)!==Number(company.data().updatedAt||company.data().createdAt||0))throw new PlatformError(409,'Atualize os detalhes da empresa antes de simular.');
-  if(policy.exists&&policy.data().enabled===true&&policy.data().mode!=='test')throw new PlatformError(409,'A simulação não pode substituir uma regra de acesso real.');
+  if(policy.exists&&(policy.data().mode==='owner_exempt'||policy.data().enabled===true&&policy.data().mode!=='test'))throw new PlatformError(409,'A simulação não pode substituir uma regra de acesso real.');
   const offsets={active:1,grace:-2,readonly:-6,settings:-36,payment:30};
   const next=input.phase==='off'?{enabled:false,mode:'test',updatedAt:now,updatedBy:uid}:billingAccessWindow(now+offsets[input.phase]*BILLING_ACCESS_DAY,{mode:'test',simulationPhase:input.phase,updatedAt:now,updatedBy:uid});
   tx.set(policyRef,next);tx.set(companyRef,{billingAccessTestEnabled:input.phase!=='off',updatedAt:now,updatedBy:uid},{merge:true});
