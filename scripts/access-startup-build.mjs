@@ -1,5 +1,5 @@
 import {readFileSync} from 'node:fs';
-export function applyAccessStartupDeadline(html){
+function applyAccessStartupDeadlineV9(html){
  const marker='const TEMPLATE=',start=html.indexOf(marker)+marker.length;
  if(start<marker.length||html[start]!=='"')throw Error('Aplicação não encontrada.');
  let end=start+1;for(;end<html.length;end++){if(html[end]==='\\'){end++;continue;}if(html[end]==='"'){end++;break;}}
@@ -48,4 +48,15 @@ function optimizeCachedStartup(html){
  loader=loader.replace(' return dados;',' vinculoParaInterfaceV9={uid,empresaId};\n return dados;');
  shell=shell.slice(0,a)+'let vinculoParaInterfaceV9=null;\n'+loader+shell.slice(b);
  return (html.slice(0,end)+shell).replace('Acesso offline • revisão 8','Acesso offline • revisão 9');
+}
+
+export function applyAccessStartupDeadline(html){
+ const built=applyAccessStartupDeadlineV9(html),start=built.indexOf('const TEMPLATE=')+15;let end=start+1;
+ for(;end<built.length;end++){if(built[end]==='\\'){end++;continue;}if(built[end]==='"'){end++;break;}}
+ let shell=built.slice(end);
+ shell=shell.replaceAll("'validar a empresa');","'validar a empresa',3000);")
+  .replaceAll("'consultar os dados da empresa');","'consultar os dados da empresa',3000);")
+  .replaceAll("'ler o vínculo salvo');","'ler o vínculo salvo',1000);")
+  .replaceAll("'ler a regra de acesso salva').catch", "'ler a regra de acesso salva',1000).catch");
+ return (built.slice(0,end)+shell).replace('Acesso offline • revisão 9','Acesso offline • revisão 10');
 }

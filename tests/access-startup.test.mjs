@@ -10,8 +10,8 @@ function setup({blocked=false,missing=false,uid='owner',settings=false}={}){
  const start=built.indexOf('const TEMPLATE=')+15;let end=start+1;for(;end<built.length;end++){if(built[end]==='\\'){end++;continue;}if(built[end]==='"'){end++;break;}}
  const shell=built.slice(end),a=shell.indexOf('async function lerVinculoOffline('),b=shell.indexOf('window.__smValidarVinculoOffline=',a),c=shell.indexOf('async function abrirSessaoV492('),d=shell.indexOf('\nfunction falhaEntradaV492',c);
  const nodes=new Map(),record={uid,empresaId:'tenant',ativo:true,verificadoEm:100,bloqueado:blocked,employeeMember:{empresaId:'tenant',ativo:true,papel:'admin'},planoAcesso:{enabled:false},companyRoleContext:{uid,empresaId:'tenant',isCompanyOwner:true}};
- const context={auth:{currentUser:{uid:'owner'}},sdk:{doc:(...x)=>x,getDocFromServer:()=>new Promise(()=>{}),getDocsFromServer:()=>new Promise(()=>{}),getDocFromCache:()=>{context.cacheReads++;return new Promise(()=>{});}},db:{},probeDb:{},navigator:{onLine:true},expected:{},context:null,credentials:null,frame:null,busy:true,etapaEntradaOffline:'',primeiroErroInterface:null,empresaValidaV702:x=>x==='tenant',chaveVinculoOffline:x=>'member:'+x,localStorage:{getItem:()=>missing?null:JSON.stringify(record)},erroDeRedeOffline:e=>e.code==='deadline-exceeded',revogarVinculoOffline(){throw Error('Timeout must not revoke confirmed membership');},guardarVinculoOffline(){throw Error('Timeout must not write new membership');},window:{__smSetAccessPolicy(p){context.policy=p;},__smSetCompanyRoleContext(){},__smSetEmployeeMember(m){context.member=m;},__smEmployeeMember:()=>context.member,__smBeginAccessSession(){},__smAccessState:()=>({phase:settings?'settings':'active'}),__smRenderRestricted(){context.restricted=true;},innerHeight:700},out:{textContent:''},TEMPLATE:'<html></html>',document:{createElement:()=>({style:{}})},$:id=>{if(!nodes.has(id))nodes.set(id,{style:{},append(){}});return nodes.get(id);},setTimeout:(fn,ms)=>setTimeout(fn,Math.min(ms,10)),clearTimeout};
- context.cacheReads=0;vm.createContext(context);
+ const context={auth:{currentUser:{uid:'owner'}},sdk:{doc:(...x)=>x,getDocFromServer:()=>new Promise(()=>{}),getDocsFromServer:()=>new Promise(()=>{}),getDocFromCache:()=>{context.cacheReads++;return new Promise(()=>{});}},db:{},probeDb:{},navigator:{onLine:true},expected:{},context:null,credentials:null,frame:null,busy:true,etapaEntradaOffline:'',primeiroErroInterface:null,empresaValidaV702:x=>x==='tenant',chaveVinculoOffline:x=>'member:'+x,localStorage:{getItem:()=>missing?null:JSON.stringify(record)},erroDeRedeOffline:e=>e.code==='deadline-exceeded',revogarVinculoOffline(){throw Error('Timeout must not revoke confirmed membership');},guardarVinculoOffline(){throw Error('Timeout must not write new membership');},window:{__smSetAccessPolicy(p){context.policy=p;},__smSetCompanyRoleContext(){},__smSetEmployeeMember(m){context.member=m;},__smEmployeeMember:()=>context.member,__smBeginAccessSession(){},__smAccessState:()=>({phase:settings?'settings':'active'}),__smRenderRestricted(){context.restricted=true;},innerHeight:700},out:{textContent:''},TEMPLATE:'<html></html>',document:{createElement:()=>({style:{}})},$:id=>{if(!nodes.has(id))nodes.set(id,{style:{},append(){}});return nodes.get(id);},setTimeout:(fn,ms)=>{context.waits.push(ms);return setTimeout(fn,Math.min(ms,10));},clearTimeout};
+ context.cacheReads=0;context.waits=[];vm.createContext(context);
  vm.runInContext(withAccessDeadline.toString()+'\nlet vinculoParaInterfaceV9=null;\n'+shell.slice(a,b)+'\n'+shell.slice(c,d),context);
  return context;
 }
@@ -38,4 +38,12 @@ test('one-time handoff never skips a changed or blocked local identity',async()=
  c.localStorage.getItem=()=>JSON.stringify({uid:'owner',empresaId:'tenant',ativo:true,bloqueado:true});
  await assert.rejects(c.lerVinculoOffline('owner'));
  c.auth.currentUser.uid='other';await assert.rejects(c.lerVinculoOffline('owner'));
+});
+
+test('slow network uses three-second deadline and parallel local reads use one second',async()=>{
+ const c=setup();await c.abrirSessaoV492(true);
+ assert.equal(c.waits.filter(ms=>ms===3000).length,1);
+ assert.equal(c.waits.filter(ms=>ms===1000).length,2);
+ assert(!c.waits.includes(6000));
+ assert.equal(c.context.offline,true);
 });
