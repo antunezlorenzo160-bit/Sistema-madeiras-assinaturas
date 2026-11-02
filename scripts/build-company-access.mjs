@@ -1,3 +1,4 @@
+import {applyLoadDeductionSafety} from './load-deduction-build.mjs';
 import {applyEmployeeAccess} from './employee-access-build.mjs';
 import {applyBillingAccess} from './billing-access-build.mjs';
 import {readFileSync,writeFileSync} from 'node:fs';
@@ -18,7 +19,7 @@ export function buildCompanyAccess(input=new URL('../public/index.html',import.m
   if(!app.includes(target)||app.indexOf(target)!==app.lastIndexOf(target))throw Error('Confirmação de acesso não encontrada.');
   app=app.replace(target,()=>`// COMPANY_ACCESS_V707\n${helper}\nacompanharAcessoEmpresaV707();\n${target}`);
  }
- writeFileSync(file,applyEmployeeAccess(applyBillingAccess(html.slice(0,start)+JSON.stringify(app).replaceAll('</','<\\/')+html.slice(end))));
+ writeFileSync(file,applyLoadDeductionSafety(applyEmployeeAccess(applyBillingAccess(html.slice(0,start)+JSON.stringify(app).replaceAll('</','<\\/')+html.slice(end)))));
  console.log('Aviso de teste e acompanhamento de suspensão por vínculo ativo preparados.');
 }
 if(process.argv[1]&&pathToFileURL(resolve(process.argv[1])).href===import.meta.url)buildCompanyAccess(process.argv[2]);
