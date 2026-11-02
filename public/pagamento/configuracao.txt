@@ -23,9 +23,16 @@ MERCADO_PAGO_LIVE_ORIGIN
   O checkout é recusado quando aberto por outro endereço.
   O primeiro teste pode usar a prévia explicitamente autorizada; publicar o site principal é uma etapa separada.
 
+MERCADO_PAGO_LIVE_COMPANY_POLICY
+  registered: permite contratar às empresas cadastradas e ativas, sem editar códigos a cada cliente.
+  O servidor exige e-mail confirmado, vínculo ativo e responsável da própria empresa.
+  Empresas suspensas, funcionários e contas sem empresa continuam sem permissão.
+  Configure uma única vez em Production. Isso não ativa cobrança automática.
+
 MERCADO_PAGO_LIVE_COMPANY_IDS
-  Código da empresa autorizada para a primeira cobrança. A página /pagamento/ mostra o código ao lado do nome da empresa autenticada.
-  Use apenas essa empresa no começo. Para mais empresas, separar códigos por vírgula. Não há opção de liberar todas por padrão.
+  Usado no modo restrito de teste (política allowlist, padrão).
+  No modo registered não precisa preencher esta lista.
+  Preserve os valores de Deploy Previews para manter o teste controlado.
 
 PAYMENT_TERMS_URL
   URL HTTPS dos termos da contratação aprovados por você, incluindo condições do plano, cancelamento, estorno e contato de suporte.

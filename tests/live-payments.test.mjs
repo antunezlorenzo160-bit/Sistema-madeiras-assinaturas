@@ -111,3 +111,39 @@ test('archived plans disappear from offers and cannot create new real checkouts'
  const overview=await liveOverview(s.args.db,s.args.identity,s.args.config);assert.equal(overview.offers.length,0);
  await assert.rejects(createLiveCheckout(s.args));assert(!s.calls.some(c=>c.url.endsWith('/checkout/preferences')));
 });
+
+test('registered-company policy makes future registered owners eligible without editing the allowlist',async()=>{
+ const s=setup();s.args.config={...s.args.config,companyPolicy:'registered',companies:[]};
+ assert.equal((await liveOverview(s.args.db,s.args.identity,s.args.config)).ready,true);
+ const first=await createLiveCheckout(s.args);
+ s.records.set('membros/new-owner',{empresaId:'new-tenant',ativo:true,papel:'admin'});
+ s.records.set(root+'/companies/new-tenant',{name:'New customer',ownerUid:'new-owner'});
+ const second=await createLiveCheckout({...s.args,identity:{uid:'new-owner',emailVerified:true}});
+ assert.notEqual(first.id,second.id);
+ assert.equal(s.records.get(root+'/live_charges/'+second.id).empresaId,'new-tenant');
+});
+test('registered policy still rejects unregistered, suspended, unverified and non-owner accounts',async()=>{
+ for(const variation of ['missing-member','missing-company','inactive','suspended','email','employee']){
+  const s=setup();s.args.config={...s.args.config,companyPolicy:'registered',companies:[]};
+  if(variation==='missing-member')s.records.delete('membros/owner');
+  if(variation==='missing-company')s.records.delete(root+'/companies/tenant');
+  if(variation==='inactive')s.records.get('membros/owner').ativo=false;
+  if(variation==='suspended')s.records.get(root+'/companies/tenant').accessStatus='suspended';
+  if(variation==='email')s.args.identity.emailVerified=false;
+  if(variation==='employee')s.records.get(root+'/companies/tenant').ownerUid='different-owner';
+  await assert.rejects(createLiveCheckout(s.args));assert.equal(s.writes.length,0);assert.equal(s.calls.length,0);
+ }
+});
+test('registered checkout ignores a forged company ID and binds the charge to the authenticated membership',async()=>{
+ const s=setup();s.args.config={...s.args.config,companyPolicy:'registered',companies:[]};s.args.input.empresaId='another-customer';
+ const result=await createLiveCheckout(s.args);
+ assert.equal(s.records.get(root+'/live_charges/'+result.id).empresaId,'tenant');
+ assert(!s.writes.some(path=>path.includes('another-customer')));
+});
+test('registered policy is explicit and invalid policy fails closed',()=>{
+ const env={MERCADO_PAGO_LIVE_ENABLED:'true',MERCADO_PAGO_LIVE_ACCESS_TOKEN:'APP_USR-fake',MERCADO_PAGO_LIVE_COLLECTOR_ID:'123',MERCADO_PAGO_LIVE_WEBHOOK_SECRET:'fake',MERCADO_PAGO_LIVE_ORIGIN:'https://system.example',PAYMENT_TERMS_URL:'https://system.example'+CONTRACT_TERMS.path};
+ assert.equal(liveConfiguration(env).ready,false);
+ assert.equal(liveConfiguration({...env,MERCADO_PAGO_LIVE_COMPANY_POLICY:'registered'}).ready,true);
+ assert.equal(liveConfiguration({...env,MERCADO_PAGO_LIVE_COMPANY_POLICY:'anything',MERCADO_PAGO_LIVE_COMPANY_IDS:'tenant'}).ready,false);
+ assert.equal(liveConfiguration({...env,MERCADO_PAGO_LIVE_COMPANY_POLICY:'registered',MERCADO_PAGO_LIVE_ENABLED:'false'}).ready,false);
+});
