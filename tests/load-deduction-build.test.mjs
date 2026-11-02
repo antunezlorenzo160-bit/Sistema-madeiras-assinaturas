@@ -45,3 +45,23 @@ test('451-piece regression resumes after a partial load and preserves 15.43917 m
  assert.equal(r.estoque1Lancamentos.reduce((s,x)=>s+x.quantidade,0),451);assert.equal(r.movimentos.length,75);
  assert(Math.abs(r.movimentos.reduce((s,x)=>s+x.volume,0)-15.43917)<1e-9);
 });
+function setupExecutor({storageFailure=false,renderFailure=false}={}){
+ const s=setup(),c=s.context,alerts=[];
+ const html=applyLoadDeductionSafety(readFileSync(new URL('../public/index.html',import.meta.url),'utf8')),app=template(html);
+ const start=app.indexOf('  const baixasEmCurso=new Set();'),end=app.indexOf('  async function ajusteRapidoEDarBaixaCargaV390',start);
+ Object.assign(c,{salvarCargaComBaixaV387:c.salvarCargaComBaixa,nomeUsuarioCargaV388:()=> 'Owner',employeeLoadActor:()=>({uid:'owner'}),iniciarMutacaoCargaV396(){},finalizarMutacaoCargaV396(){},save(){},console:{error(){}},alert:m=>alerts.push(m),fecharModalAjusteRapidoV390(){},atualizarFluxoCargaV388(){if(renderFailure)throw Error('render failed');},setTimeout});
+ if(storageFailure)c.window.__smLoadDeductionJournal.commit=()=>{throw Object.assign(Error('local storage full'),{name:'QuotaExceededError'});};
+ vm.runInContext(app.slice(start,end),c);return {...s,alerts};
+}
+test('complete offline executor persists one deduction and reports successful completion',async()=>{
+ const {context:c,item,alerts}=setupExecutor();await c.executarBaixaConferidaCargaV390('group',[item]);
+ assert.equal(c.estoque1Lancamentos[0].quantidade,15);assert.equal(c.carregamentos.length,1);assert.equal(c.carregamentos[0].cargaStatus,'concluido');assert.equal(c.lancamentos.length,0);assert(alerts.some(m=>m.includes('estoque baixado')));
+});
+test('post-commit UI failure reports recorded deduction rather than an interrupted stock operation',async()=>{
+ const {context:c,item,alerts}=setupExecutor({renderFailure:true});await c.executarBaixaConferidaCargaV390('group',[item]);
+ assert.equal(c.estoque1Lancamentos[0].quantidade,15);assert(alerts.some(m=>m.startsWith('Baixa registrada neste aparelho.')));assert(!alerts.some(m=>m.startsWith('A baixa foi interrompida.')));
+});
+test('quota failure preserves stock and exposes the actual stage and reason',async()=>{
+ const {context:c,item,alerts}=setupExecutor({storageFailure:true});await c.executarBaixaConferidaCargaV390('group',[item]);
+ assert.equal(c.estoque1Lancamentos[0].quantidade,20);assert(alerts.some(m=>m.includes('QuotaExceededError')&&m.includes('Etapa: gravação do item')));
+});
