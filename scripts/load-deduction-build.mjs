@@ -1,5 +1,5 @@
 import {readFileSync} from 'node:fs';
-export function applyLoadDeductionSafety(html){
+function applyLoadDeductionSafetyV2(html){
  const marker='const TEMPLATE=',start=html.indexOf(marker)+marker.length;
  if(start<marker.length||html[start]!=='"')throw Error('Aplicação não encontrada.');
  let end=start+1;for(;end<html.length;end++){if(html[end]==='\\'){end++;continue;}if(html[end]==='"'){end++;break;}}
@@ -89,4 +89,26 @@ function applyLoadErrorDetails(html){
  body=body.replace(generic,"alert('A baixa foi interrompida. Não ajuste nem dê baixa novamente nesta carga.\\n\\nEtapa: '+etapaBaixa+'\\nMotivo: '+detalheBaixa+'\\n\\nPreserve os dados do navegador e envie esta mensagem ao suporte.');");
  app=app.slice(0,a)+body+app.slice(b);
  return html.slice(0,start)+JSON.stringify(app).replaceAll('</','<\\/')+html.slice(end);
+}
+export function applyLoadDeductionSafety(html){
+ const built=applyLoadDeductionSafetyV2(html),start=built.indexOf('const TEMPLATE=')+15;let end=start+1;
+ for(;end<built.length;end++){if(built[end]==='\\'){end++;continue;}if(built[end]==='"'){end++;break;}}
+ let app=JSON.parse(built.slice(start,end));if(app.includes('// LOAD_INDEXED_JOURNAL_V3'))return built;
+ const marker=app.indexOf('// LOAD_DEDUCTION_JOURNAL_V1'),helperStart=app.indexOf('\n',marker)+1,bootstrap=app.indexOf('window.__smLoadDeductionJournal=createLoadDeductionJournal(',helperStart);
+ if(marker<0||bootstrap<0)throw Error('Registro de recuperação da baixa não encontrado.');
+ const pure=readFileSync(new URL('../public/load-deduction-journal.mjs',import.meta.url),'utf8').replaceAll('export ','');
+ app=app.slice(0,helperStart)+'// LOAD_INDEXED_JOURNAL_V3\n'+pure+'\n'+app.slice(bootstrap);
+ const init='window.__smLoadDeductionJournal=createLoadDeductionJournal(window.__v456Local);';
+ if(!app.includes(init))throw Error('Inicialização da recuperação mudou.');
+ app=app.replace(init,"window.__smLoadDeductionJournal=createLoadDeductionJournal(window.__v456Local,{journalStore:createIndexedDBLoadJournal(window.indexedDB,window.__v456StoragePrefix)});");
+ app=app.replace(' window.__smLoadDeductionJournal.recover();'," window.__smLoadRecoveryReady=window.__smLoadDeductionJournal.recover().catch(error=>{window.__smLoadRecoveryNeedsReload=true;throw error;});window.__smLoadRecoveryReady.catch(()=>{});");
+ app=app.replaceAll('if(window.__smLoadDeductionJournal.recover())','if(await window.__smLoadDeductionJournal.recover())');
+ app=app.replaceAll('try{window.__smLoadDeductionJournal.commit([','try{await window.__smLoadDeductionJournal.commit([');
+ const bound='const boundV456=window.__v456Bound;';
+ if(!app.includes(bound))throw Error('Inicialização da sessão não encontrada.');
+ app=app.replace(bound,'await window.__smLoadRecoveryReady;\n'+bound);
+ app=app.replaceAll("if(window.__smLoadRecoveryNeedsReload)throw Error('Reabra o sistema para recuperar a baixa interrompida.');", "if(window.__smLoadRecoveryNeedsReload||window.__smLoadDeductionJournal.busy)throw Error('Aguarde a gravação ou reabra o sistema para recuperar a baixa interrompida.');");
+ app=app.replace('if(baixasEmCurso.has(chaveGrupo))','if(baixasEmCurso.size)');
+ app=app.replace("try{storage.setItem(prefix+'__probe','1');storage.removeItem(prefix+'__probe');}catch{durable=false;}","try{storage.setItem(prefix+'__probe','1');storage.removeItem(prefix+'__probe');}catch(error){durable=!!storage&&['QuotaExceededError','NS_ERROR_DOM_QUOTA_REACHED'].includes(error?.name);}");
+ return built.slice(0,start)+JSON.stringify(app).replaceAll('</','<\\/')+built.slice(end);
 }

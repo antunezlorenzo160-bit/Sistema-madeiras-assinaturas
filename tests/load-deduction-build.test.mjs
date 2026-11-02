@@ -11,8 +11,9 @@ function setup(previousStorage){
  assert.equal(applyLoadDeductionSafety(built),built);
  const start=app.indexOf('async function salvarCargaComBaixa('),end=app.indexOf('\nfunction mesmaBitolaTransferencia',start);
  const values=new Map(),storage=previousStorage||{durable:true,getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,v),removeItem:k=>values.delete(k)};let serial=0;
+ if(!storage.journalStore)storage.journalStore={value:null,async get(){return structuredClone(this.value);},async put(value){if(this.value)throw Error('Pending journal');this.value=structuredClone(value);},async remove(){this.value=null;}};
  const draft={id:'load-item',grupoCargaId:'group',quantidade:5,volume:5,valor:50,tipoMedida:'m3',madeira:'Pinus',cargaFluxoV388:true,cargaStatus:'aguardando_conferencia'};
- const context={window:{__v456Local:storage,__smLoadDeductionJournal:createLoadDeductionJournal(storage),__smMergeLoadDeductionQueue:mergeLoadDeductionQueue},COL:{estoque1:'stock1',estoque2:'stock2',cargas:'loads',movimentos:'moves'},STORAGE:{lancamentos:'summary',movimentos:'movements'},OFFLINE_OPS_KEY:'queue',estoque1Lancamentos:[{id:'stock',quantidade:20,volume:20,valor:200}],estoque2Lancamentos:[],carregamentos:[draft],lancamentos:[draft],movimentos:[],sessaoCargaAtual:'group',Date,crypto:{randomUUID},conexaoOnline:()=>false,ehMadeiraVerde:()=>false,mesmaBitolaCarga:()=>true,nowBR:()=>'',adicionarReferenciaPesoV420:x=>x,doc:(...args)=>args,db:{},employeeCheckLoadWrite(){},employeeAssertWrite(){},exigirEscritaPlano(){},offlineOps:()=>JSON.parse(storage.getItem('queue')||'[]'),atualizarPendenciasCadastroV457(){},sincronizarOfflineOps:async()=>{},save(){throw Error('Legacy non-atomic save must not run');}};
+ const context={window:{__v456Local:storage,__smLoadDeductionJournal:createLoadDeductionJournal(storage,{journalStore:storage.journalStore}),__smMergeLoadDeductionQueue:mergeLoadDeductionQueue},COL:{estoque1:'stock1',estoque2:'stock2',cargas:'loads',movimentos:'moves'},STORAGE:{lancamentos:'summary',movimentos:'movements'},OFFLINE_OPS_KEY:'queue',estoque1Lancamentos:[{id:'stock',quantidade:20,volume:20,valor:200}],estoque2Lancamentos:[],carregamentos:[draft],lancamentos:[draft],movimentos:[],sessaoCargaAtual:'group',Date,crypto:{randomUUID},conexaoOnline:()=>false,ehMadeiraVerde:()=>false,mesmaBitolaCarga:()=>true,nowBR:()=>'',adicionarReferenciaPesoV420:x=>x,doc:(...args)=>args,db:{},employeeCheckLoadWrite(){},employeeAssertWrite(){},exigirEscritaPlano(){},offlineOps:()=>JSON.parse(storage.getItem('queue')||'[]'),atualizarPendenciasCadastroV457(){},sincronizarOfflineOps:async()=>{},save(){throw Error('Legacy non-atomic save must not run');}};
  vm.createContext(context);vm.runInContext(app.slice(start,end),context);
  return {context,storage,item:{...draft,cargaStatus:'concluido',cargaBaixadaEm:100}};
 }
@@ -36,7 +37,7 @@ test('451-piece regression resumes after a partial load and preserves 15.43917 m
  c.mesmaBitolaCarga=(a,b)=>a.madeiraId===b.madeiraId;
  for(const item of items.slice(0,25))await c.salvarCargaComBaixa({...item,cargaStatus:'concluido',cargaBaixadaEm:100},'estoque1','Carga');
  const reboot=setup(first.storage),r=reboot.context;
- r.window.__smLoadDeductionJournal.recover();
+ await r.window.__smLoadDeductionJournal.recover();
  for(const [field,key]of [['estoque1Lancamentos','estoque1_lancamentos_v1'],['estoque2Lancamentos','estoque2_lancamentos_v1'],['carregamentos','carregamentos_lancamentos_v1'],['lancamentos','summary'],['movimentos','movements']])r[field]=JSON.parse(first.storage.getItem(key));
  r.mesmaBitolaCarga=(a,b)=>a.madeiraId===b.madeiraId;
  for(let attempt=0;attempt<2;attempt++)for(const item of items)await r.salvarCargaComBaixa({...item,cargaStatus:'concluido',cargaBaixadaEm:100},'estoque1','Carga');
