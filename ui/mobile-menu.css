@@ -1,0 +1,280 @@
+/* Trial information belongs to the welcome screen, on PC and mobile. */
+html body:not(:has(section#inicio.tab.active)) #avisoPlataformaV707{display:none!important}
+/* Welcome layout is shared by PC and mobile; navigation visibility remains responsive. */
+@media screen{
+  /* Give the welcome header its own top row, independent of tab scroll/layout. */
+  html body.inicio-paisagem-v474 #homeShellV492{
+    display:grid!important;grid-template-columns:minmax(0,1fr)!important;
+    grid-template-rows:max-content minmax(0,1fr)!important;align-content:start!important;
+    gap:0!important;padding:0!important;margin:0!important;inset:0!important;
+  }
+  html body.inicio-paisagem-v474 #homeShellV492>header{
+    grid-row:1!important;grid-column:1!important;align-self:start!important;
+    position:relative!important;inset:auto!important;top:0!important;
+    margin:0!important;transform:none!important;width:100%!important;box-sizing:border-box!important;
+  }
+  html body.inicio-paisagem-v474 #homeShellV492>#homeScrollV492{
+    grid-row:2!important;grid-column:1!important;min-height:0!important;
+    margin:0!important;height:auto!important;box-sizing:border-box!important;
+  }
+}
+#mobileMenuToggle,#mobileMenuBackdrop,#mobileMenuClose{display:none}
+@media screen and (max-width:760px){
+  /* Home uses the same collapsed navigation as the other mobile tabs.
+     Keep the original shortcuts in the DOM: drawer buttons call their actions. */
+  html body.mobile-menu-ready #homeScrollV492 #inicio>.card>.inicio-grid-v464,
+  html body.mobile-menu-ready #homeScrollV492 #inicio>.card>.note{
+    display:none!important;
+  }
+  body.mobile-menu-ready #mobileMenuToggle{
+    display:flex!important;align-items:center;justify-content:center;position:fixed!important;
+    right:calc(8px + env(safe-area-inset-right,0px));left:auto!important;
+    top:var(--mobile-menu-top,calc(92px + env(safe-area-inset-top,0px)));bottom:auto!important;
+    z-index:10003;width:44px!important;height:44px!important;min-width:44px;min-height:44px;padding:0!important;
+    border:0!important;border-radius:0;background:transparent!important;color:#fff!important;
+    box-shadow:none!important;opacity:.65;text-shadow:0 1px 3px #000b;
+    font:400 26px/1 system-ui;cursor:pointer;
+  }
+  /* Only the top navigation row reserves room for the icon.
+     Measurement, stock and order selectors below retain their full width. */
+  html body.mobile-menu-ready:not(.inicio-ativo-v492) header{
+    display:block!important;box-sizing:border-box!important;
+  }
+  html body.mobile-menu-ready:not(.inicio-ativo-v492) header>.tabs{
+    padding-right:calc(52px + env(safe-area-inset-right,0px))!important;
+    min-height:44px!important;box-sizing:border-box!important;
+  }
+  body.mobile-menu-ready #menuLateralV525{display:none!important}
+  body.mobile-menu-ready.mobile-menu-open #menuLateralV525{
+    display:block!important;position:fixed!important;inset:0 auto 0 0!important;
+    width:min(320px,85vw)!important;max-width:85vw!important;height:100dvh!important;
+    box-sizing:border-box;z-index:10002!important;overflow-y:auto!important;overflow-x:hidden!important;
+    padding:calc(14px + env(safe-area-inset-top,0px)) 12px calc(14px + env(safe-area-inset-bottom,0px))!important;
+    background-color:#10291d;border-right:1px solid #638371;overscroll-behavior:contain;
+  }
+  body.mobile-menu-open #mobileMenuBackdrop{
+    display:block!important;position:fixed;inset:0;z-index:10001;background:#0008;touch-action:none;
+  }
+  body.mobile-menu-ready #menuLateralV525 .inicio-atalho-v464{
+    width:100%;min-height:52px;margin:0 0 8px;padding:10px 12px;
+    background:rgba(9,39,24,.9);color:#fff;border:1px solid #a9c6af88;border-radius:10px;text-align:left;
+  }
+  body.mobile-menu-ready #menuLateralV525 .inicio-atalho-v464 strong{display:block;color:#f2cd72;font-size:17px}
+  body.mobile-menu-ready #menuLateralV525 .inicio-atalho-v464 span{font-size:12px;color:#fff}
+  body.mobile-menu-ready #mobileMenuClose{display:block;min-height:44px;margin:0 0 12px auto;padding:8px 12px;background:#163c29;color:#fff;border:1px solid #a9c6af;border-radius:8px}
+}
+@media screen and (min-width:761px){
+  html body header .tabs #estoqueTituloFixoV633{display:none!important}
+  html body #calculadora #miniContadorPacotes small{
+    display:block!important;font-size:12px!important;line-height:1.2!important;margin:0!important;
+  }
+  html body #calculadora #miniContadorPacotes #miniNumeroPacotesM2{display:none!important}
+  html body #calculadora #miniContadorPacotes[data-contando="true"] small{display:none!important}
+  html body #calculadora #miniContadorPacotes[data-contando="true"] #miniNumeroPacotesM2{
+    display:block!important;font-size:20px!important;line-height:1.2!important;margin:0!important;
+  }
+}
+@media screen{
+  /* Dark grey text stays legible on gold selections without a blurred shadow. */
+  html body:is(.tema-vidro,.tema-natural) :is(
+    header button.active,.modo-medida button.active,
+    .estoque-tipo-btn.active,.planilha-estoque-btn.active,
+    .estoque-tab-btn.active,.estoque-subtab-btn.active,
+    .madeira-filtro-tabs button.active,.bitola-tabs button.active
+  ){
+    color:#494136!important;text-shadow:none!important;font-weight:600!important;
+  }
+  html body:is(.tema-vidro,.tema-natural) :is(
+    header button.active,.modo-medida button.active,
+    .estoque-tipo-btn.active,.planilha-estoque-btn.active,
+    .estoque-tab-btn.active,.estoque-subtab-btn.active,
+    .madeira-filtro-tabs button.active,.bitola-tabs button.active
+  ) :is(span,small,strong){color:inherit!important;text-shadow:none!important;font-weight:inherit!important}
+}
+@media print{#mobileMenuToggle,#mobileMenuBackdrop,#mobileMenuClose{display:none!important}}
+
+/* Calculator: shared readable actions and transfer directions on PC and mobile. */
+@media screen{
+  html body:not(.modo-linear-real):not(.modo-granel-v384):not(.modo-fechado-v387) #calculadora .quantidade-inline-v254{
+    display:flex!important;flex-wrap:wrap!important;align-items:center!important;
+    width:100%!important;min-width:0!important;gap:8px!important;
+  }
+  html body:not(.modo-linear-real):not(.modo-granel-v384):not(.modo-fechado-v387) #calculadora #btnVerdeOuCorrigirV260{
+    flex:0 0 auto!important;width:auto!important;min-width:112px!important;max-width:100%!important;
+    height:auto!important;min-height:44px!important;max-height:none!important;
+    padding:10px 12px!important;font-size:13px!important;line-height:1.2!important;
+    white-space:normal!important;overflow:visible!important;box-sizing:border-box!important;
+  }
+  html body:not(.modo-linear-real):not(.modo-granel-v384):not(.modo-fechado-v387) #calculadora #transferenciaInlineV257{
+    flex:1 0 100%!important;width:100%!important;min-width:0!important;max-width:100%!important;
+    flex-wrap:nowrap!important;gap:8px!important;box-sizing:border-box!important;
+  }
+  html body:not(.modo-linear-real):not(.modo-granel-v384):not(.modo-fechado-v387) #calculadora #transferenciaInlineV257 label{
+    flex:1 1 0!important;width:auto!important;min-width:0!important;max-width:none!important;
+    height:auto!important;margin:0!important;box-sizing:border-box!important;
+  }
+  html body:not(.modo-linear-real):not(.modo-granel-v384):not(.modo-fechado-v387) #calculadora #transferenciaInlineV257 span{
+    width:100%!important;min-width:0!important;max-width:100%!important;
+    height:auto!important;min-height:44px!important;padding:10px 6px!important;
+    font-size:13px!important;line-height:1.2!important;white-space:normal!important;box-sizing:border-box!important;
+  }
+}
+
+/* Calculator controls keep crisp lettering on the glass and natural themes. */
+@media screen{
+  html body #calculadora #btnVerdeOuCorrigirV260,
+  html body #calculadora #transferenciaInlineV257 span{
+    text-shadow:none!important;filter:none!important;font-weight:600!important;
+  }
+  html body #calculadora #transferenciaInlineV257 input:checked + span,
+  html body #calculadora #btnVerdeOuCorrigirV260.active{
+    color:#494136!important;text-shadow:none!important;
+  }
+  html body #calculadora #transferenciaInlineV257 input:not(:checked) + span,
+  html body #calculadora #btnVerdeOuCorrigirV260:not(.active),
+  html body #calculadora #btnVerdeOuCorrigirV260[data-modo="corrigir"]{
+    color:#f3f5f1!important;text-shadow:none!important;
+  }
+}
+
+/* Keep the package counter toggle next to the launch action. */
+html body #calculadora #painelPacotesM2{display:none!important}
+html body #calculadora #btnContadorCompacto{
+  width:100%!important;max-width:none!important;min-width:0!important;
+  min-height:44px!important;height:auto!important;margin-top:8px!important;
+  padding:8px 6px!important;font-size:13px!important;line-height:1.2!important;
+  white-space:normal!important;text-shadow:none!important;font-weight:600!important;
+}
+html body #calculadora #btnContadorCompacto[hidden]{display:none!important}
+
+/* Align width with the top of the launch controls instead of their full height. */
+html body.calculadora-m2-sem-servicos #calculadora .largura-lancar-row{
+  align-items:start!important;
+}
+
+/* Let the launch stack share the right column across width and length rows. */
+html body.calculadora-m2-sem-servicos #calculadora .largura-lancar-row{
+  position:relative!important;
+}
+html body.calculadora-m2-sem-servicos #calculadora .largura-lancar-row .launch-box{
+  position:absolute!important;top:0!important;right:0!important;
+  width:205px!important;margin:0!important;
+}
+@media(max-width:760px){
+  html body.calculadora-m2-sem-servicos #calculadora .largura-lancar-row .launch-box{
+    width:clamp(112px,36vw,140px)!important;
+  }
+}
+@media(max-width:400px){
+  html body.calculadora-m2-sem-servicos #calculadora .largura-lancar-row .launch-box{
+    width:112px!important;
+  }
+}
+
+/* Services belong only to quotation and load destinations, in either unit. */
+html body #calculadora:not(:has(input[name="destinoLancamento"][value="orcamento"]:checked)):not(:has(input[name="destinoLancamento"][value="carga"]:checked)) #servicosM3Lancamento{
+  display:none!important;
+}
+
+/* Reserve the launch column even when linear service selectors are hidden. */
+html body.modo-linear-real #calculadora .comprimento-servicos-row{
+  grid-template-columns:minmax(0,1fr) minmax(112px,.62fr)!important;
+  column-gap:8px!important;
+}
+html body.modo-linear-real #calculadora .comprimento-servicos-row .launch-box{
+  justify-self:stretch!important;min-width:0!important;width:100%!important;
+}
+
+/* Quotation keeps clear-fields and delete-summary actions. */
+html body #calculadora:has(input[name="destinoLancamento"][value="orcamento"]:checked) #btnGuardarResumoCalc,
+html body #calculadora:has(input[name="destinoLancamento"][value="orcamento"]:checked) #btnNovoResumoCalc{
+  display:none!important;
+}
+html body #calculadora:has(input[name="destinoLancamento"][value="orcamento"]:checked) .row-actions:has(> #btnLimparCampos){
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;
+}
+html body #calculadora:has(input[name="destinoLancamento"][value="orcamento"]:checked) :is(#btnLimparCampos,#btnLimparLancamentos){
+  display:block!important;width:100%!important;min-width:0!important;max-width:none!important;grid-column:auto!important;
+}
+
+/* The PC split workspace uses the same compact package fields as mobile. */
+@media screen and (min-width:761px){
+ html body.calculadora-m2-sem-servicos #calculadora .pc-split-campos .largura-lancar-row,
+ html body.calculadora-m2-sem-servicos #calculadora .pc-split-campos .comprimento-servicos-row{
+   grid-template-columns:minmax(0,1fr) 205px!important;column-gap:12px!important;
+ }
+ html body #calculadora .pc-split-campos #btnContadorCompacto{
+   min-height:44px!important;font-size:14px!important;
+ }
+ html body #calculadora .pc-split-campos .launch-box #btnLancar{
+   min-height:44px!important;
+ }
+}
+
+/* Load entry uses the existing save/close flow on both screen sizes. */
+html body #calculadora:has(input[name="destinoLancamento"][value="carga"]:checked) #btnNovoResumoCalc{
+  display:none!important;
+}
+
+/* Service fields have their own labels, including the wide registration grid. */
+html body #cadastro #cadRegrasLinearListaV381 .linear-service-fields label{
+  display:block!important;font-size:13px!important;line-height:1.3!important;
+  margin:0 0 5px!important;color:var(--text,#f3f5f1)!important;
+}
+html body #cadastro #cadRegrasLinearListaV381 .linear-service-fields label:has(input[type="checkbox"]){
+  display:flex!important;align-items:center!important;gap:6px!important;
+}
+html body #cadastro #cadRegrasLinearListaV381 .linear-service-fields input[type="checkbox"]{
+  width:18px!important;min-width:18px!important;height:18px!important;padding:0!important;margin:0!important;
+}
+
+/* Block subtotals span the summary instead of inheriting piece-column widths. */
+html body #calculadora #resumoCalculadoraExport .table-wrap>table{
+  width:100%!important;min-width:0!important;max-width:100%!important;table-layout:fixed!important;
+}
+html body #calculadora #resumoCalculadoraExport #tbLancamentos tr.resumo-total-bloco-v597{
+  display:table-row!important;
+}
+html body #calculadora #resumoCalculadoraExport #tbLancamentos tr.resumo-total-bloco-v597>td{
+  display:table-cell!important;width:auto!important;min-width:0!important;max-width:100%!important;
+  white-space:normal!important;overflow-wrap:anywhere!important;word-break:normal!important;
+  text-align:left!important;padding:8px 4px!important;box-sizing:border-box!important;
+}
+html body #calculadora #resumoCalculadoraExport #tbLancamentos tr.resumo-total-bloco-v597>td::before{
+  display:none!important;content:none!important;
+}
+
+/* Summary export actions stay prominent over the photo background. */
+@media screen{
+ html body #calculadora #resumoCalculadoraExport>.export-actions{
+   display:flex!important;flex-wrap:wrap!important;gap:12px!important;margin:14px 0!important;
+ }
+ html body #calculadora #resumoCalculadoraExport>.export-actions>.btn{
+   min-height:50px!important;min-width:150px!important;width:auto!important;
+   padding:12px 20px!important;font-size:17px!important;line-height:1.25!important;
+   font-weight:600!important;opacity:1!important;text-shadow:none!important;
+   border-radius:10px!important;box-sizing:border-box!important;
+ }
+ html body #calculadora #resumoCalculadoraExport>.export-actions>.btn-secondary{
+   background:#244b3b!important;color:#fff!important;border:1px solid #91b29f!important;
+ }
+ html body #calculadora #resumoCalculadoraExport>.export-actions>.btn-primary{
+   background:#e5b347!important;color:#302713!important;border:1px solid #f6d681!important;
+ }
+}
+
+/* Stock, transfer and planer summaries expose only clear and delete actions. */
+html body #calculadora:has(input[name="destinoLancamento"]:is([value="transferencia"],[value="plaina"],[value="estoque1"],[value="estoque2"]):checked) :is(#btnGuardarResumoCalc,#btnNovoResumoCalc){
+  display:none!important;
+}
+html body #calculadora:has(input[name="destinoLancamento"]:is([value="transferencia"],[value="plaina"],[value="estoque1"],[value="estoque2"]):checked) .row-actions:has(> #btnLimparCampos){
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;
+}
+html body #calculadora:has(input[name="destinoLancamento"]:is([value="transferencia"],[value="plaina"],[value="estoque1"],[value="estoque2"]):checked) :is(#btnLimparCampos,#btnLimparLancamentos){
+  width:100%!important;min-width:0!important;max-width:none!important;grid-column:auto!important;
+}
+
+/* Full-screen production keeps its own Close action clear of navigation. */
+html body:has(#telaProducaoCompartilhada.v628-aberta:not([hidden])) :is(#mobileMenuToggle,#mobileMenuBackdrop,#menuLateralV525){
+  display:none!important;
+}

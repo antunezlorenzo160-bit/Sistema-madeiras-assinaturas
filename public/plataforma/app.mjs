@@ -1,0 +1,267 @@
+import {createCompanyManagement} from './company-management.mjs?v=owner-exempt-label-1';
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js';
+import { initializeAuth, browserLocalPersistence, inMemoryPersistence, onAuthStateChanged, signInWithEmailAndPassword, signOut, sendEmailVerification } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
+
+const app=initializeApp({apiKey:'AIzaSyBQ1_mmY0mP8mdbonbmWLVv6VaDXuzHZkU',authDomain:'estoque-madeiras-cc4d7.firebaseapp.com',projectId:'estoque-madeiras-cc4d7',appId:'1:201851719270:web:8d71d7f6862d7c4709a7a7'},'sm-madeiras-login');
+const auth=initializeAuth(app,{persistence:[browserLocalPersistence,inMemoryPersistence]}),$=id=>document.getElementById(id);
+let state={plans:[],companies:[],subscriptions:[]},image='',editingPlan=null;
+const money=v=>(v/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+function status(text,error=false){$('status').textContent=text;$('status').classList.toggle('error',error);}
+function withDeadline(task, milliseconds=20000, onTimeout=()=>{}){
+  let timer;
+  const timeout=new Promise((resolve,reject)=>{timer=setTimeout(()=>{onTimeout();reject(Error('A verificação demorou demais. Confira a conexão e tente entrar novamente.'));},milliseconds);});
+  return Promise.race([Promise.resolve().then(task),timeout]).finally(()=>clearTimeout(timer));
+}
+async function api(data,{fresh=false}={}){
+  const user=auth.currentUser;
+  if(!user)throw Error('Entre com sua conta para continuar.');
+  const controller=new AbortController();
+  return withDeadline(async()=>{
+    const token=await user.getIdToken();
+    const response=await fetch('/.netlify/functions/platform-admin'+(!data&&fresh?'?refresh=1':''),{method:data?'POST':'GET',headers:{Authorization:'Bearer '+token,...(data?{'Content-Type':'application/json'}:{})},...(data?{body:JSON.stringify(data)}:{}),signal:controller.signal});
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok)throw Error(result.error||'Não foi possível acessar a plataforma.');
+    return result;
+  },20000,()=>controller.abort());
+}
+
+function record(host,title,detail,value){
+  const row=document.createElement('div');row.className='record';
+  const text=document.createElement('div'),name=document.createElement('strong'),small=document.createElement('small');
+  name.textContent=title;small.textContent=detail;text.append(name,small);row.append(text);
+  if(value){const extra=document.createElement('span');extra.textContent=value;row.append(extra);}host.append(row);
+}
+function list(id,items,render){const host=$(id);host.replaceChildren();if(!items.length){const p=document.createElement('p');p.textContent='Nenhum cadastro por enquanto.';host.append(p);}else items.forEach(item=>render(host,item));}
+function preview(){
+  $('wm-preview').hidden=!image;$('wm-default').hidden=!!image;$('wm-preview').src=image;
+  $('wm-preview').style.opacity=String(Number($('wm-opacity').value)/100);
+  $('wm-preview').style.width=Math.round(Number($('wm-width').value)/210*100)+'%';
+}
+function render(){
+ $('live-payment-config').textContent=state.livePaymentConfiguration?.ready?'Configuração de produção preenchida. Somente empresas autorizadas no servidor podem gerar pagamentos reais.':'Pagamentos reais ainda desativados. Falta configurar: '+(state.livePaymentConfiguration?.missing||[]).join(', ')+'.';
+  list('live-charges-list',[...(state.liveCharges||[])].sort((a,b)=>b.createdAt-a.createdAt),(host,charge)=>{
+    record(host,(state.companies.find(company=>company.id===charge.empresaId)?.name||charge.empresaId)+' • '+money(charge.amountCents),'Pagamento real • '+charge.status+(charge.duplicatePaymentReview?' • Pagamento adicional para conferir':'')+(charge.paymentId?' • Operação '+charge.paymentId:''),charge.periodApplied?'Período aplicado':'');
+    const verify=document.createElement('button');verify.type='button';verify.className='secondary';verify.textContent='Conferir pagamento real';verify.onclick=async()=>{verify.disabled=true;try{const result=await api({action:'payment.live.verify',chargeId:charge.id});await refresh(true);status('Pagamento real: '+result.status);}catch(error){status(error.message,true);}finally{verify.disabled=false;}};host.append(verify);
+  });
+  $('subscription-simulation').hidden=true;
+  $('total-companies').textContent=state.companies.length;
+  const active=state.subscriptions.filter(s=>s.status==='active'&&!state.companies.some(c=>(c.id===s.empresaId||c.empresaId===s.empresaId)&&c.ownerExempt===true));$('total-active').textContent=active.length;
+  $('total-monthly').textContent=money(Math.round(active.reduce((sum,s)=>{const p=state.plans.find(p=>p.id===s.planId);return sum+(p?(p.interval==='yearly'?p.amountCents/12:p.amountCents):0);},0)));
+  companyManagement.render(state);
+  list('contract-requests-list',[...(state.contractRequests||[])].sort((a,b)=>b.requestedAt-a.requestedAt),(host,r)=>{
+    record(host,r.companyName||r.empresaId,(r.planName||'Plano')+' • '+(r.interval==='yearly'?'Anual':'Mensal')+' • Renovação '+(r.renewalPreference==='automatic'?'automática, apenas preferência':'manual')+' • Solicitado em '+new Date(r.requestedAt).toLocaleString('pt-BR'),money(r.amountCents));
+    const current=(state.testPeriods||[]).find(p=>p.empresaId===r.empresaId);
+    if(current){const info=document.createElement('p');info.textContent='Período de teste: '+money(current.amountCents)+' até '+new Date(current.endsAt).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'})+'. Preço garantido até essa data.';host.append(info);}
+    if(current?.mode==='test'&&current.source==='payment_test'&&current.amountCents>0&&Date.now()<current.endsAt){
+      const simulate=document.createElement('button');simulate.type='button';simulate.className='secondary';simulate.textContent='Simular vencimento para testar renovação';
+      simulate.onclick=async()=>{
+        if(!window.confirm('Simular o vencimento APENAS do período de teste de '+(r.companyName||r.empresaId)+'? As datas originais e o pagamento anterior ficam no histórico. O acesso da empresa será preservado. Nenhuma cobrança real será feita.'))return;
+        simulate.disabled=true;
+        try{await api({action:'contract.period.simulate_paid_expiry',empresaId:r.empresaId,expectedPeriodId:current.id,simulationOnly:true});await refresh(true);status('Vencimento de teste simulado. Abra Configurações → Planos, atualize e registre uma nova escolha com renovação manual. Depois gere outro pagamento de teste.');}
+        catch(error){status(error.message,true);}finally{simulate.disabled=false;}
+      };host.append(simulate);
+    }
+    if(current?.mode==='test'&&current.source==='free_test'&&current.amountCents===0&&Date.now()<current.endsAt){
+      const end=document.createElement('button');end.type='button';end.className='secondary';end.textContent='Encerrar simulação gratuita para novo teste';
+      end.onclick=async()=>{
+        if(!window.confirm('Encerrar somente a simulação gratuita de '+(r.companyName||r.empresaId)+' para permitir um novo teste? O acesso da empresa será preservado.'))return;
+        end.disabled=true;try{await api({action:'contract.period.end_free_test',empresaId:r.empresaId,expectedPeriodId:current.id});await refresh(true);status('Simulação gratuita encerrada. Na página de planos da empresa, atualize e registre uma nova solicitação para testar o pagamento.');}catch(error){status(error.message,true);}finally{end.disabled=false;}
+      };host.append(end);
+    }
+    if(!current||Date.now()>=current.endsAt){
+      const start=document.createElement('button');start.type='button';start.className='secondary';start.textContent='Iniciar período de teste com preço garantido';
+      start.onclick=async()=>{start.disabled=true;try{await api({action:'contract.period.start',empresaId:r.empresaId,expectedRequestedAt:r.requestedAt});await refresh(true);status('Período de teste registrado. O preço está garantido até o vencimento. Nenhuma cobrança real ou alteração de acesso foi realizada.');}catch(error){status(error.message,true);}finally{start.disabled=false;}};host.append(start);
+    }
+
+  });
+  $('plans-rename-sm').hidden=!state.plans.some(p=>p.active!==false&&['Sistema','Sistema de Madeiras — Completo','Sistema de Madeiras — Completo Anual'].includes(p.name)&&['monthly','yearly'].includes(p.interval));
+  list('plans-list',state.plans,(host,p)=>{
+    record(host,p.name+(p.active===false?' • Arquivado':''),p.interval==='monthly'?'Mensal':'Anual — pagamento único pelos 12 meses',money(p.amountCents));
+    const edit=document.createElement('button');edit.type='button';edit.className='secondary';edit.textContent='Editar';edit.onclick=()=>editPlan(p);host.append(edit);
+    if(p.active!==false){
+      const archive=document.createElement('button');archive.type='button';archive.className='secondary';archive.textContent='Arquivar plano';
+      archive.onclick=async()=>{if(!window.confirm('Retirar o plano “'+p.name+'” de novas contratações? Pagamentos e períodos já registrados serão preservados.'))return;archive.disabled=true;try{await api({action:'plan.archive',planId:p.id,expectedRevision:Number(p.updatedAt||0)});await refresh(true);status('Plano arquivado. Ele não aparece para novas contratações; o histórico foi preservado.');}catch(error){status(error.message,true);}finally{archive.disabled=false;}};host.append(archive);
+    }
+    const remove=document.createElement('button');remove.type='button';remove.className='secondary';remove.textContent='Excluir';remove.setAttribute('aria-label','Excluir plano '+p.name);
+    remove.onclick=async()=>{
+      if(!window.confirm('Excluir o plano “'+p.name+'” ('+(p.interval==='yearly'?'anual':'mensal')+')? O sistema só exclui planos sem vínculos.'))return;
+      remove.disabled=true;
+      try{await api({action:'plan.delete',planId:p.id,expectedRevision:Number(p.updatedAt||0)});if(editingPlan?.id===p.id)resetPlanEditor();await refresh(true);status('Plano excluído. Os demais planos e cadastros foram preservados.');}
+      catch(error){status(error.message,true);}finally{remove.disabled=false;}
+    };host.append(remove);
+
+    if(state.plans.some(other=>other.id!==p.id&&other.name===p.name&&other.amountCents===p.amountCents&&other.interval===p.interval)){
+      const button=document.createElement('button');button.type='button';button.className='secondary';button.textContent='Remover cópia sem vínculo';
+      button.onclick=async()=>{button.disabled=true;try{const result=await api({action:'plan.removeDuplicates',planId:p.id});await refresh(true);status(result.removed?'Plano duplicado excluído. Os planos com assinaturas ou pagamentos foram preservados.':'Não há mais cópias para remover.');}catch(error){status(error.message,true);}finally{button.disabled=false;}};host.append(button);
+    }
+  });
+  const labels={trial:'Em teste',active:'Ativa',past_due:'Pendente',canceled:'Cancelada'};
+  list('subscriptions-list',state.subscriptions,(host,s)=>{
+    const company=state.companies.find(c=>c.id===s.empresaId||c.empresaId===s.empresaId);
+    if(company?.ownerExempt===true){record(host,company.name,'Isenta de cobrança — sem vencimento','Não precisa renovar');return;}
+    record(host,company?.name||s.empresaId,s.status==='trial'?companyManagement.trialLabel(s):state.plans.find(p=>p.id===s.planId)?.name||'Sem plano',(labels[s.status]||s.status)+(s.renewalPreference==='automatic'?' • Renovação automática: preferência de simulação':' • Renovação manual')+(s.testPayment?.status==='approved'?' • Pagamento de teste validado':''));
+  });
+  for(const [id,items]of [['subscription-company',state.companies],['subscription-plan',state.plans],['charge-company',state.companies]]){
+    const select=$(id),current=select.value;select.replaceChildren(new Option('Selecione…',''));
+    items.filter(item=>id!=='subscription-plan'||item.active!==false).forEach(item=>select.add(new Option(item.name+(id==='subscription-plan'?' — '+money(item.amountCents)+(item.interval==='yearly'?' por ano':' por mês'):''),item.id)));select.value=current;
+  }
+  $('webhook-status').textContent=state.webhookConfigured?'Notificações automáticas configuradas. Novas aprovações de teste serão validadas pelo servidor. Atualize a lista para consultar.':'Confirmação automática aguardando configuração do webhook. Use Conferir pagamento de teste para consultar uma cobrança.';
+  $('charge-submit').disabled=!state.testConfigured;
+  $('payment-connection').textContent=state.testConfigured?'Credencial de teste cadastrada. O próximo checkout valida a conexão.':'Configure as credenciais de teste no servidor para habilitar.';
+  $('provider-status').textContent=state.livePaymentConfiguration?.ready?'Pagamentos reais habilitados':state.testConfigured?'Ambiente de teste configurado':'Aguardando configuração';
+  $('provider-text').textContent=state.livePaymentConfiguration?.ready?'Pagamentos reais disponíveis para as empresas autorizadas, com renovação manual.':state.testConfigured?'O ambiente de teste está configurado. A configuração de pagamentos reais está incompleta.':'Configure a conexão para receber pagamentos.';
+  list('charges-list',[...(state.charges||[])].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)),(host,c)=>{
+    record(host,money(c.amountCents),({test_payment_approved:'Pagamento de teste aprovado e validado no Mercado Pago.',test_free_period:'Período gratuito de teste registrado, sem pagamento.',checkout_creating:'Preparando checkout de teste.',checkout_failed:'Falha ao preparar o checkout. O responsável pode tentar novamente.'})[c.status]||'Checkout de teste criado. Pagamento ainda não confirmado na plataforma.');
+    if(c.status==='test_checkout_created'){
+      const verify=document.createElement('button');verify.type='button';verify.className='secondary';verify.textContent='Conferir pagamento de teste';
+      verify.onclick=async()=>{verify.disabled=true;status('Consultando pagamento no Mercado Pago…');
+        try{const result=await api({action:'charge.verify',chargeId:c.id});await refresh(true);
+          const labels={approved:'Pagamento de teste aprovado e validado. O teste gratuito e o acesso continuam como estão.',not_found:'Pagamento ainda não encontrado. Se acabou de pagar, aguarde e confira novamente.',pending:'Pagamento de teste pendente.',in_process:'Pagamento de teste em análise.',rejected:'Pagamento de teste recusado.',cancelled:'Pagamento de teste cancelado.',refunded:'Pagamento de teste estornado.',charged_back:'Pagamento de teste contestado.'};
+          status(labels[result.status]||'O pagamento ainda não foi aprovado.');
+        }catch(error){status(error.message,true);}finally{verify.disabled=false;}
+      };host.append(verify);
+    }
+    const identity=document.createElement('p');identity.textContent='Criado em: '+(c.createdAt?new Date(c.createdAt).toLocaleString('pt-BR'):'Data não registrada')+' • Operação: '+(c.paymentId||'Ainda não registrada');host.append(identity);
+    if(!c.preferenceId)return;
+    const inspect=document.createElement('button');inspect.type='button';inspect.className='secondary';inspect.textContent='Ver configuração do checkout';
+    const diagnostic=document.createElement('p');diagnostic.hidden=true;diagnostic.style.whiteSpace='pre-line';
+    inspect.onclick=async()=>{inspect.disabled=true;try{
+      const d=await api({action:'charge.inspect',chargeId:c.id});
+      diagnostic.textContent=['Vendedor: '+d.sellerId,'Conta vendedora de teste: '+(d.testSeller?'Sim':'Credencial de teste'),'Aplicação usada no checkout: '+(d.applicationId||'Não informada pelo provedor'),'URL de notificação: '+(d.notificationUrl||'Não registrada neste checkout'),'Preferência: '+d.preferenceId].join('\n');diagnostic.hidden=false;
+    }catch(error){status(error.message,true);}finally{inspect.disabled=false;}};host.append(inspect,diagnostic);
+    try{const url=new URL(c.url);if(url.protocol==='https:'&&/^(?:[a-z0-9-]+\.)*mercadopago\.(com|com\.br)$/.test(url.hostname)){const link=document.createElement('a');link.href=url.href;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Abrir checkout de teste ↗';host.append(link);}}catch{}
+  });
+  const wm=state.watermark;$('wm-width').value=wm.widthMm;$('wm-opacity').value=Math.round(wm.opacity*100);image=wm.image||'';preview();
+}
+async function refresh(fresh=false){state=await api(undefined,{fresh});render();}
+const companyManagement=createCompanyManagement({document,api,onChange:()=>refresh(true),status});
+$('requests-refresh').onclick=async()=>{const b=$('requests-refresh');b.disabled=true;try{await refresh(true);status('Solicitações atualizadas.');}catch(error){status(error.message,true);}finally{b.disabled=false;}};
+$('companies-refresh').onclick=async()=>{const b=$('companies-refresh');b.disabled=true;try{await refresh(true);status('Lista de empresas atualizada.');}catch(error){status(error.message,true);}finally{b.disabled=false;}};
+function page(name){document.querySelectorAll('[data-panel]').forEach(p=>p.hidden=p.dataset.panel!==name);document.querySelectorAll('[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===name));$('page-title').textContent=document.querySelector(`[data-page="${name}"]`).textContent;status('');}
+document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>page(b.dataset.page));
+document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>page(b.dataset.open));
+let opening=null;
+function openAdministration(user){
+  if(opening?.uid===user.uid)return opening.promise;
+  $('app').hidden=true;$('login').hidden=false;$('verify').hidden=true;
+  $('login-status').textContent='Verificando acesso…';
+  const promise=(async()=>{
+    try{
+      // Refresh claims even when this account is already signed in on another tab.
+      await withDeadline(()=>user.getIdToken(true));
+      await refresh();
+      if(auth.currentUser?.uid!==user.uid)return false;
+      $('login').hidden=true;$('app').hidden=false;return true;
+    }catch(error){
+      if(auth.currentUser?.uid===user.uid){$('login-status').textContent=error.message;$('verify').hidden=user.emailVerified;}
+      return false;
+    }
+  })().finally(()=>{if(opening?.promise===promise)opening=null;});
+  opening={uid:user.uid,promise};return promise;
+}
+$('login-form').onsubmit=async event=>{
+  event.preventDefault();const button=event.submitter;button.disabled=true;$('login-status').textContent='Verificando acesso…';
+  const password=$('password').value;$('password').value='';
+  try{
+    const credential=await withDeadline(()=>signInWithEmailAndPassword(auth,$('email').value.trim(),password));
+    // Firebase need not emit another state-change event for the same user.
+    await openAdministration(credential.user);
+  }catch(error){$('login-status').textContent=error.code?'Não foi possível entrar. Confira sua conta e a senha.':error.message;}
+  finally{button.disabled=false;}
+};
+onAuthStateChanged(auth,user=>{
+  if(user){openAdministration(user);return;}
+  $('app').hidden=true;$('login').hidden=false;$('verify').hidden=true;
+});
+$('verify').onclick=async()=>{try{await sendEmailVerification(auth.currentUser);$('login-status').textContent='Confirme o link recebido no seu e-mail. Depois saia e entre novamente.';}catch{$('login-status').textContent='Não foi possível enviar a confirmação. Tente novamente mais tarde.';}};
+$('logout').onclick=()=>signOut(auth);
+async function save(form,data){
+  const button=form.querySelector('button[type=submit],button:not([type])');button.disabled=true;status('Salvando…');
+  try{await api(data);await refresh();status('Alteração salva na plataforma.');return true;}catch(error){status(error.message,true);return false;}finally{button.disabled=false;}
+}
+function resetPlanEditor(){
+ editingPlan=null;$('plan-form').reset();$('plan-editor-title').textContent='Cadastrar plano';$('plan-submit').textContent='Salvar plano';$('plan-cancel-edit').hidden=true;$('plan-preset-controls').hidden=false;
+}
+function editPlan(plan){
+ editingPlan={id:plan.id,expectedRevision:Number(plan.updatedAt||0)};
+ $('plan-name').value=plan.name;$('plan-amount').value=(plan.amountCents/100).toFixed(2);$('plan-interval').value=plan.interval;
+ $('plan-editor-title').textContent='Editar plano';$('plan-submit').textContent='Salvar alterações';$('plan-cancel-edit').hidden=false;$('plan-preset-controls').hidden=true;
+ $('plan-form').scrollIntoView?.({behavior:'smooth',block:'center'});$('plan-name').focus?.({preventScroll:true});status('Editando o plano existente. O reajuste valerá para novos checkouts.');
+}
+$('plans-rename-sm').onclick=async()=>{
+ const button=$('plans-rename-sm');button.disabled=true;
+ try{const result=await api({action:'plan.renameCurrentToSM'});await refresh(true);resetPlanEditor();status(result.renamed?'Nome SM aplicado aos planos atuais. Valores, periodicidades e vínculos foram preservados.':'Os planos atuais já estão atualizados.');}
+ catch(error){status(error.message,true);}finally{button.disabled=false;}
+};
+$('plan-cancel-edit').onclick=()=>{resetPlanEditor();status('Edição cancelada. Nenhuma alteração foi salva.');};
+for(const [id,interval,amount,name] of [
+ ['plan-preset-monthly','monthly','199.90','SM'],
+ ['plan-preset-yearly','yearly','2000.00','SM']
+])$(id).onclick=()=>{
+ $('plan-name').value=name;$('plan-amount').value=amount;$('plan-interval').value=interval;
+ status('Formulário preenchido. Confira e toque em Salvar plano para cadastrar.');
+};
+$('plan-form').onsubmit=async event=>{event.preventDefault();const f=new FormData(event.target);if(await save(event.target,{action:'plan.save',...(editingPlan||{}),name:f.get('name'),amountCents:Math.round(Number(f.get('amount'))*100),interval:f.get('interval')}))resetPlanEditor();};
+$('company-form').onsubmit=async event=>{event.preventDefault();const f=new FormData(event.target);if(await save(event.target,{action:'company.save',empresaId:f.get('empresaId'),name:f.get('name')}))event.target.reset();};
+$('subscription-simulate').onclick=()=>{
+  const box=$('subscription-simulation');box.hidden=true;
+  const company=state.companies.find(c=>c.id===$('subscription-company').value);
+  const plan=state.plans.find(p=>p.id===$('subscription-plan').value);
+  if(!company||!plan){status('Selecione a empresa e o plano para simular.',true);return;}
+  if(plan.active===false||!Number.isSafeInteger(plan.amountCents)||plan.amountCents<0||!['monthly','yearly'].includes(plan.interval)){
+    status('Este plano está indisponível. Escolha outro plano.',true);return;
+  }
+  const subscription=state.subscriptions.find(s=>s.empresaId===company.id);
+  const current=subscription?.status==='trial'?companyManagement.trialLabel(subscription):
+    ({active:'Assinatura ativa',past_due:'Assinatura pendente',canceled:'Assinatura cancelada'}[subscription?.status]||'Sem assinatura cadastrada');
+  $('subscription-simulation-summary').textContent=[
+    'Empresa: '+company.name,
+    'Plano: '+plan.name,
+    'Valor: '+money(plan.amountCents)+(plan.interval==='yearly'?' por ano':' por mês'),
+    'Situação atual: '+current,
+    'Renovação escolhida: '+($('subscription-renewal').value==='automatic'?'Automática — somente simulação, sem débito agendado.':'Manual — novo pagamento a cada '+(plan.interval==='yearly'?'ano.':'mês.')),
+    ...(plan.interval==='yearly'?['Pagamento único pelos 12 meses; não é parcelamento mensal.']:[]),
+    'Cobranças reais e renovação automática permanecem desativadas.'
+  ].join('\n');
+  box.hidden=false;status('Simulação pronta. Nenhuma alteração foi salva.');
+};
+$('subscription-form').addEventListener('change',()=>{$('subscription-simulation').hidden=true;});
+$('subscription-form').onsubmit=async event=>{event.preventDefault();const f=new FormData(event.target);await save(event.target,{action:'subscription.save',empresaId:f.get('empresaId'),planId:f.get('planId'),status:f.get('status'),renewalPreference:f.get('renewalPreference')});};
+$('watermark-form').onsubmit=async event=>{event.preventDefault();await save(event.target,{action:'watermark.save',widthMm:Number($('wm-width').value),opacity:Number($('wm-opacity').value)/100,image});};
+for(const id of ['wm-width','wm-opacity'])$(id).oninput=preview;
+$('wm-reset').onclick=()=>{image='';$('wm-file').value='';preview();};
+$('wm-file').onchange=()=>{
+  const file=$('wm-file').files[0];if(!file)return;
+  if(!['image/png','image/jpeg'].includes(file.type)||file.size>250000){status('Selecione PNG ou JPEG de até 250 KB.',true);$('wm-file').value='';return;}
+  const reader=new FileReader();reader.onload=()=>{image=reader.result;preview();};reader.readAsDataURL(file);
+};
+
+$('charge-form').onsubmit=async event=>{
+ event.preventDefault();const button=$('charge-submit');button.disabled=true;status('Preparando checkout de teste…');
+ try{await api({action:'charge.test',empresaId:$('charge-company').value});await refresh();status('Checkout de teste criado. Abra o link na lista abaixo. Nenhum pagamento foi confirmado.');}
+ catch(error){status(error.message,true);}finally{button.disabled=!state.testConfigured;}
+};
+
+$('invite-form').onsubmit=async event=>{
+ event.preventDefault();const button=event.target.querySelector('button'),f=new FormData(event.target);button.disabled=true;status('Gerando convite…');
+ try{const result=await api({action:'invitation.create',name:f.get('name'),email:f.get('email'),trialDays:Number(f.get('trialDays'))});const inviteUrl=new URL('/cadastro/',location.origin);inviteUrl.hash=new URL(result.url).hash;$('invite-url').value=inviteUrl.href;$('invite-result').hidden=false;$('invite-copy-status').textContent='';status('Convite pronto. Copie e envie ao responsável.');}
+ catch(error){status(error.message,true);}finally{button.disabled=false;}
+};
+$('invite-copy').onclick=async()=>{try{await navigator.clipboard.writeText($('invite-url').value);$('invite-copy-status').textContent='Link copiado.';}catch{$('invite-url').focus();$('invite-url').select();$('invite-copy-status').textContent='Selecione e copie o link acima.';}};
+
+let legacyCompany=null;
+$('legacy-inspect').onclick=async()=>{
+ $('legacy-inspect').disabled=true;$('legacy-recover').hidden=true;
+ try{legacyCompany=await api({action:'company.legacy.inspect'});$('legacy-detail').textContent=legacyCompany.name+' • Código: '+legacyCompany.empresaId+' • Conta: '+legacyCompany.email+(legacyCompany.alreadyLinked?' • Vínculo administrativo já confirmado.':'');$('legacy-recover').hidden=legacyCompany.alreadyLinked;}
+ catch(error){$('legacy-detail').textContent=error.message;}finally{$('legacy-inspect').disabled=false;}
+};
+$('legacy-recover').onclick=async()=>{
+ if(!legacyCompany)return;$('legacy-recover').disabled=true;
+ try{await api({action:'company.legacy.recover',expectedEmpresaId:legacyCompany.empresaId});$('legacy-recover').hidden=true;await refresh(true);$('legacy-detail').textContent='Empresa vinculada e acesso administrativo recuperado. Abra novamente o sistema de madeiras.';}
+ catch(error){$('legacy-detail').textContent=error.message;}finally{$('legacy-recover').disabled=false;}
+};
+
+$('live-payment-inspect').onclick=async()=>{const button=$('live-payment-inspect');button.disabled=true;try{const result=await api({action:'payment.live.inspect'});$('live-payment-inspect-status').textContent='Credencial conferida. Conta recebedora: '+result.collectorId+(result.ready?' • Configuração preenchida.':' • Falta: '+result.missing.join(', '));}catch(error){$('live-payment-inspect-status').textContent=error.message;}finally{button.disabled=false;}};
+
+
+$('owner-exemption').onclick=async()=>{if(!window.confirm('Liberar sua própria empresa sem vencimento de plano? O histórico de pagamentos será preservado.'))return;const button=$('owner-exemption');button.disabled=true;try{const result=await api({action:'company.owner_exemption'});await refresh(true);$('owner-exemption-status').textContent='Isenção ativa para '+result.empresaId+'. Sua empresa não precisa renovar o plano para continuar usando o sistema.';}catch(error){$('owner-exemption-status').textContent=error.message;}finally{button.disabled=false;}};

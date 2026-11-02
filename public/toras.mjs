@@ -1,0 +1,506 @@
+// Cubagem cilíndrica pelo diâmetro da ponta fina, sem arredondamento intermediário.
+export function volumeToras(diametroCm, comprimentoM, quantidade = 1) {
+  if (![diametroCm, comprimentoM, quantidade].every(v => typeof v === 'number' && Number.isFinite(v) && v > 0) || !Number.isSafeInteger(quantidade)) {
+    throw new RangeError('Informe diâmetro e comprimento positivos e quantidade inteira de toras.');
+  }
+  const unitario = Math.PI * (diametroCm / 100) ** 2 / 4 * comprimentoM;
+  const total = unitario * quantidade;
+  if (!Number.isFinite(total) || unitario === 0) throw new RangeError('Medidas fora do limite de cálculo.');
+  return { unitario, total };
+}
+
+export function chaveEspecieToras(valor) {
+  return String(valor || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().replace(/\s+/g, ' ').toLocaleLowerCase('pt-BR');
+}
+export function precoMaoObraToras(config, especie) {
+  const regra = (config?.especies || []).find(r => chaveEspecieToras(r.especie) === chaveEspecieToras(especie));
+  const valor = regra ? regra.preco : config?.base;
+  return typeof valor === 'number' && Number.isFinite(valor) && valor >= 0 ? valor : null;
+}
+export function valorMaoObraToras(volume, preco) {
+  if (!Number.isFinite(volume) || volume < 0 || !Number.isFinite(preco) || preco < 0 || !Number.isSafeInteger(Math.round(volume * preco * 100))) throw new RangeError('Valor da mão de obra fora do limite de cálculo.');
+  return Math.round((volume * preco + Number.EPSILON) * 100) / 100;
+}
+
+export function agruparToras(linhas) {
+  const grupos = new Map();
+  for (const linha of linhas) {
+    volumeToras(linha.diametro, linha.comprimento, linha.quantidade);
+    const chave = JSON.stringify([chaveEspecieToras(linha.especie), linha.diametro, linha.comprimento, linha.precoMaoObra ?? null]);
+    const anterior = grupos.get(chave);
+    if (anterior) {
+      const quantidade = anterior.quantidade + linha.quantidade;
+      volumeToras(linha.diametro, linha.comprimento, quantidade);
+      anterior.quantidade = quantidade; anterior.ids.push(linha.id);
+    } else grupos.set(chave, { ...linha, ids: [linha.id] });
+  }
+  return [...grupos.values()];
+}
+
+// Keyboard entry uses the same form validation and submit path as the button.
+export function instalarAtalhosToras(form, view) {
+  const fields = ['toraMaoObra','toraCliente','toraEspecie','toraDiametro','toraComprimento','toraQuantidade'];
+  const numeric = new Set(['toraDiametro','toraComprimento','toraQuantidade']);
+  form.addEventListener('keydown', event => {
+    if (event.defaultPrevented || event.isComposing || event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) return;
+    if (!view.matchMedia('(min-width: 901px)').matches) return;
+    const target = event.target;
+    if (!target || !form.contains(target)) return;
+    const index = fields.indexOf(target.id);
+    if (index < 0) return;
+    const enter = event.key === 'Enter';
+    const space = event.code === 'Space' || event.key === ' ' || event.key === 'Spacebar';
+    if (!enter && !(space && numeric.has(target.id))) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.repeat) return;
+    if (enter) {
+      const next = form.querySelector('#' + fields[index + 1 === fields.length ? 3 : index + 1]);
+      next?.focus(); next?.select();
+    } else form.requestSubmit();
+  }, true);
+}
+
+export function iniciarCubagemToras({ document: doc = document, storage, copiar, pdf, observarPrecos, salvarPrecos, observarLista, gravarLinha, salvarIdentificacao }) {
+  const abrir = doc.getElementById('btnCubagemToras');
+  if (!abrir || doc.getElementById('cubagemToras')) return;
+  const dialog = doc.createElement('dialog');
+  dialog.id = 'cubagemToras';
+  dialog.className = 'card';
+  dialog.setAttribute('aria-labelledby', 'tituloCubagemToras');
+  dialog.style.cssText = 'box-sizing:border-box;width:min(680px,96vw);max-height:92dvh;overflow:auto;padding:18px;border:1px solid #888;border-radius:14px;background:var(--card,#fff);color:var(--text,#111)';
+  dialog.innerHTML = `<div class="toras-cabecalho"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><h2 id="tituloCubagemToras">Cubagem de toras</h2><button type="button" class="btn btn-secondary" data-fechar aria-label="Fechar cubagem de toras">Fechar</button></div>
+    <p class="toras-descricao">Diâmetro + comprimento. Volume cilíndrico, sem desconto de casca.</p></div><div class="toras-layout"><section class="toras-calculo" aria-label="Cálculo da cubagem">
+    <details id="cadastroPrecosToras"><summary>Cadastro de mão de obra por m³</summary>
+      <form id="formPrecoToras">
+        <label for="toraPrecoBase">Preço base para todas as espécies (R$/m³)</label><input id="toraPrecoBase" type="number" min="0" step="0.01" inputmode="decimal" required>
+        <p>Para uma espécie com outro preço, preencha os campos abaixo. As demais usam o preço base.</p>
+        <label for="toraPrecoEspecie">Espécie com preço diferente (opcional)</label><input id="toraPrecoEspecie" maxlength="100" autocomplete="off">
+        <label for="toraPrecoEspecial">Preço dessa espécie (R$/m³)</label><input id="toraPrecoEspecial" type="number" min="0" step="0.01" inputmode="decimal">
+        <button type="submit" class="btn btn-primary" id="salvarPrecoToras">Salvar cadastro</button>
+      </form>
+      <p id="toraPrecoStatus" role="status">Carregando preços…</p><div id="toraPrecosLista"></div>
+    </details>
+    <form id="formToras">
+      <div class="toras-identificacao"><div><label for="toraMaoObra">Mão de obra (opcional)</label><input id="toraMaoObra" maxlength="100" autocomplete="off"></div>
+      <div><label for="toraCliente">Nome do cliente (opcional)</label><input id="toraCliente" maxlength="100" autocomplete="name"></div>
+      <div class="toras-especie-campo"><label for="toraEspecie">Espécie / identificação (opcional)</label><div class="tora-especie-tarifa"><input id="toraEspecie" maxlength="100" autocomplete="off"><span id="toraTarifa" role="status" aria-live="polite" aria-label="Mão de obra por metro cúbico">— /m³</span></div></div></div>
+      <div class="grid3">
+        <div><label for="toraDiametro">Diâmetro (cm)</label><input id="toraDiametro" type="number" min="0.01" step="any" inputmode="decimal" required></div>
+        <div><label for="toraComprimento">Comprimento (m)</label><input id="toraComprimento" type="number" min="0.01" step="any" inputmode="decimal" required></div>
+        <div><label for="toraQuantidade">Quantidade</label><input id="toraQuantidade" type="number" min="1" step="1" inputmode="numeric" value="1" required></div>
+      </div>
+      <label class="toras-cobrar" style="display:flex;align-items:center;gap:8px"><input id="toraCobrar" type="checkbox" style="width:auto">Calcular mão de obra neste lançamento</label>
+      <p id="toraPreview" role="status" aria-live="polite">Informe as medidas.</p>
+      <button class="btn btn-primary" type="submit">Adicionar à lista</button>
+    </form>
+    </section><section class="toras-planilha" aria-label="Planilha da cubagem"><p id="toraAviso" role="status">Carregando lista de cubagem…</p>
+    <div class="export-actions"><button type="button" class="btn btn-secondary" data-copiar>Copiar lista</button><button type="button" class="btn btn-primary" data-pdf>Gerar PDF</button><button type="button" class="btn btn-secondary" data-limpar>Limpar lista</button></div>
+    <div id="torasExport"><h3>Resumo da cubagem de toras</h3><p>Método: cilindro pelo diâmetro, sem desconto de casca.</p><p>Volume = π × (diâmetro em metros)² ÷ 4 × comprimento × quantidade.</p><div id="torasIdentificacao"></div><div id="torasLinhas"></div><p id="torasTotal"></p></div></section></div>`;
+  doc.body.appendChild(dialog);
+  const el = id => dialog.querySelector('#' + id);
+  // O modal está fora de <main>. Copiar a aparência dos controles reais
+  // também respeita temas cujos seletores são limitados ao conteúdo principal.
+  const copiarEstilo = (origem, destino, propriedades) => {
+    if (!origem) return;
+    const estilo = doc.defaultView.getComputedStyle(origem);
+    for (const propriedade of propriedades) destino.style.setProperty(propriedade, estilo.getPropertyValue(propriedade));
+  };
+  function aplicarTema() {
+    const card = doc.querySelector('#calculadora .card');
+    // A camada opaca impede que os controles da calculadora apareçam pelo tema translúcido.
+    const corTexto = doc.defaultView.getComputedStyle(card || doc.body).color.match(/[\d.]+/g) || [];
+    const textoClaro = corTexto.length >= 3 && (Number(corTexto[0]) * .299 + Number(corTexto[1]) * .587 + Number(corTexto[2]) * .114) > 140;
+    dialog.style.setProperty('--toras-fundo-solido', textoClaro ? '#0b1912' : '#ffffff');
+    const fonte = ['font-family', 'font-size', 'font-weight', 'line-height', 'color'];
+    copiarEstilo(card, dialog, [...fonte, 'background-color', 'background-image', 'border-color', 'border-style', 'border-width', 'border-radius', 'box-shadow']);
+    dialog.querySelectorAll('input:not([type=checkbox])').forEach(input => {
+      copiarEstilo(doc.getElementById('largura'), input, [...fonte, 'background-color', 'background-image', 'border-color', 'border-style', 'border-width', 'border-radius', 'padding']);
+      input.style.width = '100%'; input.style.boxSizing = 'border-box';
+    });
+    dialog.querySelectorAll('label').forEach(label => {
+      copiarEstilo(doc.querySelector('label[for="largura"]') || doc.querySelector('#calculadora label'), label, fonte);
+      label.style.display = 'block'; label.style.marginTop = '10px'; label.style.marginBottom = '4px';
+    });
+    dialog.querySelectorAll('button').forEach(button => {
+      const origem = button.classList.contains('btn-primary') ? doc.getElementById('btnLancar') : doc.querySelector('#calculadora .btn-secondary');
+      copiarEstilo(origem, button, [...fonte, 'background-color', 'background-image', 'border-color', 'border-style', 'border-width', 'border-radius', 'padding', 'box-shadow']);
+      button.style.cursor = 'pointer';
+    });
+    dialog.querySelectorAll('#torasLinhas th, #torasLinhas td').forEach(bloco => {
+      const origem = card && doc.defaultView.getComputedStyle(card);
+      if (origem) bloco.style.borderColor = origem.borderColor;
+    });
+  }
+  const estiloToras = doc.createElement('style');
+  estiloToras.textContent = '@media print{#torasExport .toras-tabela-wrap{overflow:visible!important}#torasExport tr{break-inside:avoid}}#cubagemToras .export-actions{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}#cubagemToras .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}#cubagemToras input{min-width:0}#cubagemToras::backdrop{background:var(--toras-fundo-solido,#0b1912)}@media screen{#cubagemToras{position:fixed!important;inset:0!important;margin:0!important;width:100%!important;max-width:none!important;height:100dvh!important;max-height:100dvh!important;border:0!important;border-radius:0!important;overflow-y:auto!important;overscroll-behavior:contain}}@media(max-width:600px){#cubagemToras .grid3{grid-template-columns:1fr}}';
+
+  estiloToras.textContent += `
+    @media screen and (max-width:600px){
+      #cubagemToras{padding:10px!important}
+      #cubagemToras .toras-tabela-wrap{overflow:visible!important}
+      #cubagemToras .toras-resumo-tabela{display:table!important;width:100%!important;min-width:0!important;table-layout:fixed;font-size:clamp(8px,2.2vw,10px)!important;line-height:1.3!important}
+      #cubagemToras .toras-resumo-tabela thead{display:table-header-group!important}
+      #cubagemToras .toras-resumo-tabela tbody{display:table-row-group!important}
+      #cubagemToras .toras-resumo-tabela tr{display:table-row!important}
+      #cubagemToras .toras-resumo-tabela th,#cubagemToras .toras-resumo-tabela td{display:table-cell!important;min-width:0!important;padding:5px 1px!important;border-bottom:1px solid!important;white-space:normal!important;overflow-wrap:anywhere;font-size:inherit!important;vertical-align:middle}
+      #cubagemToras .toras-resumo-tabela th{font-size:0!important}
+      #cubagemToras .toras-resumo-tabela th::before{content:attr(data-curto);font-size:clamp(8px,2.2vw,10px)}
+      #cubagemToras .tora-acoes button{display:block;font-size:0!important;padding:0!important;min-height:22px!important;min-width:18px!important;width:18px!important;height:22px!important;margin:0 auto!important}
+      #cubagemToras .tora-acoes button::after{content:'×';font-size:14px;line-height:1}
+      #cubagemToras #torasTotal{font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+    }`;
+  estiloToras.textContent += `
+    @media screen{
+      #cubagemToras .toras-cabecalho h2{margin:0!important;font-size:20px!important;line-height:1.2!important}
+      #cubagemToras .toras-cabecalho{margin-bottom:10px}
+      #cubagemToras .toras-descricao{margin:5px 0;font-size:12px}
+      #cubagemToras .toras-calculo,#cubagemToras .toras-planilha{min-width:0}
+      #cubagemToras .toras-identificacao{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 10px}
+      #cubagemToras .toras-identificacao>div{min-width:0}
+      #cubagemToras .toras-especie-campo{grid-column:1/-1}
+      #cubagemToras .grid3{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px}
+      #cubagemToras label{font-size:13px!important;line-height:1.25!important;margin:6px 0 3px!important}
+      #cubagemToras input:not([type=checkbox]){font-size:16px!important;line-height:1.25!important;height:38px!important;min-height:38px!important;padding:7px 9px!important}
+      #cubagemToras .toras-cobrar{display:flex!important;align-items:center;gap:7px;min-height:30px;margin:6px 0!important}
+      #cubagemToras .toras-cobrar input{flex:0 0 auto;margin:0!important}
+      #cubagemToras #toraTarifa:empty{display:none}
+      #cubagemToras #toraTarifa,#cubagemToras #toraPreview{font-size:12px!important;line-height:1.35!important;margin:5px 0!important}
+      #cubagemToras .tora-especie-tarifa{display:flex;align-items:center;gap:10px;min-width:0}
+      #cubagemToras .tora-especie-tarifa #toraEspecie{flex:1 1 0;width:0!important;min-width:0!important}
+      #cubagemToras .tora-especie-tarifa #toraTarifa{flex:0 0 auto;white-space:nowrap;font-size:14px!important;font-weight:600;color:var(--accent2,var(--text,#e7bc64));margin:0!important}
+      #cubagemToras #toraAviso{font-size:12px!important;line-height:1.3!important;margin:8px 0!important}
+      #cubagemToras .export-actions{flex-wrap:nowrap;gap:6px;margin:8px 0}
+      #cubagemToras .export-actions button{flex:1;min-width:0;font-size:13px!important;padding:9px 6px!important;min-height:38px!important}
+      #cubagemToras #formToras>button{min-height:38px!important;padding:9px 12px!important;font-size:14px!important}
+      #cubagemToras #torasExport>h3{font-size:16px!important;margin:8px 0!important}
+      #cubagemToras #torasExport>p:not(#torasTotal){display:none}
+      #cubagemToras #torasIdentificacao{font-size:12px;line-height:1.35}
+      #cubagemToras #cadastroPrecosToras>summary{font-size:13px;min-height:24px}
+    }
+    @media screen and (min-width:1000px){
+      #cubagemToras[open]{display:flex!important;flex-direction:column;overflow:hidden!important}
+      #cubagemToras .toras-cabecalho{flex:0 0 auto}
+      #cubagemToras .toras-layout{display:grid;grid-template-columns:minmax(300px,380px) minmax(0,1fr);gap:24px;flex:1;min-height:0}
+      #cubagemToras .toras-calculo,#cubagemToras .toras-planilha{overflow-y:auto;min-height:0;padding:0 8px 12px 0;overscroll-behavior:contain}
+      #cubagemToras .toras-planilha{padding-left:20px;border-left:1px solid var(--line,#638371)}
+    }
+    @media screen and (max-width:760px){
+      #cubagemToras{padding:8px!important}
+      #cubagemToras .toras-cabecalho{margin-bottom:4px}
+      #cubagemToras .toras-cabecalho h2{font-size:18px!important}
+      #cubagemToras .toras-cabecalho button{min-height:36px!important;padding:7px 10px!important;font-size:13px!important}
+      #cubagemToras .toras-descricao{display:none}
+      #cubagemToras .grid3{gap:6px}
+    }
+  `;
+  doc.head.appendChild(estiloToras);
+  let temaPendente = false;
+  const observarTema = new doc.defaultView.MutationObserver(() => {
+    if (temaPendente) return;
+    temaPendente = true;
+    doc.defaultView.requestAnimationFrame(() => { temaPendente = false; aplicarTema(); });
+  });
+  for (const elemento of [doc.documentElement, doc.body]) observarTema.observe(elemento, { attributes: true, attributeFilter: ['class', 'style', 'data-theme', 'data-tema'] });
+
+  const fmt = (v, casas = 4) => v.toLocaleString('pt-BR', { minimumFractionDigits: casas, maximumFractionDigits: casas });
+  const moeda = v => v.toLocaleString('pt-BR', {style:'currency',currency:'BRL'});
+  const key = 'cubagem_toras_ponta_fina_v1';
+  let linhas = [];
+  try {
+    const salvas = JSON.parse(storage.getItem(key) || '[]');
+    if (Array.isArray(salvas)) linhas = salvas.filter(l => {
+      try { volumeToras(l.diametro, l.comprimento, l.quantidade); return typeof l.especie === 'string'; } catch { return false; }
+    });
+  } catch { el('toraAviso').textContent = 'Não foi possível recuperar a lista deste dispositivo.'; }
+  linhas = linhas.map(l => l.id ? l : ({...l, id:doc.defaultView.crypto.randomUUID(), migrar:true}));
+  const precosKey = 'cubagem_toras_precos_v1';
+  let precos = {base:null, especies:[]}, precosProntos = !observarPrecos, salvandoPreco = false;
+  try { const salvo = JSON.parse(storage.getItem(precosKey) || 'null'); if (salvo && Array.isArray(salvo.especies)) precos = salvo; } catch {}
+  function renderPrecos() {
+    if (doc.activeElement !== el('toraPrecoBase')) el('toraPrecoBase').value = precos.base ?? '';
+    const lista = el('toraPrecosLista'); lista.replaceChildren();
+    const base = doc.createElement('p'); base.textContent = 'Base: ' + (precos.base === null ? 'não cadastrada' : moeda(precos.base) + '/m³'); lista.appendChild(base);
+    for (const regra of precos.especies) {
+      const linha = doc.createElement('div'); linha.style.marginBottom = '8px';
+      const texto = doc.createElement('span'); texto.textContent = regra.especie + ': ' + moeda(regra.preco) + '/m³ '; linha.appendChild(texto);
+      const editar = doc.createElement('button'); editar.type = 'button'; editar.className = 'btn btn-secondary'; editar.textContent = 'Editar';
+      editar.onclick = () => { el('toraPrecoEspecie').value = regra.especie; el('toraPrecoEspecial').value = regra.preco; el('toraPrecoEspecial').focus(); }; linha.appendChild(editar);
+      const remover = doc.createElement('button'); remover.type = 'button'; remover.className = 'btn btn-secondary'; remover.textContent = 'Remover preço específico';
+      remover.disabled = salvandoPreco || !precosProntos;
+      remover.onclick = async () => {
+        if (!doc.defaultView.confirm('Remover o preço específico de ' + regra.especie + '? Novos lançamentos usarão o preço base.')) return;
+        await gravarPrecos({...precos, especies:precos.especies.filter(r => chaveEspecieToras(r.especie) !== chaveEspecieToras(regra.especie))});
+      }; linha.appendChild(remover); lista.appendChild(linha);
+    }
+    el('salvarPrecoToras').disabled = salvandoPreco || !precosProntos;
+    aplicarTema();
+  }
+  async function gravarPrecos(novos) {
+    if (!precosProntos || salvandoPreco) return false;
+    salvandoPreco = true; renderPrecos(); el('toraPrecoStatus').textContent = 'Salvando preços…';
+    try {
+      if (salvarPrecos) await salvarPrecos(novos);
+      else storage.setItem(precosKey, JSON.stringify(novos));
+      precos = novos;
+      if (salvarPrecos) { try { storage.setItem(precosKey, JSON.stringify(novos)); } catch {} }
+      el('toraPrecoStatus').textContent = salvarPrecos ? 'Cadastro salvo para esta empresa.' : 'Cadastro salvo neste dispositivo.';
+      preview(); return true;
+    } catch { el('toraPrecoStatus').textContent = 'Não foi possível confirmar o cadastro. Confira a conexão e tente novamente.'; return false; }
+    finally { salvandoPreco = false; renderPrecos(); }
+  }
+  el('formPrecoToras').addEventListener('submit', async event => {
+    event.preventDefault();
+    const baseTexto = el('toraPrecoBase').value, especie = el('toraPrecoEspecie').value.trim(), especialTexto = el('toraPrecoEspecial').value;
+    const base = Number(baseTexto), especial = Number(especialTexto);
+    const valido = v => Number.isFinite(v) && v >= 0 && Number.isSafeInteger(Math.round(v*100)) && Math.abs(v*100 - Math.round(v*100)) < 0.000001;
+    if (!baseTexto || !valido(base) || (especie && (!especialTexto || !valido(especial))) || (!especie && especialTexto)) {
+      el('toraPrecoStatus').textContent = 'Informe o preço base e, para preço diferente, a espécie e seu valor. Use valores positivos ou zero, com até duas casas decimais.'; return;
+    }
+    const especies = precos.especies.filter(r => !especie || chaveEspecieToras(r.especie) !== chaveEspecieToras(especie));
+    if (especie) especies.push({especie, preco:especial});
+    if (await gravarPrecos({base, especies})) { el('toraPrecoEspecie').value = ''; el('toraPrecoEspecial').value = ''; }
+  });
+  renderPrecos();
+  if (observarPrecos) {
+    const parar = observarPrecos(config => {
+      precos = config && Array.isArray(config.especies) ? config : {base:null, especies:[]};
+      precosProntos = true; try { storage.setItem(precosKey, JSON.stringify(precos)); } catch {}
+      renderPrecos(); preview(); el('toraPrecoStatus').textContent = 'Preços sincronizados com a empresa.';
+    }, () => { precosProntos = false; renderPrecos(); preview(); el('toraPrecoStatus').textContent = 'Não foi possível carregar os preços da empresa. Confira a conexão.'; });
+    doc.defaultView.addEventListener('pagehide', () => parar?.(), {once:true});
+  } else el('toraPrecoStatus').textContent = 'Cadastro salvo neste dispositivo.';
+  const identificacaoKey = 'cubagem_toras_identificacao_v1';
+  let identificacao = null;
+  try { identificacao = JSON.parse(storage.getItem(identificacaoKey) || 'null'); } catch {}
+  if (!identificacao || typeof identificacao !== 'object' || Array.isArray(identificacao)) {
+    // Listas antigas guardavam os campos em cada linha: recuperar o último
+    // preenchimento de cada campo sem alterar os lançamentos existentes.
+    const ultimo = campo => [...linhas].reverse().find(l => typeof l[campo] === 'string' && l[campo].trim())?.[campo] || '';
+    identificacao = { maoObra: ultimo('maoObra'), cliente: ultimo('cliente') };
+  }
+  el('toraMaoObra').value = typeof identificacao.maoObra === 'string' ? identificacao.maoObra : '';
+  el('toraCliente').value = typeof identificacao.cliente === 'string' ? identificacao.cliente : '';
+  function preencherIdentificacao(destino) {
+    for (const [rotulo, id] of [['', 'toraMaoObra'], ['Cliente', 'toraCliente']]) {
+      const valor = el(id).value.trim();
+      if (valor) { const p = doc.createElement('div'); p.textContent = rotulo ? rotulo + ': ' + valor : valor; destino.appendChild(p); }
+    }
+  }
+  function atualizarIdentificacao() {
+    const destino = el('torasIdentificacao'); destino.replaceChildren(); preencherIdentificacao(destino);
+  }
+  let identificacaoTimer;
+  function sincronizarIdentificacao() {
+    if (!salvarIdentificacao) return;
+    clearTimeout(identificacaoTimer);
+    identificacaoTimer = undefined;
+    Promise.resolve().then(() => salvarIdentificacao({maoObra:el('toraMaoObra').value,cliente:el('toraCliente').value})).catch(falhaSync);
+  }
+  for (const id of ['toraMaoObra', 'toraCliente']) el(id).addEventListener('input', () => {
+    atualizarIdentificacao();
+    clearTimeout(identificacaoTimer);
+    if (salvarIdentificacao) identificacaoTimer = setTimeout(sincronizarIdentificacao, 400);
+    try { storage.setItem(identificacaoKey, JSON.stringify({ maoObra: el('toraMaoObra').value, cliente: el('toraCliente').value })); }
+    catch { el('toraAviso').textContent = 'Não foi possível salvar a identificação. Exporte a lista antes de fechar o sistema.'; }
+  });
+  for (const id of ['toraMaoObra', 'toraCliente']) el(id).addEventListener('blur', () => { if (identificacaoTimer) sincronizarIdentificacao(); });
+  atualizarIdentificacao();
+  function salvar() {
+    try {
+      storage.setItem(key, JSON.stringify(linhas));
+      el('toraAviso').textContent = storage.durable === false ? 'Armazenamento indisponível. Exporte a lista antes de fechar o sistema.' : observarLista ? 'Lista salva neste aparelho • aguardando sincronização com a empresa.' : 'Lista salva somente neste dispositivo. Não movimenta estoque ou pedidos.';
+    } catch { el('toraAviso').textContent = 'Não foi possível salvar. Exporte a lista antes de fechar o sistema.'; }
+  }
+  function falhaSync() {
+    el('toraAviso').textContent = 'Não foi possível confirmar a sincronização. A lista permanece neste aparelho; confira a conexão e as permissões.';
+  }
+  function removerLinhas(ids) {
+    const removidas = linhas.filter(l => ids.includes(l.id));
+    linhas = linhas.filter(l => !ids.includes(l.id)); salvar(); render();
+    if (gravarLinha) Promise.all(removidas.map(l => gravarLinha(l.id, {...l, ativo:false}))).catch(falhaSync);
+  }
+  function render() {
+    const host = el('torasLinhas'); host.replaceChildren();
+    const wrap = doc.createElement('div'); wrap.className = 'toras-tabela-wrap'; wrap.style.overflowX = 'auto';
+    const tabela = doc.createElement('table'); tabela.style.cssText = 'width:100%;border-collapse:collapse;font-size:12px;line-height:1.4';
+    tabela.className = 'toras-resumo-tabela';
+    tabela.setAttribute('aria-label', 'Resumo dos lançamentos de toras');
+    const grupos = agruparToras(linhas);
+    const comValores = grupos.some(l => typeof l.precoMaoObra === 'number');
+    const cabecalho = tabela.createTHead().insertRow();
+    for (const [indice, texto] of ['Espécie', 'Qtd.', 'Diâmetro (cm)', 'Comp. (m)', 'm³/tora', 'm³ total', ...(comValores ? ['R$/m³', 'Valor (R$)'] : []), 'Ação'].entries()) {
+      const th = doc.createElement('th'); th.scope = 'col'; th.textContent = texto;
+      th.dataset.curto = ['Espécie', 'Qtd', 'D.cm', 'C.m', 'm³/un', 'm³', ...(comValores ? ['R$/m³', 'R$'] : []), ''][indice];
+      const pesos = comValores ? [18,5,9,9,12,12,12,16,7] : [24,7,12,12,17,17,7];
+      th.style.width = (pesos[indice] / pesos.reduce((a,b)=>a+b,0)*100) + '%';
+      th.style.cssText += 'padding:7px 5px;border-bottom:1px solid;text-align:'+ (indice ? 'right' : 'left');
+      if (texto === 'Ação') th.className = 'no-print';
+      cabecalho.appendChild(th);
+    }
+    const corpo = tabela.createTBody(); wrap.appendChild(tabela); host.appendChild(wrap);
+    let total = 0, quantidade = 0, valorTotal = 0;
+    grupos.forEach((l, indice) => {
+      const { unitario, total: volume } = volumeToras(l.diametro, l.comprimento, l.quantidade);
+      total += volume; quantidade += l.quantidade;
+      const tr = doc.createElement('tr');
+      const valor = typeof l.precoMaoObra === 'number' ? valorMaoObraToras(volume, l.precoMaoObra) : null;
+      if (valor !== null) valorTotal += Math.round(valor * 100);
+      const valores = [l.especie || 'Espécie não informada', String(l.quantidade), fmt(l.diametro, 2), fmt(l.comprimento, 2), fmt(unitario), fmt(volume), ...(comValores ? [valor === null ? '—' : fmt(l.precoMaoObra, 2), valor === null ? '—' : fmt(valor, 2)] : [])];
+      valores.forEach((valor, coluna) => {
+        const td = doc.createElement('td'); td.textContent = valor;
+        td.dataset.label = ['Espécie', 'Qtd.', 'Diâm.cm', 'Comp.m', 'm³/tora', 'm³ total', 'R$/m³', 'Valor R$'][coluna];
+        td.className = coluna === 0 ? 'tora-especie' : (coluna >= 6 ? 'tora-financeiro' : 'tora-medida');
+        td.style.cssText = 'padding:7px 5px;border-bottom:1px solid;'+(coluna ? 'text-align:right;white-space:nowrap' : 'min-width:85px;overflow-wrap:anywhere');
+        tr.appendChild(td);
+      });
+      const acoes = doc.createElement('td'); acoes.className = 'no-print tora-acoes';
+      const remover = doc.createElement('button'); remover.type = 'button'; remover.className = 'btn btn-secondary no-print'; remover.textContent = 'Remover'; remover.setAttribute('aria-label', 'Remover grupo ' + (indice + 1));
+      remover.onclick = () => removerLinhas(l.ids); acoes.appendChild(remover); tr.appendChild(acoes); corpo.appendChild(tr);
+
+    });
+    aplicarTema();
+    el('torasTotal').textContent = 'Total: ' + quantidade + (quantidade === 1 ? ' tora • ' : ' toras • ') + fmt(total) + ' m³' + (comValores ? ' • Total mão de obra: ' + moeda(valorTotal / 100) : '');
+  }
+  function ler() { return [Number(el('toraDiametro').value), Number(el('toraComprimento').value), Number(el('toraQuantidade').value)]; }
+  function preview() {
+    const preco = precoMaoObraToras(precos, el('toraEspecie').value);
+    el('toraTarifa').textContent = precosProntos && preco !== null ? moeda(preco) + '/m³' : '— /m³';
+    el('toraTarifa').title = !precosProntos ? 'Aguardando os preços da empresa.' : preco === null ? 'Cadastre um preço base ou específico para esta espécie.' : 'Mão de obra por metro cúbico';
+    try { const v = volumeToras(...ler()); el('toraPreview').textContent = 'Por tora: ' + fmt(v.unitario) + ' m³ • Total: ' + fmt(v.total) + ' m³' + (el('toraCobrar').checked && preco !== null ? ' • Mão de obra: ' + moeda(valorMaoObraToras(v.total, preco)) : ''); }
+    catch { el('toraPreview').textContent = 'Informe diâmetro e comprimento positivos e quantidade inteira.'; }
+  }
+  instalarAtalhosToras(el('formToras'), doc.defaultView);
+  el('formToras').addEventListener('input', preview);
+  el('formToras').addEventListener('submit', event => {
+    event.preventDefault();
+    try {
+      const [diametro, comprimento, quantidade] = ler(); volumeToras(diametro, comprimento, quantidade);
+      const item = { id:doc.defaultView.crypto.randomUUID(), migrar:true, especie: el('toraEspecie').value.trim(), diametro, comprimento, quantidade };
+      if (el('toraCobrar').checked) {
+        if (!precosProntos) throw Error('Aguarde a confirmação dos preços da empresa.');
+        const preco = precoMaoObraToras(precos, item.especie);
+        if (preco === null) throw Error('Cadastre o preço da mão de obra antes de lançar.');
+        valorMaoObraToras(volumeToras(diametro, comprimento, quantidade).total, preco);
+        item.precoMaoObra = preco;
+      }
+      agruparToras([...linhas, item]);
+      linhas.push(item); salvar(); render();
+      if (gravarLinha) Promise.resolve().then(() => gravarLinha(item.id, item)).catch(falhaSync);
+      el('toraDiametro').value = ''; preview(); el('toraDiametro').focus();
+    } catch (e) { el('toraPreview').textContent = e.message; }
+  });
+  abrir.addEventListener('click', () => { aplicarTema(); dialog.showModal(); dialog.scrollTop=0; dialog.querySelector('.toras-calculo').scrollTop=0; dialog.querySelector('.toras-planilha').scrollTop=0; el('toraDiametro').focus({preventScroll:true}); });
+  dialog.querySelector('[data-fechar]').onclick = () => dialog.close();
+  dialog.querySelector('[data-copiar]').onclick = async () => {
+    if (!linhas.length) { el('toraAviso').textContent = 'Adicione uma tora à lista primeiro.'; return; }
+    // Na mensagem, a espécie fica acima da tabela para caber no celular.
+    const resumo = doc.createElement('div');
+    const titulo = doc.createElement('h3'); titulo.textContent = 'Cubagem de toras'; resumo.appendChild(titulo);
+    preencherIdentificacao(resumo);
+    for (const l of agruparToras(linhas)) {
+      const h = doc.createElement('h4'); h.textContent = l.especie || 'Espécie não informada'; resumo.appendChild(h);
+      const v = volumeToras(l.diametro, l.comprimento, l.quantidade);
+      const tabela = doc.createElement('table');
+      for (const valores of [['Qtd', 'D.cm', 'C.m', 'm³/tora', 'm³ total'], [String(l.quantidade), fmt(l.diametro, 2), fmt(l.comprimento, 2), fmt(v.unitario), fmt(v.total)]]) {
+        const tr = tabela.insertRow(); for (const valor of valores) tr.insertCell().textContent = valor;
+      }
+      resumo.appendChild(tabela);
+      if (typeof l.precoMaoObra === 'number') {
+        const valor = doc.createElement('p'); valor.textContent = 'Preço por m³: ' + moeda(l.precoMaoObra) + ' • Valor: ' + moeda(valorMaoObraToras(v.total, l.precoMaoObra)); resumo.appendChild(valor);
+      }
+    }
+    const total = doc.createElement('p'); total.textContent = el('torasTotal').textContent; resumo.appendChild(total);
+    await copiar(resumo);
+  };
+  dialog.querySelector('[data-pdf]').onclick = () => {
+    if (!linhas.length) { el('toraAviso').textContent = 'Adicione uma tora à lista primeiro.'; return; }
+    // O gerador clona o resumo antes de imprimir; retirar o modal da camada
+    // superior permite que a área de impressão apareça no Chrome/Android.
+    pdf('torasExport', 'Cubagem de toras');
+    dialog.close();
+    doc.defaultView.addEventListener('afterprint', () => { if (dialog.isConnected && !dialog.open) dialog.showModal(); }, { once: true });
+  };
+  dialog.querySelector('[data-limpar]').onclick = () => {
+    if (linhas.length && doc.defaultView.confirm(observarLista ? 'Apagar esta lista de cubagem de toras da empresa em todos os dispositivos?' : 'Apagar a lista de cubagem de toras deste dispositivo?')) removerLinhas(linhas.map(l => l.id));
+  };
+  salvar(); render();
+  if (observarLista) {
+    const migrando = new Set();
+    let migrandoIdentificacao = false;
+    const parar = observarLista(estado => {
+      const antigas = linhas.filter(l => l.migrar);
+      const recebidas = Array.isArray(estado.linhas) ? estado.linhas.filter(l => {
+        try { volumeToras(l.diametro, l.comprimento, l.quantidade); return typeof l.especie === 'string'; } catch { return false; }
+      }) : [];
+      const ids = new Set(recebidas.map(l => l.id));
+      if (!(estado.offline && !estado.conhecido)) linhas = [...recebidas, ...antigas.filter(l => !ids.has(l.id))];
+      const dados = estado.identificacao;
+      if (dados && typeof dados === 'object' && !identificacaoTimer) {
+        for (const [campo, id] of [['maoObra','toraMaoObra'],['cliente','toraCliente']]) {
+          if (doc.activeElement !== el(id) && typeof dados[campo] === 'string') el(id).value = dados[campo];
+        }
+        atualizarIdentificacao();
+        try { storage.setItem(identificacaoKey,JSON.stringify(dados)); } catch {}
+      }
+      salvar(); render();
+      el('toraAviso').textContent = estado.pendente ? 'Lista salva neste aparelho • aguardando sincronização com a empresa.' : estado.offline ? 'Sem confirmação do servidor • lista disponível neste aparelho.' : 'Cubagem sincronizada com a empresa. Não movimenta estoque ou pedidos.';
+      if (estado.pronto && !dados && salvarIdentificacao && !migrandoIdentificacao && (el('toraMaoObra').value || el('toraCliente').value)) {
+        migrandoIdentificacao = true; sincronizarIdentificacao();
+      }
+      if (estado.pronto && gravarLinha) for (const linha of antigas) {
+        if (migrando.has(linha.id)) continue;
+        migrando.add(linha.id);
+        Promise.resolve().then(() => gravarLinha(linha.id, {...linha, migrar:false})).catch(() => { migrando.delete(linha.id); falhaSync(); });
+      }
+    }, falhaSync);
+    doc.defaultView.addEventListener('pagehide', () => { if (identificacaoTimer) sincronizarIdentificacao(); parar?.(); }, {once:true});
+  }
+}
+
+
+const PREFIX = 'cubagem_toras_linha_';
+const IDENTIFICACAO = 'cubagem_toras_identificacao';
+
+// Each addition has its own document. Offline additions from two devices never
+// replace an entire list; removals are tombstones for the known additions only.
+export function criarSincronismoToras({ observar, pendencias, gravar, confirmar }) {
+  let ultimo, receber;
+  function publicar() {
+    if (!ultimo || !receber) return;
+    const registros = new Map(ultimo.docs.map(d => [d.id, d.data]));
+    const fila = pendencias().filter(op => op.id.startsWith(PREFIX) || op.id === IDENTIFICACAO);
+    for (const op of fila) {
+      if (op.modo === 'delete') registros.delete(op.id);
+      else registros.set(op.id, op.obj);
+    }
+    receber({
+      linhas: [...registros].filter(([id, data]) => id.startsWith(PREFIX) && data.ativo !== false)
+        .map(([id, data]) => ({ ...data, id: id.slice(PREFIX.length) })),
+      identificacao: registros.get(IDENTIFICACAO),
+      conhecido: [...registros.keys()].some(id => id.startsWith(PREFIX)),
+      pronto: !ultimo.fromCache,
+      pendente: fila.length > 0 || ultimo.hasPendingWrites,
+      offline: ultimo.fromCache,
+    });
+  }
+  async function salvar(id, dados) {
+    // Queue is persisted before attempting the server; failures keep the change.
+    gravar(id, dados);
+    publicar();
+    try { await confirmar(); } finally { publicar(); }
+  }
+  return {
+    observarLista(callback, falhar) {
+      receber = callback;
+      return observar(snapshot => { ultimo = snapshot; publicar(); }, falhar);
+    },
+    gravarLinha(id, dados) {
+      if (!/^[a-zA-Z0-9_-]{1,120}$/.test(id)) throw Error('Identificador da cubagem inválido.');
+      const { migrar, ...limpos } = dados;
+      return salvar(PREFIX + id, limpos);
+    },
+    salvarIdentificacao: dados => salvar(IDENTIFICACAO, dados),
+  };
+}
+

@@ -1,0 +1,752 @@
+[
+  {
+    "id": "item-0",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-0",
+    "espessura": 5.0,
+    "largura": 5.0,
+    "comprimento": 2.5,
+    "quantidade": 57,
+    "volume": 0.35625
+  },
+  {
+    "id": "item-1",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-1",
+    "espessura": 5.0,
+    "largura": 5.0,
+    "comprimento": 3.0,
+    "quantidade": 3,
+    "volume": 0.0225
+  },
+  {
+    "id": "item-2",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-2",
+    "espessura": 5.0,
+    "largura": 5.0,
+    "comprimento": 4.0,
+    "quantidade": 9,
+    "volume": 0.09
+  },
+  {
+    "id": "item-3",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-3",
+    "espessura": 5.0,
+    "largura": 5.0,
+    "comprimento": 4.5,
+    "quantidade": 5,
+    "volume": 0.05625
+  },
+  {
+    "id": "item-4",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-4",
+    "espessura": 5.0,
+    "largura": 5.0,
+    "comprimento": 5.5,
+    "quantidade": 2,
+    "volume": 0.0275
+  },
+  {
+    "id": "item-5",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-5",
+    "espessura": 5.0,
+    "largura": 10.0,
+    "comprimento": 2.5,
+    "quantidade": 33,
+    "volume": 0.4125
+  },
+  {
+    "id": "item-6",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-6",
+    "espessura": 5.0,
+    "largura": 10.0,
+    "comprimento": 3.0,
+    "quantidade": 17,
+    "volume": 0.255
+  },
+  {
+    "id": "item-7",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-7",
+    "espessura": 5.0,
+    "largura": 10.0,
+    "comprimento": 3.5,
+    "quantidade": 9,
+    "volume": 0.1575
+  },
+  {
+    "id": "item-8",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-8",
+    "espessura": 5.0,
+    "largura": 10.0,
+    "comprimento": 4.0,
+    "quantidade": 10,
+    "volume": 0.2
+  },
+  {
+    "id": "item-9",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-9",
+    "espessura": 5.0,
+    "largura": 10.0,
+    "comprimento": 4.5,
+    "quantidade": 18,
+    "volume": 0.405
+  },
+  {
+    "id": "item-10",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-10",
+    "espessura": 5.0,
+    "largura": 10.0,
+    "comprimento": 5.5,
+    "quantidade": 7,
+    "volume": 0.1925
+  },
+  {
+    "id": "item-11",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-11",
+    "espessura": 5.0,
+    "largura": 15.0,
+    "comprimento": 2.5,
+    "quantidade": 21,
+    "volume": 0.39375
+  },
+  {
+    "id": "item-12",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-12",
+    "espessura": 5.0,
+    "largura": 15.0,
+    "comprimento": 3.0,
+    "quantidade": 13,
+    "volume": 0.2925
+  },
+  {
+    "id": "item-13",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-13",
+    "espessura": 5.0,
+    "largura": 15.0,
+    "comprimento": 3.5,
+    "quantidade": 9,
+    "volume": 0.23625
+  },
+  {
+    "id": "item-14",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-14",
+    "espessura": 5.0,
+    "largura": 15.0,
+    "comprimento": 4.0,
+    "quantidade": 16,
+    "volume": 0.48
+  },
+  {
+    "id": "item-15",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-15",
+    "espessura": 5.0,
+    "largura": 15.0,
+    "comprimento": 4.5,
+    "quantidade": 24,
+    "volume": 0.81
+  },
+  {
+    "id": "item-16",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-16",
+    "espessura": 5.0,
+    "largura": 15.0,
+    "comprimento": 5.5,
+    "quantidade": 18,
+    "volume": 0.7425
+  },
+  {
+    "id": "item-17",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-17",
+    "espessura": 5.0,
+    "largura": 18.0,
+    "comprimento": 4.5,
+    "quantidade": 1,
+    "volume": 0.0405
+  },
+  {
+    "id": "item-18",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-18",
+    "espessura": 5.0,
+    "largura": 19.0,
+    "comprimento": 4.5,
+    "quantidade": 1,
+    "volume": 0.04275
+  },
+  {
+    "id": "item-19",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-19",
+    "espessura": 5.0,
+    "largura": 20.0,
+    "comprimento": 2.5,
+    "quantidade": 2,
+    "volume": 0.05
+  },
+  {
+    "id": "item-20",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-20",
+    "espessura": 5.0,
+    "largura": 20.0,
+    "comprimento": 3.5,
+    "quantidade": 2,
+    "volume": 0.07
+  },
+  {
+    "id": "item-21",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-21",
+    "espessura": 5.0,
+    "largura": 20.0,
+    "comprimento": 4.5,
+    "quantidade": 11,
+    "volume": 0.495
+  },
+  {
+    "id": "item-22",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-22",
+    "espessura": 5.0,
+    "largura": 20.0,
+    "comprimento": 5.5,
+    "quantidade": 1,
+    "volume": 0.055
+  },
+  {
+    "id": "item-23",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-23",
+    "espessura": 8.0,
+    "largura": 6.0,
+    "comprimento": 5.5,
+    "quantidade": 1,
+    "volume": 0.0264
+  },
+  {
+    "id": "item-24",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-24",
+    "espessura": 8.0,
+    "largura": 7.0,
+    "comprimento": 2.5,
+    "quantidade": 1,
+    "volume": 0.014
+  },
+  {
+    "id": "item-25",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-25",
+    "espessura": 8.0,
+    "largura": 8.0,
+    "comprimento": 2.5,
+    "quantidade": 1,
+    "volume": 0.016
+  },
+  {
+    "id": "item-26",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-26",
+    "espessura": 8.0,
+    "largura": 8.0,
+    "comprimento": 3.0,
+    "quantidade": 2,
+    "volume": 0.0384
+  },
+  {
+    "id": "item-27",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-27",
+    "espessura": 8.0,
+    "largura": 9.0,
+    "comprimento": 2.5,
+    "quantidade": 2,
+    "volume": 0.036
+  },
+  {
+    "id": "item-28",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-28",
+    "espessura": 8.0,
+    "largura": 9.0,
+    "comprimento": 3.0,
+    "quantidade": 1,
+    "volume": 0.0216
+  },
+  {
+    "id": "item-29",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-29",
+    "espessura": 8.0,
+    "largura": 10.0,
+    "comprimento": 1.8,
+    "quantidade": 4,
+    "volume": 0.0576
+  },
+  {
+    "id": "item-30",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-30",
+    "espessura": 8.0,
+    "largura": 10.0,
+    "comprimento": 2.0,
+    "quantidade": 2,
+    "volume": 0.032
+  },
+  {
+    "id": "item-31",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-31",
+    "espessura": 8.0,
+    "largura": 10.0,
+    "comprimento": 2.5,
+    "quantidade": 25,
+    "volume": 0.5
+  },
+  {
+    "id": "item-32",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-32",
+    "espessura": 8.0,
+    "largura": 10.0,
+    "comprimento": 3.5,
+    "quantidade": 1,
+    "volume": 0.028
+  },
+  {
+    "id": "item-33",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-33",
+    "espessura": 8.0,
+    "largura": 10.0,
+    "comprimento": 4.5,
+    "quantidade": 2,
+    "volume": 0.072
+  },
+  {
+    "id": "item-34",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-34",
+    "espessura": 8.0,
+    "largura": 12.0,
+    "comprimento": 4.0,
+    "quantidade": 1,
+    "volume": 0.0384
+  },
+  {
+    "id": "item-35",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-35",
+    "espessura": 8.0,
+    "largura": 14.0,
+    "comprimento": 1.8,
+    "quantidade": 1,
+    "volume": 0.02016
+  },
+  {
+    "id": "item-36",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-36",
+    "espessura": 8.0,
+    "largura": 14.0,
+    "comprimento": 2.0,
+    "quantidade": 1,
+    "volume": 0.0224
+  },
+  {
+    "id": "item-37",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-37",
+    "espessura": 8.0,
+    "largura": 15.0,
+    "comprimento": 1.8,
+    "quantidade": 2,
+    "volume": 0.0432
+  },
+  {
+    "id": "item-38",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-38",
+    "espessura": 8.0,
+    "largura": 15.0,
+    "comprimento": 2.5,
+    "quantidade": 14,
+    "volume": 0.42
+  },
+  {
+    "id": "item-39",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-39",
+    "espessura": 8.0,
+    "largura": 15.0,
+    "comprimento": 3.0,
+    "quantidade": 1,
+    "volume": 0.036
+  },
+  {
+    "id": "item-40",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-40",
+    "espessura": 8.0,
+    "largura": 15.0,
+    "comprimento": 3.5,
+    "quantidade": 1,
+    "volume": 0.042
+  },
+  {
+    "id": "item-41",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-41",
+    "espessura": 8.0,
+    "largura": 15.0,
+    "comprimento": 4.0,
+    "quantidade": 1,
+    "volume": 0.048
+  },
+  {
+    "id": "item-42",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-42",
+    "espessura": 8.0,
+    "largura": 15.0,
+    "comprimento": 4.5,
+    "quantidade": 5,
+    "volume": 0.27
+  },
+  {
+    "id": "item-43",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-43",
+    "espessura": 8.0,
+    "largura": 15.0,
+    "comprimento": 5.0,
+    "quantidade": 2,
+    "volume": 0.12
+  },
+  {
+    "id": "item-44",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-44",
+    "espessura": 8.0,
+    "largura": 15.0,
+    "comprimento": 5.5,
+    "quantidade": 11,
+    "volume": 0.726
+  },
+  {
+    "id": "item-45",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-45",
+    "espessura": 8.0,
+    "largura": 15.0,
+    "comprimento": 6.0,
+    "quantidade": 8,
+    "volume": 0.576
+  },
+  {
+    "id": "item-46",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-46",
+    "espessura": 8.0,
+    "largura": 15.0,
+    "comprimento": 6.5,
+    "quantidade": 7,
+    "volume": 0.546
+  },
+  {
+    "id": "item-47",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-47",
+    "espessura": 8.0,
+    "largura": 15.0,
+    "comprimento": 7.0,
+    "quantidade": 1,
+    "volume": 0.084
+  },
+  {
+    "id": "item-48",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-48",
+    "espessura": 8.0,
+    "largura": 19.0,
+    "comprimento": 1.8,
+    "quantidade": 1,
+    "volume": 0.02736
+  },
+  {
+    "id": "item-49",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-49",
+    "espessura": 8.0,
+    "largura": 20.0,
+    "comprimento": 1.8,
+    "quantidade": 2,
+    "volume": 0.0576
+  },
+  {
+    "id": "item-50",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-50",
+    "espessura": 8.0,
+    "largura": 20.0,
+    "comprimento": 2.0,
+    "quantidade": 3,
+    "volume": 0.096
+  },
+  {
+    "id": "item-51",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-51",
+    "espessura": 8.0,
+    "largura": 20.0,
+    "comprimento": 2.5,
+    "quantidade": 4,
+    "volume": 0.16
+  },
+  {
+    "id": "item-52",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-52",
+    "espessura": 8.0,
+    "largura": 20.0,
+    "comprimento": 3.0,
+    "quantidade": 1,
+    "volume": 0.048
+  },
+  {
+    "id": "item-53",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-53",
+    "espessura": 8.0,
+    "largura": 20.0,
+    "comprimento": 3.5,
+    "quantidade": 1,
+    "volume": 0.056
+  },
+  {
+    "id": "item-54",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-54",
+    "espessura": 8.0,
+    "largura": 20.0,
+    "comprimento": 4.5,
+    "quantidade": 4,
+    "volume": 0.288
+  },
+  {
+    "id": "item-55",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-55",
+    "espessura": 8.0,
+    "largura": 20.0,
+    "comprimento": 5.0,
+    "quantidade": 4,
+    "volume": 0.32
+  },
+  {
+    "id": "item-56",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-56",
+    "espessura": 8.0,
+    "largura": 20.0,
+    "comprimento": 5.5,
+    "quantidade": 10,
+    "volume": 0.88
+  },
+  {
+    "id": "item-57",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-57",
+    "espessura": 8.0,
+    "largura": 20.0,
+    "comprimento": 6.0,
+    "quantidade": 3,
+    "volume": 0.288
+  },
+  {
+    "id": "item-58",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-58",
+    "espessura": 8.0,
+    "largura": 20.0,
+    "comprimento": 6.5,
+    "quantidade": 3,
+    "volume": 0.312
+  },
+  {
+    "id": "item-59",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-59",
+    "espessura": 8.0,
+    "largura": 24.0,
+    "comprimento": 2.0,
+    "quantidade": 1,
+    "volume": 0.0384
+  },
+  {
+    "id": "item-60",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-60",
+    "espessura": 8.0,
+    "largura": 25.0,
+    "comprimento": 2.5,
+    "quantidade": 3,
+    "volume": 0.15
+  },
+  {
+    "id": "item-61",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-61",
+    "espessura": 8.0,
+    "largura": 25.0,
+    "comprimento": 4.5,
+    "quantidade": 1,
+    "volume": 0.09
+  },
+  {
+    "id": "item-62",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-62",
+    "espessura": 8.0,
+    "largura": 25.0,
+    "comprimento": 5.0,
+    "quantidade": 1,
+    "volume": 0.1
+  },
+  {
+    "id": "item-63",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-63",
+    "espessura": 8.0,
+    "largura": 25.0,
+    "comprimento": 6.5,
+    "quantidade": 1,
+    "volume": 0.13
+  },
+  {
+    "id": "item-64",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-64",
+    "espessura": 8.0,
+    "largura": 25.0,
+    "comprimento": 7.0,
+    "quantidade": 1,
+    "volume": 0.14
+  },
+  {
+    "id": "item-65",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-65",
+    "espessura": 8.0,
+    "largura": 30.0,
+    "comprimento": 2.0,
+    "quantidade": 1,
+    "volume": 0.048
+  },
+  {
+    "id": "item-66",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-66",
+    "espessura": 8.0,
+    "largura": 30.0,
+    "comprimento": 2.5,
+    "quantidade": 4,
+    "volume": 0.24
+  },
+  {
+    "id": "item-67",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-67",
+    "espessura": 8.0,
+    "largura": 35.0,
+    "comprimento": 2.5,
+    "quantidade": 3,
+    "volume": 0.21
+  },
+  {
+    "id": "item-68",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-68",
+    "espessura": 8.0,
+    "largura": 39.0,
+    "comprimento": 2.0,
+    "quantidade": 1,
+    "volume": 0.0624
+  },
+  {
+    "id": "item-69",
+    "madeira": "Garapeira",
+    "madeiraId": "bitola-69",
+    "espessura": 8.0,
+    "largura": 40.0,
+    "comprimento": 2.5,
+    "quantidade": 1,
+    "volume": 0.08
+  },
+  {
+    "id": "item-70",
+    "madeira": "Garrote",
+    "madeiraId": "bitola-70",
+    "espessura": 20.0,
+    "largura": 20.0,
+    "comprimento": 4.0,
+    "quantidade": 1,
+    "volume": 0.16
+  },
+  {
+    "id": "item-71",
+    "madeira": "Garrote",
+    "madeiraId": "bitola-71",
+    "espessura": 20.0,
+    "largura": 20.0,
+    "comprimento": 4.5,
+    "quantidade": 6,
+    "volume": 1.08
+  },
+  {
+    "id": "item-72",
+    "madeira": "Garrote",
+    "madeiraId": "bitola-72",
+    "espessura": 20.0,
+    "largura": 20.0,
+    "comprimento": 5.0,
+    "quantidade": 1,
+    "volume": 0.2
+  },
+  {
+    "id": "item-73",
+    "madeira": "Garrote",
+    "madeiraId": "bitola-73",
+    "espessura": 20.0,
+    "largura": 20.0,
+    "comprimento": 5.5,
+    "quantidade": 1,
+    "volume": 0.22
+  },
+  {
+    "id": "item-74",
+    "madeira": "Garrote",
+    "madeiraId": "bitola-74",
+    "espessura": 20.0,
+    "largura": 20.0,
+    "comprimento": 6.0,
+    "quantidade": 1,
+    "volume": 0.24
+  }
+]

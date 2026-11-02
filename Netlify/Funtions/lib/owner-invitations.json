@@ -1,0 +1,12 @@
+{
+  "b6dd6aa9051f33223533bd49044f00ef1ae6bb702f133f00c59686c8f285677b": {
+    "name": "",
+    "email": "",
+    "empresaId": "empresa-8711d0a4-08eb-4e36-9f29-94e4b2fce8b4",
+    "status": "pending",
+    "trialMode": "indefinite",
+    "trialEndsAt": null,
+    "source": "owner_authorized_preview_invitation",
+    "createdAt": 1792962000000
+  }
+}

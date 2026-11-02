@@ -1,0 +1,60 @@
+PAGAMENTOS REAIS — CONFIGURAÇÃO NO SERVIDOR
+
+Esta versão prepara pagamentos avulsos com renovação manual.
+Nenhuma credencial de produção vem no código. Não envie tokens ou a assinatura secreta pelo chat.
+Configure as variáveis privadas no Netlify, em Environment variables, para o contexto exato em que será feito o teste. Faça um novo deploy depois de configurá-las.
+
+MERCADO_PAGO_LIVE_ENABLED
+  Comece com false. Mude para true somente depois de conferir as demais configurações e a empresa da primeira cobrança.
+
+MERCADO_PAGO_LIVE_ACCESS_TOKEN
+  Access Token de PRODUÇÃO da aplicação no Mercado Pago. Guardar somente no servidor.
+  Não use o token de teste e não remova as variáveis de teste existentes.
+
+MERCADO_PAGO_LIVE_COLLECTOR_ID
+  ID numérico da conta recebedora real. Será conferido com /users/me antes de gerar um pagamento.
+
+MERCADO_PAGO_LIVE_WEBHOOK_SECRET
+  Assinatura secreta da configuração de Webhooks de produção, guardada somente no servidor.
+
+MERCADO_PAGO_LIVE_ORIGIN
+  Endereço HTTPS exato do sistema que será autorizado. Sem caminho, consulta ou fragmento.
+  Exemplo de formato: https://seu-sistema.netlify.app
+  O checkout é recusado quando aberto por outro endereço.
+  O primeiro teste pode usar a prévia explicitamente autorizada; publicar o site principal é uma etapa separada.
+
+MERCADO_PAGO_LIVE_COMPANY_IDS
+  Código da empresa autorizada para a primeira cobrança. A página /pagamento/ mostra o código ao lado do nome da empresa autenticada.
+  Use apenas essa empresa no começo. Para mais empresas, separar códigos por vírgula. Não há opção de liberar todas por padrão.
+
+PAYMENT_TERMS_URL
+  URL HTTPS dos termos da contratação aprovados por você, incluindo condições do plano, cancelamento, estorno e contato de suporte.
+  A URL precisa corresponder ao documento versionado publicado no manifesto do servidor. Versão publicada: manual-v1-2026-11-01. Para a prévia, use exatamente:\n  https://deploy-preview-11--famous-marigold-4e370d.netlify.app/termos/versoes/manual-v1-2026-11-01.html
+
+NO MERCADO PAGO
+1. Escolha a aplicação e as credenciais de PRODUÇÃO.
+2. Cadastre o Webhook de pagamentos para:
+   https://ENDERECO_AUTORIZADO/.netlify/functions/mercadopago-live-webhook
+3. Copie a assinatura secreta exclusivamente para a variável privada no Netlify.
+4. Em Administração → Pagamentos → Pagamentos reais, use Conferir conexão de produção. Isso consulta a conta e não cria cobrança.
+5. Somente depois, ative MERCADO_PAGO_LIVE_ENABLED=true e faça novo deploy.
+
+PRIMEIRA COBRANÇA CONTROLADA
+- Antes de pagar, confira empresa, plano, preço, prazo e termos em /pagamento/.
+- O checkbox autoriza pagamento REAL avulso; não existe débito automático.
+- Gerar o checkout ainda não cobra. Abrir o link leva ao Mercado Pago, onde o comprador decide pagar.
+- Após pagar, volte e use Conferir pagamento ou aguarde o Webhook. O servidor confere modo real, recebedor, referência, moeda e valor antes de liberar o período.
+- Confira o novo período e o histórico real na administração. O histórico de teste permanece separado.
+- Não repita o pagamento em caso de dúvida; confira a operação anterior primeiro.
+- Uma preparação de resultado incerto fica para revisão, sem criar outro checkout automaticamente.
+
+ESTORNO / CONTESTAÇÃO
+O estorno é realizado no painel do Mercado Pago. Este sistema não inicia devoluções automaticamente. A confirmação de estorno integral, parcial ou contestação suspende o período vinculado ao pagamento, sem atingir um período posterior pago por outra operação. O responsável continua podendo entrar na área de pagamento. Operações duplicadas são sinalizadas para revisão; não prolongam o plano automaticamente.
+
+DESATIVAR NOVOS CHECKOUTS
+Mude MERCADO_PAGO_LIVE_ENABLED=false e publique a configuração. Preserve o token e a assinatura do Webhook para continuar recebendo confirmações e estornos de pagamentos já existentes.
+
+REFERÊNCIAS OFICIAIS
+https://www.mercadopago.com.br/developers/pt/reference/online-payments/checkout-pro-preferences/overview
+https://www.mercadopago.com.br/developers/pt/reference/online-payments/checkout-pro-preferences/create-preference/post
+https://www.mercadopago.com.br/developers/pt/docs/links-and-debts/additional-content/your-integrations/notifications/webhooks?scope=prod
