@@ -4,7 +4,7 @@ export function applyAccessStartupDeadline(html){
  if(start<marker.length||html[start]!=='"')throw Error('Aplicação não encontrada.');
  let end=start+1;for(;end<html.length;end++){if(html[end]==='\\'){end++;continue;}if(html[end]==='"'){end++;break;}}
  let shell=html.slice(end);
- if(shell.includes('// ACCESS_STARTUP_DEADLINE_V8'))return html;
+ if(shell.includes('// ACCESS_STARTUP_DEADLINE_V8'))return optimizeCachedStartup(html);
  const helper=readFileSync(new URL('../public/access-startup-deadline.mjs',import.meta.url),'utf8').replaceAll('export ','');
  const a=shell.indexOf('async function abrirSessaoV492('),b=shell.indexOf('\nfunction falhaEntradaV492',a);
  if(a<0||b<0)throw Error('Validação inicial da empresa não encontrada.');
@@ -26,5 +26,26 @@ export function applyAccessStartupDeadline(html){
  cached=cached.replace("['unavailable','failed-precondition']","['unavailable','failed-precondition','deadline-exceeded']");
  cached=cached.replace("const cached=await sdk.getDocFromCache(sdk.doc(db,'empresas',empresaId,'acesso','plano'));","const cached=await withAccessDeadline(()=>sdk.getDocFromCache(sdk.doc(db,'empresas',empresaId,'acesso','plano')),'ler a regra de acesso salva');");
  shell=shell.slice(0,c)+cached+shell.slice(d);
- return (html.slice(0,end)+shell).replace(/Acesso offline • revisão [4567]/,'Acesso offline • revisão 8');
+ return optimizeCachedStartup((html.slice(0,end)+shell).replace(/Acesso offline • revisão [4567]/,'Acesso offline • revisão 8'));
+}
+function optimizeCachedStartup(html){
+ const marker='const TEMPLATE=',start=html.indexOf(marker)+marker.length;let end=start+1;
+ for(;end<html.length;end++){if(html[end]==='\\'){end++;continue;}if(html[end]==='"'){end++;break;}}
+ let shell=html.slice(end);if(shell.includes('// CACHED_ACCESS_HANDOFF_V9'))return html;
+ const a=shell.indexOf('async function lerVinculoOffline('),b=shell.indexOf('window.__smValidarVinculoOffline=',a);
+ if(a<0||b<0)throw Error('Leitura de acesso salvo não encontrada.');
+ let loader=shell.slice(a,b);
+ const target=' const empresaId=registro.empresaId;expected[uid]=empresaId;';
+ if(!loader.includes(target))throw Error('Validação de vínculo salvo mudou.');
+ loader=loader.replace(target,target+`
+ // CACHED_ACCESS_HANDOFF_V9
+ const currentMember=window.__smEmployeeMember?.();
+ if(vinculoParaInterfaceV9?.uid===uid&&vinculoParaInterfaceV9.empresaId===empresaId&&currentMember?.ativo===true&&currentMember.empresaId===empresaId){vinculoParaInterfaceV9=null;return currentMember;}
+ const policyReadV9=withAccessDeadline(()=>sdk.getDocFromCache(sdk.doc(db,'empresas',empresaId,'acesso','plano')),'ler a regra de acesso salva').catch(()=>null);`);
+ const policy="try{const cached=await withAccessDeadline(()=>sdk.getDocFromCache(sdk.doc(db,'empresas',empresaId,'acesso','plano')),'ler a regra de acesso salva');if(cached.exists())cachedPolicy=cached.data();}catch{}";
+ if(!loader.includes(policy))throw Error('Leitura da política salva mudou.');
+ loader=loader.replace(policy,"const cached=await policyReadV9;if(cached?.exists())cachedPolicy=cached.data();");
+ loader=loader.replace(' return dados;',' vinculoParaInterfaceV9={uid,empresaId};\n return dados;');
+ shell=shell.slice(0,a)+'let vinculoParaInterfaceV9=null;\n'+loader+shell.slice(b);
+ return (html.slice(0,end)+shell).replace('Acesso offline • revisão 8','Acesso offline • revisão 9');
 }
