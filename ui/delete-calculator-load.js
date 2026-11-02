@@ -34,12 +34,16 @@ async function apagarCargaAtualV388(){
 
   async function apagarSomenteResumoCarga(){
     exigirEscritaPlano();
-    // The calculator summary includes entries from every destination and unit.
-    const ids=lancamentos.map(x=>x.id);
-    if(!ids.length)return alert('Não há itens no resumo para apagar.');
-    if(!confirm('Apagar somente o resumo da calculadora?\n\nOs registros de estoque, orçamento e carregamentos salvos serão preservados.'))return;
-    await ocultarDoResumo(ids);
-    contadorPacotes=0;sessaoPacotes=crypto.randomUUID();salvarContador();
+    if(typeof lotePacotesEmCurso!=='undefined'&&lotePacotesEmCurso)return alert('Aguarde o término dos lançamentos antes de limpar o resumo.');
+    if(lancamentos.length){
+      if(!confirm('Apagar somente o resumo da calculadora?\n\nOs registros de estoque, orçamento e carregamentos salvos serão preservados.'))return;
+      const anteriores=lancamentos;
+      lancamentos=[];
+      try{save([STORAGE.lancamentos]);}catch(error){lancamentos=anteriores;throw error;}
+      contadorPacotes=0;sessaoPacotes=crypto.randomUUID();salvarContador();
+    }
+    // Redraw even when only stale rows remain in the DOM.
+    renderLancamentosV387();
     try{atualizarPainelPacotes()}catch(e){}
     try{calcPreview()}catch(e){}
     try{pcAtualizarPlanilhaDirecionada()}catch(e){}

@@ -6,7 +6,7 @@ import {applyCalculatorLoadDelete} from '../scripts/calculator-load-delete.mjs';
 const draft=(id,group='current')=>({id,grupoCargaId:group,cargaFluxoV388:true,cargaStatus:'montagem',destino:'carga'});
 function setup(items,visible=items){
  const calls={queue:[],pc:0,render:0,alerts:[],saved:0};
- const c={carregamentos:structuredClone(items),lancamentos:structuredClone(visible),sessaoCargaAtual:'current',contadorPacotes:7,sessaoPacotes:'old',COL:{cargas:'loads'},crypto:{randomUUID:()=> 'next'},confirm:()=>true,alert:m=>calls.alerts.push(m),exigirEscritaPlano(){},document:{getElementById:()=>null},window:{statusEfetivoCargaV589:x=>x.cargaStatus,__v456Local:{setItem(){}}},enfileirarOffline:(...a)=>calls.queue.push(a),save:()=>calls.saved++,sincronizarOfflineOps:async()=>{},salvarContador(){},renderLancamentosV387:()=>calls.render++,atualizarFluxoCargaV388(){},atualizarPainelPacotes(){},calcPreview(){},pcAtualizarPlanilhaDirecionada:()=>calls.pc++};
+ const c={carregamentos:structuredClone(items),lancamentos:structuredClone(visible),sessaoCargaAtual:'current',contadorPacotes:7,sessaoPacotes:'old',COL:{cargas:'loads'},STORAGE:{lancamentos:'summary'},crypto:{randomUUID:()=> 'next'},confirm:()=>true,alert:m=>calls.alerts.push(m),exigirEscritaPlano(){},document:{getElementById:()=>null},window:{statusEfetivoCargaV589:x=>x.cargaStatus,__v456Local:{setItem(){}}},enfileirarOffline:(...a)=>calls.queue.push(a),save:()=>calls.saved++,sincronizarOfflineOps:async()=>{},salvarContador(){},renderLancamentosV387:()=>calls.render++,atualizarFluxoCargaV388(){},atualizarPainelPacotes(){},calcPreview(){},pcAtualizarPlanilhaDirecionada:()=>calls.pc++};
  c.itensGrupoCargaV388=(g,status)=>c.carregamentos.filter(x=>x.cargaFluxoV388&&x.grupoCargaId===g&&x.cargaStatus===status);
  c.itensCargaAtualV388=()=>c.itensGrupoCargaV388(c.sessaoCargaAtual,'montagem');
  c.ocultarDoResumo=async ids=>{c.lancamentos=c.lancamentos.filter(x=>!ids.includes(x.id));};
@@ -21,3 +21,17 @@ test('build replacement is repeatable and refuses unknown source',()=>{const sou
 
 test('clear-summary action handles mixed destinations without deleting saved records or changing load session',async()=>{const visible=[draft('a'),{id:'stock',destino:'estoque1'},{id:'legacy',tipoMedida:'m2'}];const {c,calls}=setup([draft('a')],visible);await c.apagarSomenteResumoCarga();assert.equal(c.lancamentos.length,0);assert.equal(c.carregamentos.length,1);assert.equal(calls.queue.length,0);assert.equal(c.sessaoCargaAtual,'current');assert.equal(calls.pc,1);});
 test('cancel summary clearing preserves every visible entry',async()=>{const {c}=setup([draft('a')]);c.confirm=()=>false;await c.apagarSomenteResumoCarga();assert.equal(c.lancamentos.length,1);});
+
+test('empty source redraws stale rows without alerts, server writes or saved-load changes',async()=>{
+ const {c,calls}=setup([draft('saved')],[]);c.displayedRows=['stale'];c.renderLancamentosV387=()=>{calls.render++;c.displayedRows=Array.from(c.lancamentos);};
+ await c.apagarSomenteResumoCarga();assert.equal(c.displayedRows.length,0);assert.equal(calls.alerts.length,0);assert.equal(calls.queue.length,0);assert.equal(c.carregamentos.length,1);assert.equal(calls.pc,1);
+});
+test('clear-summary writes only its local key and never calls the legacy shared-record hiding function',async()=>{
+ const {c,calls}=setup([draft('a')]);c.ocultarDoResumo=()=>{throw Error('Must not rewrite stock/load records');};
+ c.save=keys=>{assert.equal(keys.length,1);assert.equal(keys[0],'summary');calls.saved++;};
+ await c.apagarSomenteResumoCarga();assert.equal(c.lancamentos.length,0);assert.equal(c.carregamentos.length,1);assert.equal(calls.saved,1);assert.equal(calls.queue.length,0);assert.equal(calls.render,1);
+});
+test('failed local persistence restores the original calculator summary',async()=>{
+ const {c}=setup([draft('a')]);c.save=()=>{throw Error('disk full');};
+ await assert.rejects(c.apagarSomenteResumoCarga(),/disk full/);assert.equal(c.lancamentos.length,1);assert.equal(c.carregamentos.length,1);
+});
