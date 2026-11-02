@@ -1,4 +1,4 @@
-import {createCompanyManagement} from './company-management.mjs?v=free-trial-limit-1';
+import {createCompanyManagement} from './company-management.mjs?v=owner-exempt-label-1';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js';
 import { initializeAuth, browserLocalPersistence, inMemoryPersistence, onAuthStateChanged, signInWithEmailAndPassword, signOut, sendEmailVerification } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
 
@@ -45,7 +45,7 @@ function render(){
   });
   $('subscription-simulation').hidden=true;
   $('total-companies').textContent=state.companies.length;
-  const active=state.subscriptions.filter(s=>s.status==='active');$('total-active').textContent=active.length;
+  const active=state.subscriptions.filter(s=>s.status==='active'&&!state.companies.some(c=>(c.id===s.empresaId||c.empresaId===s.empresaId)&&c.ownerExempt===true));$('total-active').textContent=active.length;
   $('total-monthly').textContent=money(Math.round(active.reduce((sum,s)=>{const p=state.plans.find(p=>p.id===s.planId);return sum+(p?(p.interval==='yearly'?p.amountCents/12:p.amountCents):0);},0)));
   companyManagement.render(state);
   list('contract-requests-list',[...(state.contractRequests||[])].sort((a,b)=>b.requestedAt-a.requestedAt),(host,r)=>{
@@ -96,7 +96,11 @@ function render(){
     }
   });
   const labels={trial:'Em teste',active:'Ativa',past_due:'Pendente',canceled:'Cancelada'};
-  list('subscriptions-list',state.subscriptions,(host,s)=>record(host,state.companies.find(c=>c.id===s.empresaId)?.name||s.empresaId,s.status==='trial'?companyManagement.trialLabel(s):state.plans.find(p=>p.id===s.planId)?.name||'Sem plano',(labels[s.status]||s.status)+(s.renewalPreference==='automatic'?' • Renovação automática: preferência de simulação':' • Renovação manual')+(s.testPayment?.status==='approved'?' • Pagamento de teste validado':'')));
+  list('subscriptions-list',state.subscriptions,(host,s)=>{
+    const company=state.companies.find(c=>c.id===s.empresaId||c.empresaId===s.empresaId);
+    if(company?.ownerExempt===true){record(host,company.name,'Isenta de cobrança — sem vencimento','Não precisa renovar');return;}
+    record(host,company?.name||s.empresaId,s.status==='trial'?companyManagement.trialLabel(s):state.plans.find(p=>p.id===s.planId)?.name||'Sem plano',(labels[s.status]||s.status)+(s.renewalPreference==='automatic'?' • Renovação automática: preferência de simulação':' • Renovação manual')+(s.testPayment?.status==='approved'?' • Pagamento de teste validado':''));
+  });
   for(const [id,items]of [['subscription-company',state.companies],['subscription-plan',state.plans],['charge-company',state.companies]]){
     const select=$(id),current=select.value;select.replaceChildren(new Option('Selecione…',''));
     items.filter(item=>id!=='subscription-plan'||item.active!==false).forEach(item=>select.add(new Option(item.name+(id==='subscription-plan'?' — '+money(item.amountCents)+(item.interval==='yearly'?' por ano':' por mês'):''),item.id)));select.value=current;

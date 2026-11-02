@@ -24,10 +24,11 @@ export function createCompanyManagement({document,api,onChange,status,confirmAct
       const data=await api({action:'company.detail',empresaId:id}),company=data.company,subscription=data.subscription,profile=data.profile||{};
       host.replaceChildren();
       host.append(field('Empresa',profile.nome||company.name),field('CNPJ',profile.cnpj),field('E-mail',profile.email||company.email),
-        field('Telefone',profile.telefone),field('Cadastro',date(company.createdAt)),field('Situação',trialLabel(subscription)),
+        field('Telefone',profile.telefone),field('Cadastro',date(company.createdAt)),field('Situação',company.ownerExempt===true?'Isenta de cobrança — sem vencimento':trialLabel(subscription)),
         field('Usuários ativos',data.members.filter(m=>m.ativo).length+' de '+data.members.length+(data.membersTruncated?' (lista parcial)':'')));
       const accessState=billingAccessState(data.accessPolicy);host.append(field('Fase do plano',({active:'Uso normal',grace:'Tolerância',readonly:'Consultas e exportações',settings:'Somente Configurações / Planos'})[accessState.phase]));
-      const plan=state.plans.find(p=>p.id===subscription?.planId);if(plan)host.append(field('Plano',plan.name));
+      if(company.ownerExempt===true)host.append(field('Cobrança','Isenção ativa. Não é necessário renovar para continuar.'));
+      const plan=state.plans.find(p=>p.id===subscription?.planId);if(plan)host.append(field(company.ownerExempt===true?'Último plano registrado (histórico)':'Plano',plan.name));
       const access=node('form',null,'management-form'),suspended=company.accessStatus==='suspended';
       access.append(node('h3','Acesso ao sistema'));
       access.append(node('p',suspended?'O acesso online desta empresa está suspenso.':'A empresa pode acessar enquanto seu usuário estiver ativo.'));
@@ -67,8 +68,8 @@ export function createCompanyManagement({document,api,onChange,status,confirmAct
     if(!companies.length){host.append(node('p',term?'Nenhuma empresa encontrada.':'Nenhum cadastro por enquanto.'));return;}
     for(const company of companies){
       const card=node('section',null,'company-card'),title=node('div',null,'company-card-title');title.append(node('h3',company.name));
-      const suspended=company.accessStatus==='suspended';title.append(node('span',suspended?'Suspensa':'Ativa na plataforma',suspended?'badge suspended':'badge'));card.append(title);
-      const subscription=state.subscriptions.find(s=>s.empresaId===company.empresaId||s.id===company.empresaId);card.append(node('p',trialLabel(subscription)));
+      const suspended=company.accessStatus==='suspended';title.append(node('span',suspended?'Suspensa':company.ownerExempt===true?'Isenta de cobrança':'Ativa na plataforma',suspended?'badge suspended':'badge'));card.append(title);
+      const subscription=state.subscriptions.find(s=>s.empresaId===company.empresaId||s.id===company.empresaId);card.append(node('p',company.ownerExempt===true?'Isenção ativa — acesso sem vencimento de plano':trialLabel(subscription)));
       const button=node('button','Consultar e gerenciar','secondary'),panel=node('div',null,'company-detail');panel.hidden=true;
       button.type='button';button.setAttribute('aria-expanded','false');
       button.onclick=async()=>{panel.hidden=!panel.hidden;button.setAttribute('aria-expanded',String(!panel.hidden));if(!panel.hidden)await detail(company.empresaId||company.id,panel);};
@@ -78,4 +79,3 @@ export function createCompanyManagement({document,api,onChange,status,confirmAct
   $('company-search')?.addEventListener('input',renderList);
   return {render(next){state=next;renderList();},trialLabel};
 }
-
