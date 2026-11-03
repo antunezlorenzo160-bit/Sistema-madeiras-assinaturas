@@ -1,3 +1,4 @@
+import {applyReadableCopy} from './copy-readable-build.mjs';
 import {applyInconsistentLoadArchive} from './archive-inconsistent-load-build.mjs';
 import {applyAccessStartupDeadline} from './access-startup-build.mjs';
 import {applyLoadDeductionSafety} from './load-deduction-build.mjs';
@@ -21,7 +22,7 @@ export function buildCompanyAccess(input=new URL('../public/index.html',import.m
   if(!app.includes(target)||app.indexOf(target)!==app.lastIndexOf(target))throw Error('Confirmação de acesso não encontrada.');
   app=app.replace(target,()=>`// COMPANY_ACCESS_V707\n${helper}\nacompanharAcessoEmpresaV707();\n${target}`);
  }
- writeFileSync(file,applyInconsistentLoadArchive(applyAccessStartupDeadline(applyLoadDeductionSafety(applyEmployeeAccess(applyBillingAccess(html.slice(0,start)+JSON.stringify(app).replaceAll('</','<\\/')+html.slice(end)))))));
+ writeFileSync(file,applyReadableCopy(applyInconsistentLoadArchive(applyAccessStartupDeadline(applyLoadDeductionSafety(applyEmployeeAccess(applyBillingAccess(html.slice(0,start)+JSON.stringify(app).replaceAll('</','<\\/')+html.slice(end))))))));
  console.log('Aviso de teste e acompanhamento de suspensão por vínculo ativo preparados.');
 }
 if(process.argv[1]&&pathToFileURL(resolve(process.argv[1])).href===import.meta.url)buildCompanyAccess(process.argv[2]);
