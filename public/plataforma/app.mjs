@@ -1,4 +1,4 @@
-import {createCompanyManagement} from './company-management.mjs?v=owner-exempt-label-1';
+import {createCompanyManagement} from './company-management.mjs?v=free-trial-limit-1';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js';
 import { initializeAuth, browserLocalPersistence, inMemoryPersistence, onAuthStateChanged, signInWithEmailAndPassword, signOut, sendEmailVerification } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
 
@@ -38,14 +38,14 @@ function preview(){
   $('wm-preview').style.width=Math.round(Number($('wm-width').value)/210*100)+'%';
 }
 function render(){
- $('live-payment-config').textContent=state.livePaymentConfiguration?.ready?'Configuração de produção preenchida. Somente empresas autorizadas no servidor podem gerar pagamentos reais.':'Pagamentos reais ainda desativados. Falta configurar: '+(state.livePaymentConfiguration?.missing||[]).join(', ')+'.';
+ $('live-payment-config').textContent=state.livePaymentConfiguration?.ready?'Configuração de produção preenchida. Somente empresas autorizadas no servidor podem gerar pagamentos.':'Pagamentos ainda desativados. Falta configurar: '+(state.livePaymentConfiguration?.missing||[]).join(', ')+'.';
   list('live-charges-list',[...(state.liveCharges||[])].sort((a,b)=>b.createdAt-a.createdAt),(host,charge)=>{
-    record(host,(state.companies.find(company=>company.id===charge.empresaId)?.name||charge.empresaId)+' • '+money(charge.amountCents),'Pagamento real • '+charge.status+(charge.duplicatePaymentReview?' • Pagamento adicional para conferir':'')+(charge.paymentId?' • Operação '+charge.paymentId:''),charge.periodApplied?'Período aplicado':'');
-    const verify=document.createElement('button');verify.type='button';verify.className='secondary';verify.textContent='Conferir pagamento real';verify.onclick=async()=>{verify.disabled=true;try{const result=await api({action:'payment.live.verify',chargeId:charge.id});await refresh(true);status('Pagamento real: '+result.status);}catch(error){status(error.message,true);}finally{verify.disabled=false;}};host.append(verify);
+    record(host,(state.companies.find(company=>company.id===charge.empresaId)?.name||charge.empresaId)+' • '+money(charge.amountCents),'Pagamento • '+charge.status+(charge.duplicatePaymentReview?' • Pagamento adicional para conferir':'')+(charge.paymentId?' • Operação '+charge.paymentId:''),charge.periodApplied?'Período aplicado':'');
+    const verify=document.createElement('button');verify.type='button';verify.className='secondary';verify.textContent='Conferir pagamento';verify.onclick=async()=>{verify.disabled=true;try{const result=await api({action:'payment.live.verify',chargeId:charge.id});await refresh(true);status('Pagamento: '+result.status);}catch(error){status(error.message,true);}finally{verify.disabled=false;}};host.append(verify);
   });
   $('subscription-simulation').hidden=true;
   $('total-companies').textContent=state.companies.length;
-  const active=state.subscriptions.filter(s=>s.status==='active'&&!state.companies.some(c=>(c.id===s.empresaId||c.empresaId===s.empresaId)&&c.ownerExempt===true));$('total-active').textContent=active.length;
+  const active=state.subscriptions.filter(s=>s.status==='active');$('total-active').textContent=active.length;
   $('total-monthly').textContent=money(Math.round(active.reduce((sum,s)=>{const p=state.plans.find(p=>p.id===s.planId);return sum+(p?(p.interval==='yearly'?p.amountCents/12:p.amountCents):0);},0)));
   companyManagement.render(state);
   list('contract-requests-list',[...(state.contractRequests||[])].sort((a,b)=>b.requestedAt-a.requestedAt),(host,r)=>{
@@ -55,7 +55,7 @@ function render(){
     if(current?.mode==='test'&&current.source==='payment_test'&&current.amountCents>0&&Date.now()<current.endsAt){
       const simulate=document.createElement('button');simulate.type='button';simulate.className='secondary';simulate.textContent='Simular vencimento para testar renovação';
       simulate.onclick=async()=>{
-        if(!window.confirm('Simular o vencimento APENAS do período de teste de '+(r.companyName||r.empresaId)+'? As datas originais e o pagamento anterior ficam no histórico. O acesso da empresa será preservado. Nenhuma cobrança real será feita.'))return;
+        if(!window.confirm('Simular o vencimento APENAS do período de teste de '+(r.companyName||r.empresaId)+'? As datas originais e o pagamento anterior ficam no histórico. O acesso da empresa será preservado. Nenhuma cobrança será feita.'))return;
         simulate.disabled=true;
         try{await api({action:'contract.period.simulate_paid_expiry',empresaId:r.empresaId,expectedPeriodId:current.id,simulationOnly:true});await refresh(true);status('Vencimento de teste simulado. Abra Configurações → Planos, atualize e registre uma nova escolha com renovação manual. Depois gere outro pagamento de teste.');}
         catch(error){status(error.message,true);}finally{simulate.disabled=false;}
@@ -70,7 +70,7 @@ function render(){
     }
     if(!current||Date.now()>=current.endsAt){
       const start=document.createElement('button');start.type='button';start.className='secondary';start.textContent='Iniciar período de teste com preço garantido';
-      start.onclick=async()=>{start.disabled=true;try{await api({action:'contract.period.start',empresaId:r.empresaId,expectedRequestedAt:r.requestedAt});await refresh(true);status('Período de teste registrado. O preço está garantido até o vencimento. Nenhuma cobrança real ou alteração de acesso foi realizada.');}catch(error){status(error.message,true);}finally{start.disabled=false;}};host.append(start);
+      start.onclick=async()=>{start.disabled=true;try{await api({action:'contract.period.start',empresaId:r.empresaId,expectedRequestedAt:r.requestedAt});await refresh(true);status('Período de teste registrado. O preço está garantido até o vencimento. Nenhuma cobrança ou alteração de acesso foi realizada.');}catch(error){status(error.message,true);}finally{start.disabled=false;}};host.append(start);
     }
 
   });
@@ -96,11 +96,7 @@ function render(){
     }
   });
   const labels={trial:'Em teste',active:'Ativa',past_due:'Pendente',canceled:'Cancelada'};
-  list('subscriptions-list',state.subscriptions,(host,s)=>{
-    const company=state.companies.find(c=>c.id===s.empresaId||c.empresaId===s.empresaId);
-    if(company?.ownerExempt===true){record(host,company.name,'Isenta de cobrança — sem vencimento','Não precisa renovar');return;}
-    record(host,company?.name||s.empresaId,s.status==='trial'?companyManagement.trialLabel(s):state.plans.find(p=>p.id===s.planId)?.name||'Sem plano',(labels[s.status]||s.status)+(s.renewalPreference==='automatic'?' • Renovação automática: preferência de simulação':' • Renovação manual')+(s.testPayment?.status==='approved'?' • Pagamento de teste validado':''));
-  });
+  list('subscriptions-list',state.subscriptions,(host,s)=>record(host,state.companies.find(c=>c.id===s.empresaId)?.name||s.empresaId,s.status==='trial'?companyManagement.trialLabel(s):state.plans.find(p=>p.id===s.planId)?.name||'Sem plano',(labels[s.status]||s.status)+(s.renewalPreference==='automatic'?' • Renovação automática: preferência de simulação':' • Renovação manual')+(s.testPayment?.status==='approved'?' • Pagamento de teste validado':'')));
   for(const [id,items]of [['subscription-company',state.companies],['subscription-plan',state.plans],['charge-company',state.companies]]){
     const select=$(id),current=select.value;select.replaceChildren(new Option('Selecione…',''));
     items.filter(item=>id!=='subscription-plan'||item.active!==false).forEach(item=>select.add(new Option(item.name+(id==='subscription-plan'?' — '+money(item.amountCents)+(item.interval==='yearly'?' por ano':' por mês'):''),item.id)));select.value=current;
@@ -108,8 +104,8 @@ function render(){
   $('webhook-status').textContent=state.webhookConfigured?'Notificações automáticas configuradas. Novas aprovações de teste serão validadas pelo servidor. Atualize a lista para consultar.':'Confirmação automática aguardando configuração do webhook. Use Conferir pagamento de teste para consultar uma cobrança.';
   $('charge-submit').disabled=!state.testConfigured;
   $('payment-connection').textContent=state.testConfigured?'Credencial de teste cadastrada. O próximo checkout valida a conexão.':'Configure as credenciais de teste no servidor para habilitar.';
-  $('provider-status').textContent=state.livePaymentConfiguration?.ready?'Pagamentos reais habilitados':state.testConfigured?'Ambiente de teste configurado':'Aguardando configuração';
-  $('provider-text').textContent=state.livePaymentConfiguration?.ready?'Pagamentos reais disponíveis para as empresas autorizadas, com renovação manual.':state.testConfigured?'O ambiente de teste está configurado. A configuração de pagamentos reais está incompleta.':'Configure a conexão para receber pagamentos.';
+  $('provider-status').textContent=state.livePaymentConfiguration?.ready?'Pagamentos habilitados':state.testConfigured?'Ambiente de teste configurado':'Aguardando configuração';
+  $('provider-text').textContent=state.livePaymentConfiguration?.ready?'Pagamentos disponíveis para as empresas autorizadas, com renovação manual.':state.testConfigured?'O ambiente de teste está configurado. A configuração de pagamentos está incompleta.':'Configure a conexão para receber pagamentos.';
   list('charges-list',[...(state.charges||[])].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)),(host,c)=>{
     record(host,money(c.amountCents),({test_payment_approved:'Pagamento de teste aprovado e validado no Mercado Pago.',test_free_period:'Período gratuito de teste registrado, sem pagamento.',checkout_creating:'Preparando checkout de teste.',checkout_failed:'Falha ao preparar o checkout. O responsável pode tentar novamente.'})[c.status]||'Checkout de teste criado. Pagamento ainda não confirmado na plataforma.');
     if(c.status==='test_checkout_created'){
@@ -221,7 +217,7 @@ $('subscription-simulate').onclick=()=>{
     'Situação atual: '+current,
     'Renovação escolhida: '+($('subscription-renewal').value==='automatic'?'Automática — somente simulação, sem débito agendado.':'Manual — novo pagamento a cada '+(plan.interval==='yearly'?'ano.':'mês.')),
     ...(plan.interval==='yearly'?['Pagamento único pelos 12 meses; não é parcelamento mensal.']:[]),
-    'Cobranças reais e renovação automática permanecem desativadas.'
+    'Cobranças e renovação automática permanecem desativadas.'
   ].join('\n');
   box.hidden=false;status('Simulação pronta. Nenhuma alteração foi salva.');
 };

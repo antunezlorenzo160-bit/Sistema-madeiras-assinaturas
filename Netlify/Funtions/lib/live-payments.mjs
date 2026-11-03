@@ -25,7 +25,7 @@ export function liveConfiguration(env=process.env,termsDocument=CONTRACT_TERMS){
  return {ready:!missing.length,missing,origin:site?.origin||'',termsUrl:terms?.href||'',termsReady,termsVersion:termsDocument.version,termsContentId:termsDocument.contentId,companyPolicy,companies,token:env.MERCADO_PAGO_LIVE_ACCESS_TOKEN,collectorId:env.MERCADO_PAGO_LIVE_COLLECTOR_ID,secret:env.MERCADO_PAGO_LIVE_WEBHOOK_SECRET};
 }
 function companyPaymentsAllowed(config,empresaId){return valid(empresaId)&&(config.companyPolicy==='registered'||config.companies.includes(empresaId));}
-function enabled(config,empresaId){if(!config.ready||!companyPaymentsAllowed(config,empresaId))throw new PlatformError(503,'Pagamento real ainda não habilitado para esta empresa.');}
+function enabled(config,empresaId){if(!config.ready||!companyPaymentsAllowed(config,empresaId))throw new PlatformError(503,'Pagamento ainda não habilitado para esta empresa.');}
 async function provider(config,path,body,request=fetch,method){
  const response=await request('https://api.mercadopago.com'+path,{method:method||(body?'POST':'GET'),headers:{Authorization:'Bearer '+config.token,'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(15000)});
  if(!response.ok)throw new PlatformError(502,'O Mercado Pago não confirmou a operação. Consulte o suporte antes de tentar outro pagamento.');return response.json();
@@ -40,10 +40,10 @@ export async function liveOverview(db,identity,config){
  return {company,ready:config.ready&&companyPaymentsAllowed(config,company.empresaId),missing:config.missing,termsUrl:config.termsUrl,termsVersion:config.termsVersion,termsContentId:config.termsContentId,termsReady:config.termsReady,period:period.exists?period.data():null,checkout:linked?.exists&&linked.data().empresaId===company.empresaId?publicCharge(linked.data(),linked.id):null,offers:catalog.docs.filter(d=>d.data().active!==false&&Number.isSafeInteger(d.data().amountCents)&&d.data().amountCents>0&&d.data().amountCents<=100000000&&['monthly','yearly'].includes(d.data().interval)).map(d=>({id:d.id,name:d.data().name,amountCents:d.data().amountCents,interval:d.data().interval,revision:Number(d.data().updatedAt||0)}))};
 }
 export async function createLiveCheckout({db,identity,input,config,origin,request=fetch,now=Date.now()}){
- if(!valid(input.planId)||input.acceptRealPayment!==true||input.renewalPreference!=='manual'||input.termsVersion!==config.termsVersion||input.termsContentId!==config.termsContentId)throw new PlatformError(400,'Confira o plano, os termos e a autorização de pagamento real avulso.');
+ if(!valid(input.planId)||input.acceptRealPayment!==true||input.renewalPreference!=='manual'||input.termsVersion!==config.termsVersion||input.termsContentId!==config.termsContentId)throw new PlatformError(400,'Confira o plano, os termos e a autorização de pagamento avulso.');
  const company=await companyContext(db,identity);enabled(config,company.empresaId);
  if(config.termsReady!==true)throw new PlatformError(503,'Os termos ainda estão em revisão.');
- if(origin!==config.origin)throw new PlatformError(409,'Abra o endereço autorizado para pagamentos reais.');
+ if(origin!==config.origin)throw new PlatformError(409,'Abra o endereço autorizado para pagamentos.');
  await seller(config,request);
  const reservation=await db.runTransaction(async tx=>{
   const currentCompany=await companyContext(db,identity,ref=>tx.get(ref));if(currentCompany.empresaId!==company.empresaId)throw new PlatformError(409,'O vínculo da conta mudou. Atualize a página.');
@@ -52,7 +52,7 @@ export async function createLiveCheckout({db,identity,input,config,origin,reques
   const p=plan.exists?plan.data():null,old=period.exists?period.data():null;
   if(!p||p.active===false||!Number.isSafeInteger(p.amountCents)||p.amountCents<=0||p.amountCents>100000000||!['monthly','yearly'].includes(p.interval))throw new PlatformError(409,'Plano indisponível.');
   if(input.expectedAmountCents!==p.amountCents||input.expectedInterval!==p.interval||input.revision!==Number(p.updatedAt||0))throw new PlatformError(409,'O plano mudou. Atualize e confira o preço.');
-  if(old?.mode==='live'&&!old.revokedAt&&now<old.endsAt)throw new PlatformError(409,'Seu plano real ainda está vigente. Aguarde o vencimento para renovar.');
+  if(old?.mode==='live'&&!old.revokedAt&&now<old.endsAt)throw new PlatformError(409,'Seu plano ainda está vigente. Aguarde o vencimento para renovar.');
   const id='live-'+createHash('sha256').update(JSON.stringify([company.empresaId,input.planId,p.amountCents,p.interval,Number(p.updatedAt||0),old?.id||null,config.termsVersion,config.termsContentId])).digest('hex').slice(0,48),ref=db.doc(`${root}/live_charges/${id}`);
   const existing=await tx.get(ref),other=lock.exists&&lock.data().chargeId!==id?await tx.get(db.doc(`${root}/live_charges/${lock.data().chargeId}`)):null;
   if(other?.exists&&['checkout_creating','checkout_ready','checkout_review','pending','in_process'].includes(other.data().status))throw new PlatformError(409,'Já existe um pagamento em aberto. Confira o pagamento anterior antes de escolher outro plano.');
