@@ -85,3 +85,10 @@ Adicionado painel recolhível “Gráficos de estoque e movimentação” no top
 Transferências são mostradas à parte, sem duplicar entradas/saídas; ajustes e secagem não são novas entradas. Datas/quantidades inválidas são sinalizadas. Estoque usa lançamentos físicos remanescentes; não calcula saldo a partir de movimentos e preserva valores negativos para conferência. Sem bibliotecas externas, novas escritas, endpoints ou coleções. Usa a mesma leitura sob demanda do histórico somente ao abrir o painel; mantém as permissões de Estoque e o visual antigo da movimentação.
 
 Seis testes de dados e quatro de interação cobrem filtros, somas, unidades, transferências, datas, madeira verde, ausência de permissão, atualização/offline, seleção de período e preservação dos registros. Build completo e scripts passaram; histórico original comparado intacto. Testes existentes de preços/planilhas/PDF/entrada de funcionário passaram. Sem teste visual do navegador local, indisponível neste ambiente; conferir celular/PC na prévia. Produção não alterada.
+
+
+## Gráficos no celular — compactação V721
+
+Print mostrou barras e valores de estoque avançando além da largura visível. Painel agora limita sua largura e contém o tamanho intrínseco das tabelas/SVG; tela fixa de Estoque recebe largura limitada no celular. Barras de estoque mais finas e intervalos menores, nomes e valores em duas colunas que cabem na tela. Tabela do estoque ajustada à largura do celular. Gráfico de movimentos usa a largura disponível, reduz a quantidade de rótulos no eixo e mantém todos os períodos/valores, sem cortar dados para caber. Redimensionamento atualiza o desenho. Computador mantém o espaçamento normal.
+
+Testes de dados/interação e caso de93períodos em310px passaram (todos os períodos preservados e barras dentro do desenho). Build/scripts verificados. Conferir visual no celular na prévia; navegador visual local permanece indisponível. Nenhuma mudança nos dados ou na versão oficial.

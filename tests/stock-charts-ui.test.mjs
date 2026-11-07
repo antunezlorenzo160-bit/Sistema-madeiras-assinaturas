@@ -28,3 +28,10 @@ test('selecting a chart period opens its numeric table and reports that period',
  const key=nodes.scToV720.value;nodes.stockChartsV720.handlers.click({target:{closest:()=>({dataset:{chartPeriod:key}})}});
  assert.equal(nodes.scMovementDetailsV720.open,true);assert.match(nodes.scSelectedV720.textContent,/Entradas: 3,0000 m³/);assert.match(nodes.scMovementV720.innerHTML,/sc-period sc-selected/);
 });
+
+test('narrow movement chart keeps every day while fitting the available phone width',()=>{
+ const {c}=setup();const rows=Array.from({length:93},(_,i)=>({key:new Date(Date.UTC(2026,10,1+i)).toISOString().slice(0,10),in:i+1,out:i/2}));
+ const svg=c.movementChartMarkupV720(rows,'m3',310);assert.match(svg,/viewBox="0 0 308 210"/);assert.equal((svg.match(/data-chart-period=/g)||[]).length,93);
+ const rectangles=[...svg.matchAll(/<rect class="sc-(?:in|out)" x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)"/g)];assert.equal(rectangles.length,186);
+ for(const [,x,y,width,height] of rectangles){assert(Number(x)>=52);assert(Number(x)+Number(width)<=300);assert(Number(y)>=14.99);assert(Number(height)>=0);}
+});
