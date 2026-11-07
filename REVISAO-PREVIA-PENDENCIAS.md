@@ -76,3 +76,12 @@ Funcionário já entra pelo sistema, mas a página de convite tentava resgatar n
 ## Movimentação — retorno ao visual anterior
 
 Usuário rejeitou a nova organização por dia e confirmou voltar ao visual anterior, separado por espécie e espessura. Removidos do build o renderizador novo, seus filtros, a interceptação da busca e o CSS que ocultava os indicadores originais. Renderizadores, seleção de estoque/unidade/espessura e busca originais permanecem como em main. Dados históricos não foram modificados; demais ajustes de PDFs, planilhas, preços e funcionário preservados. Somente prévia.
+
+
+## Gráficos de estoque e movimentação
+
+Adicionado painel recolhível “Gráficos de estoque e movimentação” no topo de Estoque/Movimentação. Comparação por dia/mês de entradas e saídas, filtros de datas, estoque, espécie/produto e unidade (m³ madeira, m², metro linear, granel). Gráfico de saldo atual por espécie/produto, com madeira seca e verde separadas. Datas só filtram movimentações, nunca simulam saldo histórico. Tabelas numéricas e seleção de período no gráfico permitem conferir os valores.
+
+Transferências são mostradas à parte, sem duplicar entradas/saídas; ajustes e secagem não são novas entradas. Datas/quantidades inválidas são sinalizadas. Estoque usa lançamentos físicos remanescentes; não calcula saldo a partir de movimentos e preserva valores negativos para conferência. Sem bibliotecas externas, novas escritas, endpoints ou coleções. Usa a mesma leitura sob demanda do histórico somente ao abrir o painel; mantém as permissões de Estoque e o visual antigo da movimentação.
+
+Seis testes de dados e quatro de interação cobrem filtros, somas, unidades, transferências, datas, madeira verde, ausência de permissão, atualização/offline, seleção de período e preservação dos registros. Build completo e scripts passaram; histórico original comparado intacto. Testes existentes de preços/planilhas/PDF/entrada de funcionário passaram. Sem teste visual do navegador local, indisponível neste ambiente; conferir celular/PC na prévia. Produção não alterada.
