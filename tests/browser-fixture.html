@@ -1,0 +1,15 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="/ui/preview-layout.css"><style>body{font-family:Arial;color:#18372d}table{border-collapse:collapse}td,th{border-bottom:1px solid #ddd}#original{display:none}h1{font-size:16pt}#printAreaCustom{width:190mm}.v421-empresa-documento{font-size:9pt}.stats{display:flex;gap:2mm}.stat{border:1px solid #bbb}.stat small,.stat strong{display:block} .table-wrap{width:100%}@media print{body{margin:0}#original{display:none!important}}</style></head><body class="custom-print"><div id="original"></div><div id="printAreaCustom"></div><script type="module">
+import {compactPrintClone} from '/public/compact-documents.mjs';
+const rows=await (await fetch('/tests/fixtures/compact77.json')).json();
+const original=document.getElementById('original');let html='<div id="resumoCalculadoraExport"><h2>Resumo dos lançamentos</h2><div class="stats"><div class="stat"><small>Peças</small><strong>451</strong></div><div class="stat"><small>Volume total</small><strong>15,4392 m³</strong></div><div class="stat"><small>Lançamentos</small><strong>77</strong></div></div><div class="table-wrap"><table><tbody id="tbLancamentos">';let last='';
+for(const r of rows){const key=r.especie+r.esp+r.comp;if(key!==last){html+='<tr class="grupo-especie-titulo"><td colspan="6">'+r.especie+' — Esp. '+r.esp+' cm • Comp. '+r.comp+' m</td></tr><tr class="grupo-especie-head"><td>pç</td><td>esp.</td><td>larg.</td><td>comp.</td><td class="resumo-coluna-espacadora"></td><td>volume</td></tr>';last=key;}
+html+='<tr class="linha-excluir-pecas"><td>'+r.qtd+'pç</td><td>'+r.esp+' cm</td><td>'+r.larg+' cm</td><td>'+r.comp+' m</td><td class="resumo-coluna-espacadora"></td><td>'+r.volume+' m³</td></tr>';}
+original.innerHTML=html+'</tbody></table></div></div>';
+const before=original.innerHTML;const clone=original.firstElementChild.cloneNode(true);
+compactPrintClone(clone);const once=clone.innerHTML;compactPrintClone(clone);
+const print=document.getElementById('printAreaCustom');print.innerHTML='<h1>Resumo dos lançamentos</h1><p>01/11/2026, 23:45:41</p><div class="v421-empresa-documento">Emitente: Empresa de demonstração · Proposta de layout</div>';print.append(clone);
+const trs=[...clone.querySelectorAll('tbody tr')];const pieces=trs.reduce((sum,tr)=>sum+parseInt(tr.cells[0].textContent),0);
+const output=trs.map(tr=>[...tr.cells].map(c=>c.textContent));const expected=rows.map(r=>[r.qtd+'pç',r.esp+' cm',r.larg+' cm',r.comp+' m',r.volume+' m³']);
+if(JSON.stringify(output)!==JSON.stringify(expected))throw Error('Itens alterados');
+window.testResult={rows:trs.length,pieces,before,after:original.innerHTML,copySame:once===clone.innerHTML};window.testReady=true;
+</script></body></html>
