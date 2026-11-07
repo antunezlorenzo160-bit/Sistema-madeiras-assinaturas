@@ -30,7 +30,16 @@ export function compactLoadGroups(tables){
   const qty=g.rows.reduce((n,row)=>n+(Number(String(row[0]).replace(/[^0-9.,]/g,'').replace(/\./g,'').replace(',','.'))||0),0);
   const units={};for(const text of g.subtotals){const match=text.match(/([0-9][0-9.,]*)\s*(m³|m²|m)/);if(match){const n=Number(match[1].replace(/\./g,'').replace(',','.'));units[match[2]]=(units[match[2]]||0)+n;}}
   const volume=Object.entries(units).map(([u,n])=>n.toLocaleString('pt-BR',{minimumFractionDigits:u==='m³'?4:2,maximumFractionDigits:u==='m³'?4:2})+' '+u).join(' · ');
-  g.totals=[g.title+': '+qty.toLocaleString('pt-BR')+' pç'+(volume?' · '+volume:'')];
+  const extras=[];
+  for(const [label,unit,places,text] of [['m² face','m²',4,'Área de face'],['m linear','m',2,'Metros lineares'],['Peso kg','kg',1,'Peso']]){
+   const index=g.headers.indexOf(label);if(index<0)continue;
+   const values=g.rows.map(row=>{const str=String(row[index]||'').trim();if(!/^[0-9][0-9.,]*$/.test(str))return null;return Number(str.replace(/\./g,'').replace(',','.'));});
+   const known=values.filter(n=>n!==null&&Number.isFinite(n));
+   if(!known.length){extras.push(text+': '+(label==='m² face'?'não informada':'não informado'));continue;}
+   const total=known.reduce((a,b)=>a+b,0);
+   extras.push(text+': '+total.toLocaleString('pt-BR',{minimumFractionDigits:places,maximumFractionDigits:places})+' '+unit+(known.length<values.length?' (parcial)':''));
+  }
+  g.totals=[g.title+': '+qty.toLocaleString('pt-BR')+' pç'+(volume?' · '+volume:'')+(extras.length?' · '+extras.join(' · '):'')];
  }
  return groups;
 }
@@ -63,4 +72,10 @@ export function paginateCompactGroups(groups,capacity=44){
  }
  if(columns.some(c=>c.length))pages.push(columns);
  return pages;
+}
+
+
+export function samePrintMetricTotals(first,last){
+ const normalize=v=>String(v??'').toLowerCase().replace(/\s*(?:m³|m²|kg|m)(?=\s|$)/g,'').replace(/\s+/g,' ').trim();
+ return first.length>0&&first.length===last.length&&first.every((v,i)=>normalize(v)===normalize(last[i]));
 }

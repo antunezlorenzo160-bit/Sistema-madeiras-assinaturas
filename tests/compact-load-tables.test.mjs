@@ -29,3 +29,18 @@ test('large documents paginate without losing or duplicating rows; totals remain
  const group={title:'Madeira',headers:['Pç'],rows:Array.from({length:300},(_,i)=>[String(i)])};
  const pages=paginateCompactGroups([group]);assert(pages.length>1);assert.deepEqual(pages.flat(2).flatMap(g=>g.rows),group.rows);
 });
+
+import {samePrintMetricTotals} from '../public/compact-load-tables.mjs';
+test('thickness descriptions stay unchanged and gain face area, linear meters and unavailable weight',()=>{
+ const groups=compactLoadGroups(tables);
+ const text=groups[0].totals[0];assert.match(text,/^Garapeira — Esp\. 5 cm:/);assert(!text.includes('Total da espessura'));
+ assert.match(text,/Área de face: [\d,.]+ m²/);assert.match(text,/Metros lineares: [\d,.]+ m/);assert.match(text,/Peso: não informado/);
+ const data=[{title:'Madeira — Esp. 5 cm',headers:['pç','m² face','m linear','Peso est.'],rows:[['1','2,5000 m²','3,00 m','10,0 kg'],['1','1,0000 m²','2,00 m','—']]}];
+ assert.match(compactLoadGroups(data)[0].totals[0],/Área de face: 3,5000 m² · Metros lineares: 5,00 m · Peso: 10,0 kg \(parcial\)/);
+});
+test('global footer is duplicate despite unit suffixes, but different or incomplete metrics remain',()=>{
+ const top=['451','15,4392 m³','222,8640 m²','1.639,00 m','Não informado'];
+ assert(samePrintMetricTotals(top,['451','15,4392','222,8640','1.639,00','Não informado']));
+ assert(!samePrintMetricTotals(top,['451','15,4393','222,8640','1.639,00','Não informado']));
+ assert(!samePrintMetricTotals([],[]));assert(!samePrintMetricTotals(top,top.slice(0,-1)));
+});

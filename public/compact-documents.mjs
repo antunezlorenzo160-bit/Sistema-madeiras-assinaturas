@@ -1,4 +1,4 @@
-import {compactLoadGroups,projectCompactLoadGroups,paginateCompactGroups} from './compact-load-tables.mjs';
+import {compactLoadGroups,projectCompactLoadGroups,paginateCompactGroups,samePrintMetricTotals} from './compact-load-tables.mjs';
 // Transform only a detached print clone. The live UI and source records are never mutated.
 export function compactPrintClone(root,options={}){
  if(root.dataset.compactV710)return root;
@@ -34,6 +34,15 @@ export function compactPrintClone(root,options={}){
   const columns=renderCompactPages(root.ownerDocument,groups,options.detailed?30:44);
   const first=loadTables[0].closest('.v401-carga-grupo')||loadTables[0];first.before(columns);
   for(const table of loadTables){const wrapper=table.closest('.v401-carga-grupo');if(wrapper&&wrapper.children.length===1)wrapper.remove();else table.remove();}
+ }
+ // Keep the full global metrics at the top; remove only an equivalent repeated footer.
+ const metricBlocks=[...root.querySelectorAll('.v418-romaneio-totais')];
+ if(metricBlocks.length>1){
+  const first=[...metricBlocks[0].querySelectorAll('b')].map(b=>b.textContent);
+  for(const block of metricBlocks.slice(1)){
+   const values=[...block.querySelectorAll('b')].map(b=>b.textContent);
+   if(samePrintMetricTotals(first,values))block.remove();
+  }
  }
  // Large tabular reports keep their column labels and every value. Compact only whitespace.
  root.querySelectorAll('table').forEach(t=>t.classList.add('compact-table-v710'));
