@@ -118,3 +118,7 @@ body.movement-view-v710 #estoque .pc-metric{display:none!important}
  body.custom-print #printAreaCustom .compact-species-totals-v712{padding-top:1mm!important;margin-top:1.5mm!important}
  body.custom-print #printAreaCustom .compact-species-totals-v712 p{font-size:7.5pt!important;margin:.5mm 0!important;line-height:1.1!important}
 }
+.sheet-final-totals-v718{margin:16px 0;padding-top:12px;border-top:1px solid var(--line);clear:both}
+.sheet-final-totals-v718 h3{font-size:16px;margin:0 0 10px}
+.sheet-final-totals-v718 p{font-size:13px;line-height:1.5;margin:6px 0;white-space:normal;overflow-wrap:anywhere}
+@media print{.sheet-final-totals-v718{break-inside:avoid;margin:2mm 0;padding-top:1mm}.sheet-final-totals-v718 p{font-size:7.5pt;line-height:1.1;margin:.5mm 0}}

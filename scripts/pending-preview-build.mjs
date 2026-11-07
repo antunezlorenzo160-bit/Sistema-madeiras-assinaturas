@@ -8,8 +8,8 @@ export function applyPendingPreview(html){
  let app=JSON.parse(html.slice(start,end));if(app.includes('// PENDING_PREVIEW_V710'))return html;
  const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
  const replace=(a,b)=>{if(!app.includes(a)||app.indexOf(a)!==app.lastIndexOf(a))throw Error('Trecho da prévia mudou: '+a.slice(0,80));app=app.replace(a,()=>b);};
- const pure=['public/document-pricing.mjs','public/movement-days.mjs','public/compact-load-tables.mjs','public/compact-documents.mjs'].map(p=>read(p).replace(/^import .*;\n/gm,'').replaceAll('export ','')).join('\n');
- const helpers=read('ui/preview-pricing.js')+'\n'+read('ui/preview-movements.js')+'\n'+read('ui/compact-print-settings.js');
+ const pure=['public/document-pricing.mjs','public/movement-days.mjs','public/compact-load-tables.mjs','public/compact-documents.mjs','public/sheet-item-totals.mjs'].map(p=>read(p).replace(/^import .*;\n/gm,'').replaceAll('export ','')).join('\n');
+ const helpers=read('ui/preview-pricing.js')+'\n'+read('ui/preview-movements.js')+'\n'+read('ui/compact-print-settings.js')+'\n'+read('ui/sheet-totals.js');
  replace('function calcPreview(){','// PENDING_PREVIEW_V710\n'+pure+'\n'+helpers+'\nfunction calcPreview(){');
  app=app.replace('function calcPreview(){', 'function calcPreview(){calcPreviewBaseV710();document.getElementById("pricePreviewV710")?.remove();previewDocumentValueV710();}\nfunction calcPreviewBaseV710(){');
  replace('orcamento.push(oi);','orcamento.push(attachPriceV710(oi,orcamento));\n      repriceBudgetV710();\n      Object.assign(oi,orcamento.find(i=>i.id===oi.id)||oi);');

@@ -61,3 +61,8 @@ Print seguinte mostrou preço/valor avançando sobre a tabela vizinha. Causa no 
 ## Indicadores superiores sem segunda linha
 
 Print12:38 mostrou “Valor original” sozinho numa segunda linha de cartões, empurrando totais por espessura e financeiro para uma segunda folha. O clone de impressão registra agora a quantidade real de indicadores e os distribui em uma única linha de grid, com cada cartão limitado à própria coluna. Texto pode quebrar dentro da caixa, nunca criar nova fila de cartões. Cabeçalho e espaçamento dos totais finais compactados; linhas e fonte dos itens não foram alteradas. Build completo passou. Validar o resultado físico no Android/Carta na prévia.
+
+
+## Planilhas na tela — totais sem repetição
+
+No carregamento, orçamento e resumo, manter os itens e apenas o total físico do bloco (volume, área ou metragem conforme unidade). Remover subtotal detalhado repetido entre blocos. Totais completos agrupados por espécie/espessura ao final, incluindo área de face, metros lineares e peso conhecido; valores financeiros somente nas vistas comerciais. Limpeza de apresentação, sem alterar registros, preços ou eventos de edição das linhas. Prévia somente; produção preservada.
