@@ -88,3 +88,23 @@ body.movement-view-v710 #estoque .pc-metric{display:none!important}
  body.custom-print #printAreaCustom .compact-document-v710 .v403-fin-resumo .v403-fin-final{font-size:8pt!important;margin:0!important;padding:1mm!important;border-top:0!important;border-left:.2mm solid #aaa!important}
  body.custom-print #printAreaCustom .compact-document-v710 .v403-fin-resumo strong{font-size:8pt!important;white-space:nowrap!important}
 }
+
+/* V716: override legacy six-column widths, including their nth-child specificity.
+   Otherwise the first six cells consume 100% and push the seventh into the gutter. */
+@media print{
+ body.custom-print #printAreaCustom .compact-document-v710 table.compact-fixed-table-v712[data-columns] th:nth-child(n),
+ body.custom-print #printAreaCustom .compact-document-v710 table.compact-fixed-table-v712[data-columns] td:nth-child(n){width:auto!important;min-width:0!important;max-width:none!important;box-sizing:border-box!important;text-align:right!important}
+ body.custom-print #printAreaCustom .compact-document-v710 table.compact-fixed-table-v712[data-columns] th:nth-child(n){font-size:6.7pt!important;line-height:1.1!important;white-space:normal!important;word-break:normal!important;overflow-wrap:normal!important}
+ body.custom-print #printAreaCustom .compact-document-v710 table.compact-fixed-table-v712[data-columns="7"] :is(th,td):nth-child(1){width:7%!important}
+ body.custom-print #printAreaCustom .compact-document-v710 table.compact-fixed-table-v712[data-columns="7"] :is(th,td):nth-child(2){width:8%!important}
+ body.custom-print #printAreaCustom .compact-document-v710 table.compact-fixed-table-v712[data-columns="7"] :is(th,td):nth-child(3){width:9%!important}
+ body.custom-print #printAreaCustom .compact-document-v710 table.compact-fixed-table-v712[data-columns="7"] :is(th,td):nth-child(4){width:10%!important}
+ body.custom-print #printAreaCustom .compact-document-v710 table.compact-fixed-table-v712[data-columns="7"] :is(th,td):nth-child(5){width:18%!important}
+ body.custom-print #printAreaCustom .compact-document-v710 table.compact-fixed-table-v712[data-columns="7"] :is(th,td):nth-child(6){width:23%!important}
+ body.custom-print #printAreaCustom .compact-document-v710 table.compact-fixed-table-v712[data-columns="7"] :is(th,td):nth-child(7){width:25%!important}
+ body.custom-print #printAreaCustom .compact-document-v710 table.compact-fixed-table-v712[data-columns="5"] :is(th,td):nth-child(1){width:12%!important}
+ body.custom-print #printAreaCustom .compact-document-v710 table.compact-fixed-table-v712[data-columns="5"] :is(th,td):nth-child(2){width:14%!important}
+ body.custom-print #printAreaCustom .compact-document-v710 table.compact-fixed-table-v712[data-columns="5"] :is(th,td):nth-child(3){width:16%!important}
+ body.custom-print #printAreaCustom .compact-document-v710 table.compact-fixed-table-v712[data-columns="5"] :is(th,td):nth-child(4){width:18%!important}
+ body.custom-print #printAreaCustom .compact-document-v710 table.compact-fixed-table-v712[data-columns="5"] :is(th,td):nth-child(5){width:40%!important}
+}
