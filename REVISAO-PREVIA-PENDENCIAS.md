@@ -71,3 +71,8 @@ No carregamento, orçamento e resumo, manter os itens e apenas o total físico d
 ## Entrada pela página de funcionário
 
 Funcionário já entra pelo sistema, mas a página de convite tentava resgatar novamente o convite e exigia confirmação de regras, bloqueando um vínculo já ativo. A entrada agora consulta company-session autenticado primeiro. Vínculo ativo da mesma empresa permite abrir o sistema sem novo resgate; primeiro acesso continua exigindo convite e a verificação original do servidor. Página sem fragmento permite entrar com conta já ativada. Botão muda para Entrar e senha existente usa validação de login. Contas de outra empresa, inativas, identidades inconsistentes e falhas do servidor não recebem acesso. Cinco testes cobrem os caminhos, sem alterar regras, membros nem permissões. Apenas prévia; validação manual pendente.
+
+
+## Movimentação — retorno ao visual anterior
+
+Usuário rejeitou a nova organização por dia e confirmou voltar ao visual anterior, separado por espécie e espessura. Removidos do build o renderizador novo, seus filtros, a interceptação da busca e o CSS que ocultava os indicadores originais. Renderizadores, seleção de estoque/unidade/espessura e busca originais permanecem como em main. Dados históricos não foram modificados; demais ajustes de PDFs, planilhas, preços e funcionário preservados. Somente prévia.

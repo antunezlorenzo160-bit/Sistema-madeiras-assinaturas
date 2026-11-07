@@ -1,9 +1,3 @@
-body.movement-view-v710 #estoque .pc-stock-hero,
-body.movement-view-v710 #estoque .pc-stock-dashboard,
-body.movement-view-v710 #estoque .pc-stock-summary,
-body.movement-view-v710 #estoque .pc-metrics,
-body.movement-view-v710 #estoque .pc-filter-box,
-body.movement-view-v710 #estoque .pc-metric{display:none!important}
 #pricePolicyV710 input[type=checkbox]{width:auto}
 .price-notice-v710{padding:8px;border:1px solid currentColor;border-radius:6px}
 @media print{
