@@ -5,7 +5,8 @@ export function compactLoadGroups(tables){
   const title=String(input.title||'Itens').replace(/\s*[—–•·-]\s*Comp\..*$/i,'').trim();
   const original=input.headers.map(x=>String(x).trim());
   const key=JSON.stringify([title,original]);let group=groups.find(g=>g.key===key);
-  if(!group){group={key,title,headers:original.slice(),rows:[]};groups.push(group);}
+  if(!group){group={key,title,headers:original.slice(),rows:[],subtotals:[]};groups.push(group);}
+  if(input.subtotal)group.subtotals.push(String(input.subtotal));
   for(const values of input.rows){
    if(values.length!==original.length)throw Error('Colunas incompatíveis no romaneio.');
    const row=values.map(x=>String(x).trim());
@@ -25,5 +26,41 @@ export function compactLoadGroups(tables){
    group.rows.push(row);
   }
  }
+ for(const g of groups){
+  const qty=g.rows.reduce((n,row)=>n+(Number(String(row[0]).replace(/[^0-9.,]/g,'').replace(/\./g,'').replace(',','.'))||0),0);
+  const units={};for(const text of g.subtotals){const match=text.match(/([0-9][0-9.,]*)\s*(m³|m²|m)/);if(match){const n=Number(match[1].replace(/\./g,'').replace(',','.'));units[match[2]]=(units[match[2]]||0)+n;}}
+  const volume=Object.entries(units).map(([u,n])=>n.toLocaleString('pt-BR',{minimumFractionDigits:u==='m³'?4:2,maximumFractionDigits:u==='m³'?4:2})+' '+u).join(' · ');
+  g.totals=[g.title+': '+qty.toLocaleString('pt-BR')+' pç'+(volume?' · '+volume:'')];
+ }
  return groups;
+}
+
+// The compact romaneio uses the five approved columns. Complementary metrics remain
+// in the document totals; a detailed print option retains all per-piece metrics.
+export function projectCompactLoadGroups(groups,detailed=false){
+ return groups.map(g=>{
+  if(detailed||g.headers.length!==7||!g.headers.includes('m² face')||!g.headers.includes('Peso kg'))return {...g,rows:g.rows.map(r=>r.slice())};
+  const thickness=g.title.match(/Esp\.\s*([\d,.]+)\s*cm/i)?.[1]||'—';
+  const unitColumn=g.rows.some(r=>r[3]!=='—')?3:g.rows.some(r=>r[4]!=='—')?4:5;
+  return {...g,headers:['Pç','Esp. cm',g.headers[1]==='Larg. cm'?'Larg. cm':'Medidas','Comp. m',unitColumn===3?'Volume m³':unitColumn===4?'Área m²':'Metros m'],rows:g.rows.map(r=>[r[0],thickness,r[1],r[2],r[unitColumn]])};
+ });
+}
+
+// Explicit columns avoid Android's CSS multicol table fragmentation. Each header
+// and row consumes a bounded slot; repeated headers identify every continuation.
+export function paginateCompactGroups(groups,capacity=44){
+ if(!Number.isInteger(capacity)||capacity<4)throw Error('Capacidade de impressão inválida.');
+ const pages=[];let columns=[[],[]],column=0,used=0;
+ const advance=()=>{if(column===0){column=1;used=0;}else{pages.push(columns);columns=[[],[]];column=0;used=0;}};
+ for(const group of groups){let offset=0;
+  while(offset<group.rows.length){
+   if(capacity-used<3)advance();
+   const take=Math.min(group.rows.length-offset,capacity-used-2);
+   columns[column].push({...group,continued:offset>0,rows:group.rows.slice(offset,offset+take)});
+   offset+=take;used+=take+2;
+   if(offset<group.rows.length)advance();
+  }
+ }
+ if(columns.some(c=>c.length))pages.push(columns);
+ return pages;
 }

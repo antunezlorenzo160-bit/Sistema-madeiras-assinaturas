@@ -11,3 +11,21 @@ test('input cells, weights, unknown dimensions and financial fields are never re
  const data=[{title:'Madeira — Esp. 5 cm — Comp. 3 m',headers:['pç','medidas','comp.','Valor'],rows:[['2','Largura não informada','3,0 m','R$ 1.234,56']]}];const before=JSON.stringify(data);const out=compactLoadGroups(data);assert.equal(JSON.stringify(data),before);assert.equal(out[0].rows[0][1],'Largura não informada');assert.equal(out[0].rows[0][3],'R$ 1.234,56');
  assert.throws(()=>compactLoadGroups([{title:'Itens',headers:['Pç','m³'],rows:[['1']]}]));
 });
+
+import {projectCompactLoadGroups,paginateCompactGroups} from '../public/compact-load-tables.mjs';
+test('approved compact romaneio has five columns with explicit thickness; detailed option preserves seven',()=>{
+ const source=compactLoadGroups(tables);const out=projectCompactLoadGroups(source);
+ assert.deepEqual(out[0].headers,['Pç','Esp. cm','Larg. cm','Comp. m','Volume m³']);
+ assert.deepEqual(out.flatMap(g=>g.rows),rows.map(r=>[r.quantity,r.thickness,r.width,r.length,r.m3]));
+ assert.deepEqual(projectCompactLoadGroups(source,true).flatMap(g=>g.rows),source.flatMap(g=>g.rows));
+});
+test('75-line fixture is explicitly balanced on one sheet with continuation title, no CSS multicol',()=>{
+ const groups=projectCompactLoadGroups(compactLoadGroups(tables));const pages=paginateCompactGroups(groups);
+ assert.equal(pages.length,1);assert.equal(pages[0].length,2);
+ const flat=pages.flat(2).flatMap(g=>g.rows);assert.deepEqual(flat,groups.flatMap(g=>g.rows));
+ assert(pages[0][1][0].continued);assert(pages[0].every(col=>col.reduce((n,g)=>n+g.rows.length+2,0)<=44));
+});
+test('large documents paginate without losing or duplicating rows; totals remain outside repeated chunks',()=>{
+ const group={title:'Madeira',headers:['Pç'],rows:Array.from({length:300},(_,i)=>[String(i)])};
+ const pages=paginateCompactGroups([group]);assert(pages.length>1);assert.deepEqual(pages.flat(2).flatMap(g=>g.rows),group.rows);
+});
