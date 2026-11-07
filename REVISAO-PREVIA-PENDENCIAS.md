@@ -57,3 +57,7 @@ Tabelas detalhadas ou com origem que precisem de mais largura passam a uma colun
 ## Larguras monetárias no carregamento
 
 Print seguinte mostrou preço/valor avançando sobre a tabela vizinha. Causa no CSS: regras legadas de seis colunas com nth-child!important consumiam100% antes da sétima coluna. Adicionado reset com precedência superior e larguras explícitas para as7colunas (7/8/9/10/18/23/25%), reservando espaço próprio para preço/valor. Cinco colunas também têm distribuição explícita12/14/16/18/40%. Cabeçalhos podem quebrar somente entre palavras; números continuam alinhados à direita. Distribuições somam100%;9testes do modelo e valores passaram. Não houve alteração nos dados, preços ou cálculos. Validar novamente no PDF Android da prévia.
+
+## Indicadores superiores sem segunda linha
+
+Print12:38 mostrou “Valor original” sozinho numa segunda linha de cartões, empurrando totais por espessura e financeiro para uma segunda folha. O clone de impressão registra agora a quantidade real de indicadores e os distribui em uma única linha de grid, com cada cartão limitado à própria coluna. Texto pode quebrar dentro da caixa, nunca criar nova fila de cartões. Cabeçalho e espaçamento dos totais finais compactados; linhas e fonte dos itens não foram alteradas. Build completo passou. Validar o resultado físico no Android/Carta na prévia.

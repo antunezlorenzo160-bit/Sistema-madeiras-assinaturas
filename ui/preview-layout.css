@@ -108,3 +108,13 @@ body.movement-view-v710 #estoque .pc-metric{display:none!important}
  body.custom-print #printAreaCustom .compact-document-v710 table.compact-fixed-table-v712[data-columns="5"] :is(th,td):nth-child(4){width:18%!important}
  body.custom-print #printAreaCustom .compact-document-v710 table.compact-fixed-table-v712[data-columns="5"] :is(th,td):nth-child(5){width:40%!important}
 }
+
+/* V717: one row of top indicators; wrapping is limited to text inside each box. */
+@media print{
+ body.custom-print #printAreaCustom .compact-document-v710 [data-compact-totals="1"]{display:grid!important;grid-template-columns:repeat(var(--compact-totals-count,5),minmax(0,1fr))!important;gap:1mm!important;width:100%!important;max-width:100%!important;margin:1mm 0 1.5mm!important;padding:0!important;align-items:stretch!important}
+ body.custom-print #printAreaCustom .compact-document-v710 [data-compact-totals="1"]>span,
+ body.custom-print #printAreaCustom .compact-document-v710 [data-compact-totals="1"]>div{display:block!important;min-width:0!important;width:auto!important;max-width:none!important;margin:0!important;padding:1mm!important;box-sizing:border-box!important;border-radius:0!important;font-size:7.2pt!important;line-height:1.1!important;white-space:normal!important;overflow-wrap:normal!important}
+ body.custom-print #printAreaCustom .compact-document-v710 [data-compact-totals="1"] b{font-size:7.5pt!important;line-height:1.1!important;white-space:nowrap!important}
+ body.custom-print #printAreaCustom .compact-species-totals-v712{padding-top:1mm!important;margin-top:1.5mm!important}
+ body.custom-print #printAreaCustom .compact-species-totals-v712 p{font-size:7.5pt!important;margin:.5mm 0!important;line-height:1.1!important}
+}

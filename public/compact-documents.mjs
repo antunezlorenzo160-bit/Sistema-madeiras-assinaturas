@@ -44,6 +44,11 @@ export function compactPrintClone(root,options={}){
    if(samePrintMetricTotals(first,values))block.remove();
   }
  }
+ // Top indicators form one row regardless of how many metrics are present.
+ for(const totals of root.querySelectorAll('.v401-carga-totais,.v418-romaneio-totais')){
+  totals.dataset.compactTotals='1';
+  totals.style.setProperty('--compact-totals-count',String(Math.max(1,totals.children.length)));
+ }
  // Large tabular reports keep their column labels and every value. Compact only whitespace.
  root.querySelectorAll('table').forEach(t=>t.classList.add('compact-table-v710'));
  return root;
