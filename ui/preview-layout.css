@@ -72,3 +72,5 @@ body.movement-view-v710 #estoque .pc-metric{display:none!important}
  body.custom-print #printAreaCustom>div:first-child h2+div{font-size:8pt!important;margin-bottom:2mm!important}
  body.custom-print #printAreaCustom .compact-document-v710 .v421-empresa-documento{font-size:7.5pt!important;line-height:1.1!important}
 }
+
+@media print{body.custom-print #printAreaCustom .compact-document-v710 .compact-fixed-table-v712[data-columns="9"] th,body.custom-print #printAreaCustom .compact-document-v710 .compact-fixed-table-v712[data-columns="9"] td{white-space:normal!important;overflow-wrap:anywhere!important;font-size:7pt!important}}

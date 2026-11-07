@@ -42,6 +42,7 @@ export function compactPrintClone(root,options={}){
 
 export function renderCompactPages(doc,groups,capacity=44){
  const pages=doc.createElement('div');pages.className='compact-pages-v712';
+ if(groups.some(g=>(g.headers||g.header).length>7))capacity=Math.min(capacity,24);
  for(const columns of paginateCompactGroups(groups,capacity)){
   const sheet=doc.createElement('div');sheet.className='compact-sheet-v712';
   for(const fragments of columns){const col=doc.createElement('div');col.className='compact-column-v712';
@@ -49,7 +50,7 @@ export function renderCompactPages(doc,groups,capacity=44){
     const section=doc.createElement('section');section.className='compact-group-v710';
     const title=doc.createElement('h3');title.textContent=g.name||g.title; if(g.continued)title.textContent+=' (continuação)';section.append(title);
     const table=doc.createElement('table');table.className='compact-fixed-table-v712';
-    const headers=g.headers||g.header;const head=table.createTHead().insertRow();for(const label of headers){const th=doc.createElement('th');th.textContent=label;head.append(th);}
+    const headers=g.headers||g.header;table.dataset.columns=String(headers.length);const head=table.createTHead().insertRow();for(const label of headers){const th=doc.createElement('th');th.textContent=label;head.append(th);}
     const tbody=table.createTBody();for(const values of g.rows){const tr=tbody.insertRow();for(const value of values)tr.insertCell().textContent=value;}
     section.append(table);col.append(section);
    }
