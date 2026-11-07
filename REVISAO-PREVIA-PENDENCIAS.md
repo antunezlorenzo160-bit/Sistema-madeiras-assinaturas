@@ -66,3 +66,8 @@ Print12:38 mostrou “Valor original” sozinho numa segunda linha de cartões, 
 ## Planilhas na tela — totais sem repetição
 
 No carregamento, orçamento e resumo, manter os itens e apenas o total físico do bloco (volume, área ou metragem conforme unidade). Remover subtotal detalhado repetido entre blocos. Totais completos agrupados por espécie/espessura ao final, incluindo área de face, metros lineares e peso conhecido; valores financeiros somente nas vistas comerciais. Limpeza de apresentação, sem alterar registros, preços ou eventos de edição das linhas. Prévia somente; produção preservada.
+
+
+## Entrada pela página de funcionário
+
+Funcionário já entra pelo sistema, mas a página de convite tentava resgatar novamente o convite e exigia confirmação de regras, bloqueando um vínculo já ativo. A entrada agora consulta company-session autenticado primeiro. Vínculo ativo da mesma empresa permite abrir o sistema sem novo resgate; primeiro acesso continua exigindo convite e a verificação original do servidor. Página sem fragmento permite entrar com conta já ativada. Botão muda para Entrar e senha existente usa validação de login. Contas de outra empresa, inativas, identidades inconsistentes e falhas do servidor não recebem acesso. Cinco testes cobrem os caminhos, sem alterar regras, membros nem permissões. Apenas prévia; validação manual pendente.
