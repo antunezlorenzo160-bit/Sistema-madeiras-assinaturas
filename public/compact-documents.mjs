@@ -1,3 +1,4 @@
+import {compactLoadGroups} from './compact-load-tables.mjs';
 // Transform only a detached print clone. The live UI and source records are never mutated.
 export function compactPrintClone(root){
  if(root.dataset.compactV710)return root;
@@ -32,27 +33,25 @@ export function compactPrintClone(root){
    const outer=body.closest('.table-wrap')||body.closest('table');outer.replaceWith(columns);
   }
  }
- // Load and delivery tables contain extra financial/physical columns. Preserve each
- // labelled value in a compact two-column list, rather than shrinking a 9-column table.
+ // Keep load documents tabular, grouped by species/thickness across lengths.
  const loadTables=[...root.querySelectorAll('.v404-carga-tabela')];
  if(!body&&loadTables.length){
+  const data=loadTables.map(table=>{
+   const heads=[...table.tHead?.rows||[]];
+   return {title:heads.slice(0,-1).map(r=>r.textContent.trim()).join(' '),headers:[...(heads.at(-1)?.cells||[])].map(c=>c.textContent.trim()),rows:[...table.tBodies].flatMap(b=>[...b.rows]).filter(r=>[...r.cells].every(c=>c.colSpan===1)).map(r=>[...r.cells].map(c=>c.textContent.trim()))};
+  });
+  const groups=compactLoadGroups(data);
   const columns=root.ownerDocument.createElement('div');columns.className='compact-columns-v710 compact-load-columns-v710';
   const first=loadTables[0].closest('.v401-carga-grupo')||loadTables[0];first.before(columns);
-  for(const table of loadTables){
+  for(const g of groups){
    const section=root.ownerDocument.createElement('section');section.className='compact-group-v710';
-   const headings=[...table.tHead?.rows||[]];
-   const labels=[...(headings[headings.length-1]?.cells||[])].map(c=>c.textContent.trim());
-   for(const row of headings.slice(0,-1)){const title=root.ownerDocument.createElement('h3');title.textContent=row.textContent.trim();section.append(title);}
-   for(const row of [...table.tBodies].flatMap(b=>[...b.rows])){
-    const cells=[...row.cells];
-    const line=root.ownerDocument.createElement('div');line.className='compact-load-row-v710';
-    if(cells.some(c=>c.colSpan>1)){line.textContent=row.textContent.trim();}
-    else cells.forEach((cell,index)=>{const span=root.ownerDocument.createElement('span');span.textContent=(labels[index]?labels[index]+': ':'')+cell.textContent.trim();line.append(span);});
-    section.append(line);
-   }
-   if(table.tFoot){const total=root.ownerDocument.createElement('p');total.className='compact-load-total-v710';total.textContent=table.tFoot.textContent.trim();section.append(total);}
-   columns.append(section);const wrapper=table.closest('.v401-carga-grupo');if(wrapper&&wrapper.children.length===1)wrapper.remove();else table.remove();
+   const title=root.ownerDocument.createElement('h3');title.textContent=g.title;section.append(title);
+   const table=root.ownerDocument.createElement('table');table.className='compact-load-table-v711';
+   const head=table.createTHead().insertRow();for(const name of g.headers){const th=root.ownerDocument.createElement('th');th.textContent=name;head.append(th);}
+   const tbody=table.createTBody();for(const row of g.rows){const tr=tbody.insertRow();for(const value of row)tr.insertCell().textContent=value;}
+   section.append(table);columns.append(section);
   }
+  for(const table of loadTables){const wrapper=table.closest('.v401-carga-grupo');if(wrapper&&wrapper.children.length===1)wrapper.remove();else table.remove();}
  }
  // Large tabular reports keep their column labels and every value. Compact only whitespace.
  root.querySelectorAll('table').forEach(t=>t.classList.add('compact-table-v710'));
