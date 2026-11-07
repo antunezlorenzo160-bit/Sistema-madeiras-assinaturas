@@ -22,6 +22,7 @@ export function applyPendingPreview(html){
  replace("function pcBuscarEspecie(q){","function pcBuscarEspecie(q){\n  if(document.getElementById('estoqueHistoricoPainel')?.classList.contains('ativo')){movementFiltersV710.search=String(q??document.getElementById('pcBuscaEspecie')?.value??'').trim();renderMovementDaysV710();return document.querySelectorAll('.movement-day-v710').length;}");
  replace(' document.body.appendChild(area);',' compactPrintClone(c,{detailed:window.__v456Local.getItem("compact_pdf_details_v712")==="true"});\n document.body.appendChild(area);');
  app=app.replace(/<body([^>]*)>/, '<body$1><aside class="no-print" style="padding:10px;background:#fff0ca;color:#493b19;font:14px system-ui">Prévia para testes. Use documentos de teste e preserve os registros da empresa.</aside>');
+ replace("return `<section class=\"v585-subtotais-especies\"><h3>Totais físicos e subtotal por espécie</h3><div class=\"v585-subtotais-grade\">${cards}</div></section>`;","return `<details class=\"v585-subtotais-especies v714-subtotais-recolher\"><summary>Totais físicos e subtotal por espécie</summary><div class=\"v585-subtotais-grade\">${cards}</div></details>`;");
  app=app.replace('</head>','<style id="preview-layout-v710">'+read('ui/preview-layout.css')+'</style></head>');
  return html.slice(0,start)+JSON.stringify(app).replaceAll('</','<\\/')+html.slice(end);
 }

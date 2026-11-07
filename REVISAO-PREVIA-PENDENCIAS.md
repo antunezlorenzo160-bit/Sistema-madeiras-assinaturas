@@ -42,3 +42,7 @@ Totais por espécie/espessura ao fim; cabeçalho, emitente, cliente e cartões r
 ## Totais finais — ajuste solicitado em seguida
 
 Usuário corrigiu: não mudar as descrições para “Total da espessura”. Manter “Garapeira — Esp.5cm” etc e acrescentar área de face, metros lineares e peso nos totais por espessura. Implementado; peso ausente aparece não informado e peso parcialmente conhecido fica identificado como parcial, sem inventar densidades. Mantidos os totais gerais completos no topo. O quadro de total geral repetido no rodapé é retirado somente quando os cinco valores coincidem (comparação tolera sufixos de unidade); valores diferentes não são removidos. Sete testes de agrupamento/paginação/totais passaram, mais build,31scripts e3testes de integração. Atualização apenas na prévia.
+
+## Recolher totais físicos na tela
+
+Seção “Totais físicos e subtotal por espécie” dos carregamentos agora usa details/summary nativo, com seta e acesso por teclado, inicialmente recolhida. Os cards e cálculos permanecem intactos; documentos PDF continuam sendo gerados a partir dos dados do carregamento. Build completo e presença única do novo details verificados.
