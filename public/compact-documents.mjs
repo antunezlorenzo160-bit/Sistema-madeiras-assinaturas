@@ -51,9 +51,10 @@ export function compactPrintClone(root,options={}){
 
 export function renderCompactPages(doc,groups,capacity=44){
  const pages=doc.createElement('div');pages.className='compact-pages-v712';
- if(groups.some(g=>(g.headers||g.header).length>7))capacity=Math.min(capacity,24);
- for(const columns of paginateCompactGroups(groups,capacity)){
-  const sheet=doc.createElement('div');sheet.className='compact-sheet-v712';
+ const wide=groups.some(g=>(g.headers||g.header).length>7||(g.headers||g.header).includes('Preço un.'));
+ if(wide)capacity=Math.min(capacity,32);
+ for(const columns of paginateCompactGroups(groups,capacity,wide?1:2)){
+  const sheet=doc.createElement('div');sheet.className='compact-sheet-v712'+(wide?' compact-sheet-wide-v715':'');
   for(const fragments of columns){const col=doc.createElement('div');col.className='compact-column-v712';
    for(const g of fragments){
     const section=doc.createElement('section');section.className='compact-group-v710';

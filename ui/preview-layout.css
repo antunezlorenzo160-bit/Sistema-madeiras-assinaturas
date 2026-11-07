@@ -79,3 +79,12 @@ body.movement-view-v710 #estoque .pc-metric{display:none!important}
 .v714-subtotais-recolher[open]>summary{list-style-type:disclosure-open!important}
 .v714-subtotais-recolher>summary:focus-visible{outline:2px solid currentColor;outline-offset:4px}
 .v714-subtotais-recolher[open]>.v585-subtotais-grade{margin-top:8px}
+@media print{
+ body.custom-print #printAreaCustom .compact-sheet-v712.compact-sheet-wide-v715{grid-template-columns:minmax(0,1fr)!important}
+ body.custom-print #printAreaCustom .compact-document-v710 .compact-fixed-table-v712[data-columns="7"] th,
+ body.custom-print #printAreaCustom .compact-document-v710 .compact-fixed-table-v712[data-columns="7"] td{font-size:7.3pt!important;padding:.35mm .3mm!important}
+ body.custom-print #printAreaCustom .compact-document-v710 .v403-fin-resumo{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:2mm!important;max-width:none!important;width:100%!important;margin:2mm 0 0!important;padding:1.2mm!important}
+ body.custom-print #printAreaCustom .compact-document-v710 .v403-fin-resumo>div{display:flex!important;flex-direction:column!important;gap:1mm!important;padding:1mm!important;min-width:0!important;font-size:7.5pt!important;line-height:1.1!important}
+ body.custom-print #printAreaCustom .compact-document-v710 .v403-fin-resumo .v403-fin-final{font-size:8pt!important;margin:0!important;padding:1mm!important;border-top:0!important;border-left:.2mm solid #aaa!important}
+ body.custom-print #printAreaCustom .compact-document-v710 .v403-fin-resumo strong{font-size:8pt!important;white-space:nowrap!important}
+}

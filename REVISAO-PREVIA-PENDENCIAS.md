@@ -46,3 +46,10 @@ Usuário corrigiu: não mudar as descrições para “Total da espessura”. Man
 ## Recolher totais físicos na tela
 
 Seção “Totais físicos e subtotal por espécie” dos carregamentos agora usa details/summary nativo, com seta e acesso por teclado, inicialmente recolhida. Os cards e cálculos permanecem intactos; documentos PDF continuam sendo gerados a partir dos dados do carregamento. Build completo e presença única do novo details verificados.
+
+
+## PDF do carregamento original e cópia comercial
+
+PDF(23) enviado pelo usuário saiu em7páginas: a projeção compacta só reconhecia o romaneio7colunas, deixando os documentos financeiros com9colunas comprimidas e preços na vertical. Agora a projeção identifica campos de preço/valor, mantém7colunas compactas (peças, espessura, largura, comprimento, quantidade comercial, preço unitário, valor), com moeda/unidade nos cabeçalhos. Origem não é removida quando presente. Métricas físicas extras e valor dos produtos ficam por espessura no resumo; subtotal/desconto/frete/outras despesas/total geral preservados em faixa compacta.
+
+Tabelas detalhadas ou com origem que precisem de mais largura passam a uma coluna de página inteira; não são espremidas em duas colunas. Opção detalhada continua disponível em Configurações. Nove testes de tabelas/paginação/totais/preços passaram e três de integração passaram; build completo passou. Validar PDF no Android na prévia, pois teste visual local permanece bloqueado.

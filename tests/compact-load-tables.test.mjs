@@ -44,3 +44,17 @@ test('global footer is duplicate despite unit suffixes, but different or incompl
  assert(!samePrintMetricTotals(top,['451','15,4393','222,8640','1.639,00','Não informado']));
  assert(!samePrintMetricTotals([],[]));assert(!samePrintMetricTotals(top,top.slice(0,-1)));
 });
+
+test('original load and commercial copy retain unit prices and row values in seven compact columns',()=>{
+ const financial=tables.map((t,i)=>({...t,headers:[...t.headers,'preço un.','valor'],rows:t.rows.map(r=>[...r,i%2?'R$ 1.234,56/m³':'R$ 0,00/m³',i%2?'R$ 9.876,54':'R$ 0,00'])}));
+ const source=compactLoadGroups(financial),out=projectCompactLoadGroups(source);
+ assert.equal(out[0].headers.length,7);assert.deepEqual(out[0].headers.slice(-2),['R$/m³','Valor R$']);
+ const projected=out.flatMap(g=>g.rows);assert.equal(projected.length,75);assert.equal(projected[0].at(-2),'0,00');assert.equal(projected[1].at(-2),'1.234,56');assert.equal(projected[1].at(-1),'9.876,54');
+ assert.equal(paginateCompactGroups(out).length,1);assert.deepEqual(projectCompactLoadGroups(source,true).flatMap(g=>g.rows),source.flatMap(g=>g.rows));
+});
+test('load origin remains present; wide detailed tables paginate as a single full-width column',()=>{
+ const t={...tables[0],headers:[...tables[0].headers,'origem','preço un.','valor'],rows:[...tables[0].rows.map(r=>[...r,'Estoque 2','R$ 100,00/m³','R$ 12,00'])]};
+ const out=projectCompactLoadGroups(compactLoadGroups([t]));assert.equal(out[0].headers.length,8);assert.equal(out[0].rows[0][5],'Estoque 2');
+ const data={title:'Carga detalhada',headers:Array(10).fill('Campo'),rows:Array.from({length:75},(_,i)=>[String(i)])};
+ const pages=paginateCompactGroups([data],32,1);assert.equal(pages.length,3);assert(pages.every(p=>p.length===1));assert.equal(pages.flat(2).flatMap(g=>g.rows).length,75);
+});
