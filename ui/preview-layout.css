@@ -1,0 +1,36 @@
+body.movement-view-v710 #estoque .pc-stock-hero,
+body.movement-view-v710 #estoque .pc-stock-dashboard,
+body.movement-view-v710 #estoque .pc-stock-summary,
+body.movement-view-v710 #estoque .pc-metrics,
+body.movement-view-v710 #estoque .pc-filter-box,
+body.movement-view-v710 #estoque .pc-metric{display:none!important}
+#pricePolicyV710 input[type=checkbox]{width:auto}
+.price-notice-v710{padding:8px;border:1px solid currentColor;border-radius:6px}
+@media print{
+ body.custom-print #printAreaCustom .compact-load-row-v710{font-size:8pt!important;line-height:1.25!important;padding:1.2mm 0!important;border-bottom:.2mm solid #ccc;break-inside:avoid}
+ body.custom-print #printAreaCustom .compact-load-row-v710 span{display:inline!important;white-space:normal!important}
+ body.custom-print #printAreaCustom .compact-load-row-v710 span+span::before{content:' · '}
+ body.custom-print #printAreaCustom .compact-load-total-v710{font-size:8pt!important;font-weight:bold;break-inside:avoid}
+
+ body.custom-print #printAreaCustom:has(.compact-document-v710){font-size:8.5pt!important;line-height:1.15!important}
+ body.custom-print #printAreaCustom .compact-document-v710 .stats{display:flex!important;flex-wrap:wrap!important;gap:2mm!important;margin:2mm 0!important;break-inside:avoid}
+ body.custom-print #printAreaCustom .compact-document-v710 .stat{flex:1 1 25%;padding:1.5mm!important;min-height:0!important;margin:0!important}
+ body.custom-print #printAreaCustom .compact-document-v710 .stat small{font-size:7pt!important}
+ body.custom-print #printAreaCustom .compact-document-v710 .stat strong{font-size:9pt!important}
+ body.custom-print #printAreaCustom h2{font-size:13pt!important;margin:0 0 2mm!important}
+ body.custom-print #printAreaCustom h3{font-size:9pt!important;margin:2mm 0 1mm!important;break-after:avoid}
+ body.custom-print #printAreaCustom .v421-empresa-documento{margin:1mm 0 2mm!important;padding:1.5mm!important;min-height:0!important}
+ body.custom-print #printAreaCustom .v421-empresa-documento img{max-height:13mm!important;max-width:24mm!important}
+ body.custom-print #printAreaCustom .compact-columns-v710{column-count:2;column-gap:5mm;column-fill:balance;display:block!important}
+ body.custom-print #printAreaCustom .compact-group-v710{break-inside:auto;display:block!important;margin:0 0 2mm!important}
+ body.custom-print #printAreaCustom .compact-document-v710 table{width:100%!important;table-layout:auto!important;margin:0 0 2mm!important;border-collapse:collapse!important;break-inside:auto!important}
+ body.custom-print #printAreaCustom .compact-document-v710 th,
+ body.custom-print #printAreaCustom .compact-document-v710 td{font-size:8pt!important;line-height:1.15!important;padding:1mm .7mm!important;white-space:normal!important;height:auto!important;min-height:0!important;overflow-wrap:anywhere!important}
+ body.custom-print #printAreaCustom .compact-columns-v710 th,
+ body.custom-print #printAreaCustom .compact-columns-v710 td{font-size:7.5pt!important;padding:.8mm .5mm!important}
+ body.custom-print #printAreaCustom .compact-document-v710 tr{break-inside:avoid!important}
+ body.custom-print #printAreaCustom .compact-document-v710 thead{display:table-header-group!important}
+ body.custom-print #printAreaCustom .compact-document-v710 tfoot{display:table-row-group!important;font-weight:700}
+ body.custom-print #printAreaCustom .compact-document-v710 .table-wrap{overflow:visible!important;margin:0!important}
+ body.custom-print #printAreaCustom .compact-document-v710 .v404-carga-tabela{font-size:8pt!important}
+}

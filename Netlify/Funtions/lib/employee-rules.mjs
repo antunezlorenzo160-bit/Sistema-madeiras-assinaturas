@@ -10,4 +10,4 @@ export async function employeeRulesReady({accessToken,request=fetch}){
  const source=(rules.source?.files||[]).map(f=>f.content||'').join('\n');
  return createHash('sha256').update(source.replace(/\s/g,'')).digest('hex')===expected.sha256;
 }
-export async function requireEmployeeRules(options){let ready=false;try{ready=await employeeRulesReady(options);}catch{}if(!ready)throw new PlatformError(409,'Publique as regras de funcionários no Firestore e confirme em Atualizar lista. Se a verificação não concluir, confira a permissão de leitura das regras na conta de serviço do servidor.');return true;}
+export async function requireEmployeeRules(options){let ready=false;try{ready=await employeeRulesReady(options);}catch{}if(!ready)throw new PlatformError(409,'Não foi possível confirmar a configuração de acesso dos funcionários. Atualize a lista e, se continuar, entre em contato com o suporte.');return true;}
