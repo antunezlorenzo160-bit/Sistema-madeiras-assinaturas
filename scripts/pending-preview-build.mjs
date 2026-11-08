@@ -27,6 +27,8 @@ export function applyPendingPreview(html){
  replace('function renderEstoque(){\n  if(lotePacotesEmCurso)return;','function renderEstoque(){\n  if(lotePacotesEmCurso)return;\n  queueStockChartsV720();');
  replace('function renderPlanilhasM3Especies(){\n  if(lotePacotesEmCurso)return;','function renderPlanilhasM3Especies(){\n  if(lotePacotesEmCurso)return;\n  queueStockChartsV720();');
  replace('function avisoHistoricoV701(texto){','function avisoHistoricoV701(texto){\n queueStockChartsV720(texto);');
+ // Plate input uses an inline handler; expose its real helper from the load module.
+ replace('  window.atualizarTransportePendenteV414=atualizarTransportePendenteV414;','  window.atualizarTransportePendenteV414=atualizarTransportePendenteV414;\n  window.preencherTaraPorPlacaV587=preencherTaraPorPlacaV587;');
  // Freight billed to the customer and real transport costs are distinct.
  replace("${podeCopia?formularioFinanceiroHtmlV403(gid,idx,'original',itens):''}","${podeCopia?formularioFinanceiroHtmlV403(gid,idx,'original',itens):''}${podeCopia?loadTransportFormV723(gid,idx,originalFinanceiro.frete):''}");
  app=app.replace('<label>Frete (R$)<input data-fin-campo="frete"','<label>Frete cobrado do cliente (R$)<input data-fin-campo="frete"');
