@@ -34,6 +34,9 @@ export function projectWeightedStockCosts({purchases,movements,stock,openingPoli
    const paired=conferenceExits.get(JSON.stringify([key,row.grupoCargaId]));
    if(paired!==undefined){type='entrada';at=paired-1;}
   }
+  // V391 records an actual conference entry before the user separately confirms the exit.
+  // Unlike V390, keep its own recorded time; it may still be in stock without a paired exit.
+  if(type==='ajuste'&&row.ajusteConferenciaV391===true&&row.grupoCargaId)type='entrada';
   if(!['entrada','saida'].includes(type)){invalidate(p,'Há um ajuste no histórico desta medida que precisa de conferência.');continue;}
   let quantity;try{quantity=purchaseVolumeUnits(Math.abs(Number(row.volume)));if(!quantity)continue;}catch{invalidate(p,'Há volume inválido no histórico desta medida.');continue;}
   const purchase=byMovement.get(row.id);let value=null,missingReason=null;
@@ -41,7 +44,7 @@ export function projectWeightedStockCosts({purchases,movements,stock,openingPoli
   if(type==='entrada'&&!purchase){
    if(row.purchaseReceiptV728)missingReason='A entrada tem referência de compra, mas o custo dessa compra não foi localizado neste financeiro.';
    else if(oldEnabled&&(row.tipoMedida||row.tipoCadastro||'m3')==='m3'&&at!==null&&at<=opening.cutoffAt)value=oldValue(quantity);
-   else missingReason=oldEnabled&&at>opening.cutoffAt?'Há entrada sem preço posterior ao salvamento do custo antigo. Essa entrada precisa do próprio custo.':'Há madeira sem custo de compra completo nesta medida.';
+   else missingReason=row.ajusteConferenciaV391===true||row.ajusteConferenciaV390===true?'O ajuste de conferência acrescentou madeira sem custo de compra nesta medida. É preciso conferir a origem e o custo dessa entrada; o preço de venda não é usado como custo.':oldEnabled&&at>opening.cutoffAt?'Há entrada sem preço posterior ao salvamento do custo antigo. Essa entrada precisa do próprio custo.':'Há madeira sem custo de compra completo nesta medida.';
   }
   if(at===null)invalidate(p,'Falta uma data válida em uma entrada ou saída desta medida.');
   p.delta+=type==='entrada'?quantity:-quantity;if(!Number.isSafeInteger(p.delta))invalidate(p,'O histórico desta medida ultrapassa o limite de cálculo.');

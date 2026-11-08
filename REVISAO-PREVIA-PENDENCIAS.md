@@ -268,3 +268,12 @@ Validação:8suítes pertinentes passaram, incluindo novos casos de automático 
 Screenshot:camposClienteV407 is not defined ao escolher cliente cadastrado para a carga. Causa reproduzida:listenerV492 executa fora da closureV407 e referenciava seu const privado. Build passa a usar camposClientesV492, schema local já usado pelo cadastro. Campos inexistentes no formulário são ignorados; dados são atribuídos por value, nunca por HTML. Seleção só marca formulário pendente, sem salvar carga/cliente, emitir operações offline, mexer em estoque ou financeiro.
 
 Validação:no handler real extraído do TEMPLATE gerado, versão anterior reproduz exatamente ReferenceError; corrigida preenche16campos, preserva registro cadastrado e exige Salvar dados do cliente. Seleção vazia/removida não modifica formulário.3suítes pertinentes passaram (cliente/financeiro/teclado); build limpo e32scripts válidos. Somente prévia12; não há alteração de regras, permissões, login ou produção.
+
+
+## Conferência física V391 no custo automático V739 — 08/11
+
+ScreenshotLeopoldo:10,325m³/vendaR$3850,custo pendente por ajuste no histórico,2itens sem valor de venda. Fonte revela dois fluxos distintos:V390 cria ajuste virtual consumido pela própria baixa (já suportado);V391 acrescenta estoque real antes de o usuário dar baixa separadamente (faltava suporte). Sem sessão Firebase para confirmar a flag do documento real; pergunta de origem pendente ao usuário.
+
+Modelo agora normaliza somente ajusteConferenciaV391=true com grupoCargaId como entrada física, mantendo sua própria data e saldo remanescente, sem exigir saída da mesma carga. Não antecipa a data para caber na política antiga. Entrada anterior ao corte pode usar política antiga já salva; ajuste novo sem compra/custo continua pendente com mensagem específica sobre madeira acrescentada sem custo. Preço de venda e valor do ajuste nunca são adotados como custo. Ajustes não identificados continuam pendentes. Nenhuma criação de compra, despesa, estoque ou correção de valores manuais.
+
+Validação:2novos casos cobrem saldo parcial, consumo por outra carga, política antes/depois do corte, ausência de política, proteção de ajuste genérico e imutabilidade.7suítes pertinentes passaram (média, compra, venda, reconciliação, cliente, UIfinanceira, teclado). Build32scripts válido. Apenas prévia12. Não afirmar que a pendência real será resolvida se o ajuste posterior não tiver custo.

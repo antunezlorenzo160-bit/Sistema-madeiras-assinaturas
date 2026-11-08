@@ -66,3 +66,16 @@ test('old valuation does not hide a damaged purchase reference or a real stock s
  const missing=weightedCostForLoad([{...physical(),quantidade:1,grupoCargaId:'missing',volume:1}],new Map());assert.match(missing.reason,/movimento de saída/);
  const tooMany=Object.assign(new Map(),{unavailableReason:'Histórico acima do limite.'});assert.equal(weightedCostForLoad([{...physical(),quantidade:1,grupoCargaId:'x',volume:1}],tooMany).reason,'Histórico acima do limite.');
 });
+
+test('V391 physical conference is a recorded entry at its own time, not an unknown adjustment type',()=>{
+ const adjustment=move('v391','ajuste',2,8,{grupoCargaId:'load-391',ajusteConferenciaV391:true}),exit=move('out-391','saida',1,9,{grupoCargaId:'load-391'}),before=JSON.stringify([adjustment,exit]);
+ const result=projectWeightedStockCosts({openingPolicy:opening,purchases:[],movements:[adjustment,exit],stock:[{...physical(),volume:1}]});
+ assert.equal(cost(result,'load-391',1).costCents,100000);assert.equal(JSON.stringify([adjustment,exit]),before);
+ // The real stock entry can be consumed by a later load, not only the one linked to the conference.
+ const later=projectWeightedStockCosts({openingPolicy:opening,purchases:[],movements:[adjustment,{...exit,grupoCargaId:'later-391'}],stock:[{...physical(),volume:1}]});assert.equal(cost(later,'later-391',1).costCents,100000);
+});
+test('new conference entries do not borrow the selling price or old valuation after cutoff',()=>{
+ const adjustment=move('v391-new','ajuste',1,13,{grupoCargaId:'load-new',ajusteConferenciaV391:true,valor:99999}),exit=move('out-new','saida',1,14,{grupoCargaId:'load-new'});
+ for(const policy of [{},opening]){const result=projectWeightedStockCosts({openingPolicy:policy,purchases:[],movements:[adjustment,exit],stock:[]}),checked=cost(result,'load-new',1);assert.equal(checked.costCents,null);assert.match(checked.reason,/ajuste de conferência acrescentou madeira sem custo/);}
+ const unmarked=projectWeightedStockCosts({openingPolicy:opening,purchases:[],movements:[{...adjustment,ajusteConferenciaV391:false},exit],stock:[]});assert.match(cost(unmarked,'load-new',1).reason,/ajuste no histórico/);
+});
