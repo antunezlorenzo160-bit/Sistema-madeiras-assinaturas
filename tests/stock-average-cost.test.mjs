@@ -46,3 +46,23 @@ test('old valuation works without a purchase receipt but does not cover granel o
  const broken=projectWeightedStockCosts({openingPolicy:opening,purchases:[],movements:events,stock:[]});assert.equal(cost(broken,'x',1).costCents,null);
  const rows=events.map(e=>({...e,tipoMedida:'granel',largura:0,espessura:0,comprimento:0})),granel=projectWeightedStockCosts({openingPolicy:opening,purchases:[],movements:rows,stock:[{...physical({tipoMedida:'granel',largura:0,espessura:0,comprimento:0}),volume:1}]});assert.equal(weightedCostForLoad([{...physical({tipoMedida:'granel'}),grupoCargaId:'x',volume:1}],granel).costCents,null);
 });
+test('old reconstructed balance is valued even if its first recorded exit occurs after the valuation was saved',()=>{
+ const a=buy('new-after-cutoff',1,200000,13),events=[a.row,move('later','saida',1,14,{grupoCargaId:'later'})],result=projectWeightedStockCosts({openingPolicy:opening,purchases:[a.receipt],movements:events,stock:[{...physical(),volume:1}]});assert.equal(cost(result,'later',1).costCents,150000);
+});
+test('a recorded quick-conference adjustment supplies its own exit but is never an invented new purchase',()=>{
+ const adjustment=move('adjust','ajuste',1,11,{grupoCargaId:'adjusted',ajusteConferenciaV390:true}),exit=move('adjusted-exit','saida',1,10,{grupoCargaId:'adjusted'}),before=JSON.stringify([adjustment,exit]);
+ const result=projectWeightedStockCosts({openingPolicy:opening,purchases:[],movements:[adjustment,exit],stock:[]});assert.equal(cost(result,'adjusted',1).costCents,100000);assert.equal(JSON.stringify([adjustment,exit]),before);
+ const noPrice=projectWeightedStockCosts({purchases:[],movements:[adjustment,exit],stock:[]});assert.equal(cost(noPrice,'adjusted',1).costCents,null);
+ const future=projectWeightedStockCosts({openingPolicy:opening,purchases:[],movements:[{...adjustment,data:time(14)},{...exit,data:time(13)}],stock:[]});assert.equal(cost(future,'adjusted',1).costCents,null);
+});
+test('one nanounit of rounding in the reconstructed opening balance does not block a valid cost',()=>{
+ const a=buy('round',2.0000000008,200000,8),exit=move('round-out','saida',1.0000000004,9,{grupoCargaId:'round-load'}),result=projectWeightedStockCosts({purchases:[a.receipt],movements:[a.row,exit],stock:[{...physical(),volume:1.0000000004}]});assert.equal(cost(result,'round-load',1.0000000004).costCents,100000);
+});
+test('old valuation does not hide a damaged purchase reference or a real stock shortage, and gives a concrete reason',()=>{
+ const a=buy('safe',1,200000,8),out=move('safe-out','saida',1,9,{grupoCargaId:'safe-load'});
+ for(const movements of [[{...a.row,purchaseReceiptV728:'wrong'},out],[{...a.row,data:time(10)},{...out,volume:2}]]){
+  const result=projectWeightedStockCosts({openingPolicy:opening,purchases:[a.receipt],movements,stock:[]}),checked=cost(result,'safe-load',1);assert.equal(checked.costCents,null);assert(checked.reason.length>20);assert.match(checked.reason,/confere|fecham|supera/);
+ }
+ const missing=weightedCostForLoad([{...physical(),quantidade:1,grupoCargaId:'missing',volume:1}],new Map());assert.match(missing.reason,/movimento de saída/);
+ const tooMany=Object.assign(new Map(),{unavailableReason:'Histórico acima do limite.'});assert.equal(weightedCostForLoad([{...physical(),quantidade:1,grupoCargaId:'x',volume:1}],tooMany).reason,'Histórico acima do limite.');
+});

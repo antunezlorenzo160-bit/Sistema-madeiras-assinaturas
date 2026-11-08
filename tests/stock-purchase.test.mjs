@@ -72,3 +72,11 @@ test('old stock receives the authorized R1000 cost without creating another fina
  let sale=report.entries[0];await saveLoadSaleConfig(s.db,s.identity,{loadId:'old-load',revision:0,signature:sale.source.signature,include:true,costCents:130000,manualEntry:null,resolution:'none'},at+7200002);
  await saveOpeningStockCost(s.db,s.identity,{companyId:'tenant',unitCents:120000,revision:1},at+7200003);sale=(await listFinanceEntries(s.db,s.identity,range,at+7200004)).entries[0];assert.equal(sale.costCents,130000);assert.equal(sale.source.costMode,'manual');assert.equal(sale.source.automaticCostCents,120000);
 });
+test('saving old cost once also values old stock whose first exit is recorded later, with no resave or ledger duplication',async()=>{
+ const {saveOpeningStockCost}=await import('../Netlify/Funtions/lib/opening-stock-cost.mjs'),{listFinanceEntries}=await import('../Netlify/Funtions/lib/company-finance.mjs'),s=purchaseTestDb(),physical={madeiraId:'wood',tipoMedida:'m3',largura:100,espessura:100,comprimento:1,quantidade:1,volume:1};
+ await saveOpeningStockCost(s.db,s.identity,{companyId:'tenant',unitCents:100000,revision:0},at);
+ s.records.set('empresas/tenant/dados/sm2_estoque1/registros/prehistory',{...physical,id:'prehistory'});
+ s.records.set('empresas/tenant/dados/sm2_movimentos/registros/later-out',{...physical,tipo:'saida',grupoCargaId:'later-load',data:'08/11/2026, 10:00:00'});
+ s.records.set('empresas/tenant/dados/sm2_carregamentos/registros/later-load',{...physical,grupoCargaId:'later-load',valor:2500,cargaStatus:'concluido',cargaBaixadaEm:at+3600000});
+ const before=JSON.stringify([...s.records]),writes=s.writes.length,report=await listFinanceEntries(s.db,s.identity,{from:'2026-11-08',to:'2026-11-08'},at+7200000);assert.equal(report.entries.length,1);assert.equal(report.entries[0].costCents,100000);assert.equal(report.entries[0].source.costMode,'average');assert.equal(report.openingPolicy.revision,1);assert.equal(s.writes.length,writes);assert.equal(JSON.stringify([...s.records]),before);
+});
