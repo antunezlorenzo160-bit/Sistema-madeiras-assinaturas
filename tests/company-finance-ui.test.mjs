@@ -52,3 +52,9 @@ test('saving a target refreshes warnings without changing sale values; failed sa
  s.setRequest(async(url,options)=>{assert.match(url,/company-profit-policy$/);assert.deepEqual(JSON.parse(options.body),{minimumBasisPoints:2000,revision:0});return response({empresaId:'tenant',policy:{minimumBasisPoints:2000,revision:1}});});await s.c.financeMinimumSaveV726();assert.match(s.nodes.finEntriesV722.innerHTML,/Abaixo do mínimo da empresa/);assert.equal(vm.runInContext('financeRowsV722[0].amountCents',s.c),11000);
  s.nodes.finMinimumPercentV726.value='35';s.setRequest(async()=>{throw Error('Sem conexão');});await s.c.financeMinimumSaveV726();assert.equal(s.nodes.finMinimumPercentV726.value,'35');assert.match(s.nodes.finMinimumStatusV726.textContent,/preservado/);
 });
+test('service breakdown stays within sale revenue but does not hide a low wood margin',async()=>{
+ const s=setup(),row=automaticSale({amountCents:14300,costCents:10000,source:{...automaticSale().source,woodCents:11000,serviceCents:3300,pendingServiceLines:0}});
+ s.setRequest(async()=>response({empresaId:'tenant',entries:[row],canWrite:true,profitPolicy:{minimumBasisPoints:2000,revision:1}}));await s.c.financeLoadV722();
+ assert.match(s.nodes.finStatsV722.innerHTML,/Serviços incluídos nas vendas/);assert.match(s.nodes.finEntriesV722.innerHTML,/Abaixo do mínimo da empresa/);assert.match(s.nodes.finEntriesV722.innerHTML,/sem adicional de serviços/);assert.match(s.nodes.finMinimumSummaryV726.textContent,/abaixo do lucro mínimo/);
+ s.setRequest(async()=>response({empresaId:'tenant',entries:[{...row,source:{...row.source,woodCents:null,serviceCents:null,pendingServiceLines:1}}],canWrite:true,profitPolicy:{minimumBasisPoints:2000,revision:1}}));await s.c.financeLoadV722();assert.match(s.nodes.finEntriesV722.innerHTML,/pendente de separar o serviço/);assert(!s.nodes.finEntriesV722.innerHTML.includes('Mínimo atendido'));
+});

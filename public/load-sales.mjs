@@ -1,3 +1,29 @@
+// Used only for newly created load lines and their subsequent automatic repricing.
+export function priceLoadServices(item){
+ if((item.tipoMedida||'m3')!=='m3'||item.vendaFechadaM3===true)return item;
+ const material=Number(item.volume||0)*Number(item.preco||0),end=item.endireitamento===true?Number(item.precoEndireitamento||0):0,apl=item.aplainamento===true?Number(item.precoAplainamento||0):0;
+ if(![material,end,apl].every(n=>Number.isFinite(n)&&n>=0))throw Error('Confira o preço e os percentuais dos serviços antes de lançar a carga.');
+ const valorEndireitamento=material*end/100,valorAplainamento=material*apl/100,valorServicos=valorEndireitamento+valorAplainamento;
+ if(!Number.isFinite(material+valorServicos)||material+valorServicos>1000000000000)throw Error('Valor dos serviços acima do limite de cálculo.');
+ return {...item,servicePricingV727:true,valorMaterial:material,valorEndireitamento,valorAplainamento,valorServicos,valor:material+valorServicos};
+}
+// Separate only amounts actually reconciled with the saved original line total.
+// Percentages alone never prove that a service was included in that total.
+export function loadServiceSplit(items,subtotalCents,discountCents){
+ let rawServices=0,pendingServiceLines=0;
+ for(const item of items){
+  const total=Number(item.valor||0),material=Number(item.valorMaterial),explicit=item.valorServicos!==undefined?Number(item.valorServicos):item.valorEndireitamento!==undefined||item.valorAplainamento!==undefined?Number(item.valorEndireitamento||0)+Number(item.valorAplainamento||0):null;
+  const flagged=item.endireitamento===true||item.aplainamento===true||item.encaixe===true||item.friso===true;
+  if(explicit!==null&&Number.isFinite(explicit)&&explicit>=0&&Number.isFinite(material)&&material>=0&&Math.abs(total-material-explicit)<0.000001){rawServices+=explicit;continue;}
+  if(flagged||explicit!==null&&explicit!==0)pendingServiceLines++;
+ }
+ if(pendingServiceLines)return {serviceCents:null,woodCents:null,pendingServiceLines};
+ const beforeDiscount=Math.round((rawServices+Number.EPSILON)*100);
+ if(!Number.isSafeInteger(beforeDiscount)||beforeDiscount<0||beforeDiscount>subtotalCents)return {serviceCents:null,woodCents:null,pendingServiceLines:1};
+ // Allocate a global discount proportionally, rounded once to cents.
+ const net=subtotalCents-discountCents,serviceCents=subtotalCents?Number((BigInt(beforeDiscount)*BigInt(net)+BigInt(Math.floor(subtotalCents/2)))/BigInt(subtotalCents)):0;
+ return {serviceCents,woodCents:net-serviceCents,pendingServiceLines:0};
+}
 // The original commercial total is authoritative; copies and quotes are not sales.
 export function completedLoadSale(items){
  if(!Array.isArray(items)||!items.length||items.some(i=>!Number.isSafeInteger(Number(i.cargaBaixadaEm))||Number(i.cargaBaixadaEm)<=0||i.cargaStatus==='montagem'||['cancelado','cancelled','excluido'].includes(i.cargaStatus)||i.cargaArquivadaInconsistenteEm))return null;
@@ -12,7 +38,7 @@ export function completedLoadSale(items){
  const amountCents=Math.round(round(subtotal-discount+config.frete+config.outras)*100);if(!Number.isSafeInteger(amountCents))throw Error('Valor do carregamento acima do limite de cálculo.');
  const at=Math.max(...items.map(i=>Number(i.cargaBaixadaEm))),parts=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date(at)),dateParts=Object.fromEntries(parts.map(p=>[p.type,p.value]));
  const customer=items.map(i=>i.dadosClienteCargaV407).filter(c=>c&&typeof c==='object').sort((a,b)=>Number(b.atualizadoEm||0)-Number(a.atualizadoEm||0))[0]||{};
- return {amountCents,date:dateParts.year+'-'+dateParts.month+'-'+dateParts.day,partner:String(customer.nome||items.find(i=>i.compradorDestino)?.compradorDestino||'').slice(0,120),subtotalCents:Math.round(subtotal*100),discountCents:Math.round(discount*100),freightCents:Math.round(round(config.frete)*100),otherCents:Math.round(round(config.outras)*100),zeroValueLines:values.filter(v=>v===0).length};
+ return {...loadServiceSplit(items,Math.round(subtotal*100),Math.round(discount*100)),amountCents,date:dateParts.year+'-'+dateParts.month+'-'+dateParts.day,partner:String(customer.nome||items.find(i=>i.compradorDestino)?.compradorDestino||'').slice(0,120),subtotalCents:Math.round(subtotal*100),discountCents:Math.round(discount*100),freightCents:Math.round(round(config.frete)*100),otherCents:Math.round(round(config.outras)*100),zeroValueLines:values.filter(v=>v===0).length};
 }
 export function normalizeLoadSaleConfig(input){
  if(!input||typeof input!=='object'||Array.isArray(input)||Object.keys(input).some(k=>!['loadId','revision','signature','include','costCents','manualEntry','resolution'].includes(k)))throw Error('Dados da venda inválidos.');

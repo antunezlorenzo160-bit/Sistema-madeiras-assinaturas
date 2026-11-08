@@ -45,3 +45,9 @@ test('employee, unverified identity, foreign owner, readonly plan or tenant swap
  }
  const s=setup();await assert.rejects(saveMinimumProfitPolicy(s.db,s.identity,{minimumBasisPoints:2000,revision:0,empresaId:'forged'},now),e=>e.status===400);assert.equal(s.writes.length,0);
 });
+test('service revenue cannot cover low wood margin in a sale or the period and is not a second expense',()=>{
+ const entry=sale({amountCents:14300,source:{type:'load-sale',woodCents:11000,serviceCents:3300,pendingServiceLines:0}}),before=JSON.stringify(entry),check=evaluateMinimumProfit(entry,policy);
+ assert.equal(check.status,'below');assert.equal(check.grossCents,1000);assert.equal(check.shortfallCents,1000);
+ const period=assessMinimumProfitPeriod([entry],{result:4300},policy);assert.equal(period.periodBelow,true);assert.equal(period.shortfallCents,1000);assert.equal(period.serviceCents,3300);assert.equal(JSON.stringify(entry),before);
+ const unknown=sale({source:{type:'load-sale',woodCents:null,serviceCents:null,pendingServiceLines:1}});assert.equal(evaluateMinimumProfit(unknown,policy).status,'pending-service');assert.equal(assessMinimumProfitPeriod([unknown],{result:2000},policy).periodBelow,null);
+});

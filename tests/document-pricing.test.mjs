@@ -34,3 +34,12 @@ test('m2, linear, granel and green wood keep their matching price sources',()=>{
  assert.deepEqual(catalogPricePair({tipoMedida:'granel'},{preco:80,precoAtacado:60}),{retail:80,wholesale:60});
  assert.equal(catalogPricePair({estadoMadeira:'verde',preco:200},{}).locked,true);
 });
+test('preview load repricing retains service charges at wholesale and preserves old completed prices',async()=>{
+ const {readFileSync}=await import('node:fs'),vm=await import('node:vm'),{priceLoadServices}=await import('../public/load-sales.mjs');
+ const writes=[],c={setTimeout(){},normalizePricePolicy,applyDocumentPrices,priceLoadServices,window:{__v456Local:{getItem:()=>null,setItem(){}}},parent:{__smEmployeeMember:()=>({papel:'admin'})},enfileirarOffline:(...args)=>writes.push(args),lancamentos:[],COL:{cargas:'loads'},STORAGE:{lancamentos:'summary'}};
+ vm.createContext(c);vm.runInContext(readFileSync(new URL('../ui/preview-pricing.js',import.meta.url),'utf8'),c);
+ const row=priceLoadServices(item('new',2,{cargaStatus:'montagem',grupoCargaId:'draft',endireitamento:true,precoEndireitamento:10}));
+ const priced=c.updatePricedRowsV710([row],'loads')[0];assert.equal(priced.preco,80);assert.equal(priced.valorMaterial,160);assert.equal(priced.valorServicos,16);assert.equal(priced.valor,176);assert.equal(writes.length,1);
+ const closed=item('closed',2,{grupoCargaId:'closed',cargaStatus:'concluido',cargaBaixadaEm:1,valor:220,endireitamento:true,precoEndireitamento:10});c.carregamentos=[closed];c.repriceLoadsV710();assert.equal(c.carregamentos[0].valor,220);assert.equal(writes.length,1);
+ const locked=item('locked',2,{valor:220});locked.autoPriceV1.locked=true;assert.equal(c.updatePricedRowsV710([locked],'loads')[0].valor,220);
+});

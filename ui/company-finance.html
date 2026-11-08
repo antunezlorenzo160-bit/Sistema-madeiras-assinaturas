@@ -3,12 +3,13 @@
   <h3>Compras, vendas e resultado</h3>
   <p class="note">Vendas dos carregamentos baixados aparecem automaticamente, pelo total do documento original e na data da baixa. Cargas em montagem e orçamentos não entram como vendas. Registre manualmente as compras e as vendas avulsas.</p>
   <p class="note">Margem antes das despesas = vendas − custo da madeira vendida. Depois de descontar despesas e eventuais perdas de madeira, o resultado aparece como lucro ou prejuízo. O prejuízo é calculado, não é uma nova despesa. Compras ainda no estoque não são descontadas novamente.</p>
+  <p class="note">O percentual de beneficiamento é definido por você considerando gastos e mão de obra. O adicional aparece separado e continua no total da venda; ele não é lançado automaticamente como despesa. O resultado considera somente os gastos registrados e não comprova o lucro líquido do serviço.</p>
   <details class="fin-minimum-policy-v726" id="finMinimumPolicyV726">
    <summary>Configurar lucro mínimo da empresa</summary>
    <p class="note">Um percentual geral para todas as madeiras e vendas. Exemplo: custo de R$ 100 e mínimo de 20% → venda mínima de R$ 120.</p>
    <label for="finMinimumPercentV726">Lucro mínimo sobre o custo da madeira (%)<input type="text" inputmode="decimal" id="finMinimumPercentV726" placeholder="Ex.: 20 — vazio desliga o aviso"></label>
    <p class="note" id="finMinimumExampleV726"></p>
-   <p class="note">A venda é comparada ao custo da madeira, antes das despesas. O resultado final do período também é comparado à meta, após os gastos. Sem custo informado, a avaliação fica pendente. Este aviso não muda preços nem bloqueia a venda.</p>
+   <p class="note">O valor da madeira, sem adicional de beneficiamento nem frete cobrado, é comparado ao custo da madeira, antes das despesas. O resultado final do período também é comparado à meta, após os gastos e sem usar o adicional dos serviços para cobrir a meta da madeira. Sem custo informado, a avaliação fica pendente. Este aviso não muda preços nem bloqueia a venda.</p>
    <button type="button" id="finMinimumSaveV726" class="btn btn-primary">Salvar mínimo da empresa</button>
    <p class="note" id="finMinimumStatusV726" role="status">Consulte o período para carregar o mínimo salvo.</p>
   </details>

@@ -67,3 +67,18 @@ test('mismatched or already-used manual entries cannot be silently canceled',asy
 test('public duplicate review is immutable and stable ids differ from transport or other loads',()=>{
  const sale=describeLoadSale([line()],gid),manual={id:'manual',type:'sale',status:'active',date:sale.date,amountCents:sale.amountCents,costCents:1},entries=[sale,manual],before=JSON.stringify(entries);assert.equal(reviewLoadSaleDuplicates(entries)[0].status,'pending-review');assert.equal(JSON.stringify(entries),before);assert.notEqual(loadSaleKeys(gid).entryId,loadSaleKeys('other').entryId);
 });
+test('services are separated only when they reconcile with the saved total; discount is allocated once',()=>{
+ const row=line({valor:1430,valorMaterial:1300,valorServicos:130,endireitamento:true,financeiroOriginalV403:{tipoDesconto:'percentual',desconto:10,frete:50}}),before=JSON.stringify(row),sale=completedLoadSale([row]);
+ assert.equal(sale.amountCents,133700);assert.equal(sale.serviceCents,11700);assert.equal(sale.woodCents,117000);assert.equal(sale.pendingServiceLines,0);assert.equal(JSON.stringify(row),before);
+ const unknown=completedLoadSale([line({valor:1300,endireitamento:true,precoEndireitamento:10})]);assert.equal(unknown.amountCents,130000);assert.equal(unknown.serviceCents,null);assert.equal(unknown.woodCents,null);assert.equal(unknown.pendingServiceLines,1);
+ assert.equal(completedLoadSale([line({valor:1300,valorMaterial:1300,valorServicos:130,endireitamento:true})]).serviceCents,null);
+ assert.equal(completedLoadSale([line({valor:0,valorMaterial:0,valorServicos:0,endireitamento:true})]).serviceCents,0);
+ assert.equal(completedLoadSale([line({valor:100,valorMaterial:90,valorEncaixe:10,valorServicos:10,tipoMedida:'linear',encaixe:true})]).serviceCents,1000);
+});
+test('new load services use saved percentages and repricing keeps both services without changing volume',async()=>{
+ const {priceLoadServices}=await import('../public/load-sales.mjs');
+ const input=line({volume:2,preco:100,endireitamento:true,aplainamento:true,precoEndireitamento:10,precoAplainamento:5}),before=JSON.stringify(input),priced=priceLoadServices(input);
+ assert.equal(priced.valorMaterial,200);assert.equal(priced.valorServicos,30);assert.equal(priced.valor,230);assert.equal(priced.volume,2);assert.equal(JSON.stringify(input),before);
+ const repriced=priceLoadServices({...priced,preco:200});assert.equal(repriced.valor,460);assert.equal(repriced.valorServicos,60);assert.equal(completedLoadSale([repriced]).serviceCents,6000);
+ assert.equal(priceLoadServices({...priced,endireitamento:false,aplainamento:false}).valor,200);assert.throws(()=>priceLoadServices({...input,precoEndireitamento:-10}));
+});

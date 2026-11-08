@@ -25,7 +25,8 @@ function financeRenderV722(){
  const t=report.total;finElV722('finNumbersV722').hidden=false;finElV722('finShownPeriodV722').textContent='Valores exibidos: '+stockChartLabelV720(range.from)+' a '+stockChartLabelV720(range.to)+'.';
  const minimum=assessMinimumProfitPeriod(financeRowsV722.filter(row=>row.date>=range.from&&row.date<=range.to),t,financeProfitPolicyV726);
  financeMinimumSummaryV726(minimum);
- const stats=[['Compras',t.purchase],[t.pendingSales?'Vendas (parcial)':'Vendas',t.sale],[t.pendingCosts?'Custo das vendas (parcial)':'Custo da madeira vendida',t.cost],['Margem antes das despesas',t.grossMargin],...(minimum.enabled?[['Lucro mínimo esperado',minimum.requiredCents]]:[]),['Despesas',t.expense],...(t.loss>0?[['Perdas de madeira / material',t.loss]]:[]),['Lucro do período',t.profit,t.profit>0?'fin-positive':''],['Prejuízo do período',t.deficit,t.deficit>0?'fin-negative':'']];
+ const serviceRows=financeRowsV722.filter(row=>row.type==='sale'&&row.status==='active'&&row.source?.type==='load-sale'&&row.date>=range.from&&row.date<=range.to),servicePending=serviceRows.some(row=>row.source.pendingServiceLines>0||row.source.serviceCents===null),serviceTotal=serviceRows.reduce((sum,row)=>sum+(row.source.serviceCents||0),0);
+ const stats=[...(serviceTotal||servicePending?[[servicePending?'Serviços nas cargas (separação pendente)':'Serviços incluídos nas vendas',servicePending?null:serviceTotal]]:[]),['Compras',t.purchase],[t.pendingSales?'Vendas (parcial)':'Vendas',t.sale],[t.pendingCosts?'Custo das vendas (parcial)':'Custo da madeira vendida',t.cost],['Margem antes das despesas',t.grossMargin],...(minimum.enabled?[['Lucro mínimo esperado',minimum.requiredCents]]:[]),['Despesas',t.expense],...(t.loss>0?[['Perdas de madeira / material',t.loss]]:[]),['Lucro do período',t.profit,t.profit>0?'fin-positive':''],['Prejuízo do período',t.deficit,t.deficit>0?'fin-negative':'']];
  finElV722('finStatsV722').innerHTML=stats.map(([label,value,color])=>'<div><small>'+label+'</small><strong class="'+(color||(value!==null&&value<0?'fin-negative':''))+'">'+(value===null?'Pendente':finMoneyV722(value))+'</strong></div>').join('');
  finElV722('finPendingV722').textContent=financeOutcomeMessageV725(t);
  const graphSeries=[['sale','Vendas'],['purchase','Compras'],['expense','Despesas'],...(t.loss>0?[['loss','Perdas de madeira / material']]:[]),['profit','Lucro'],['deficit','Prejuízo']];
@@ -79,6 +80,8 @@ function financeLoadSaleActionsV724(row){
  const source=row.source,warnings=[];
  if(row.status==='pending-review')warnings.push('Existe venda manual com a mesma data e valor. Escolha abaixo se é a mesma venda ou outra venda. Esta carga ainda não foi somada para evitar duplicidade.');
  if(source.costRequiresReview)warnings.push('As peças ou quantidades mudaram. Informe novamente o custo da madeira vendida.');
+ if(source.pendingServiceLines)warnings.push('Beneficiamento informado sem separação confirmada no total original. A margem da madeira fica pendente; o valor da venda foi preservado.');
+ else if(source.serviceCents>0)warnings.push('Madeira após desconto: '+finMoneyV722(source.woodCents)+'. Serviços após desconto: '+finMoneyV722(source.serviceCents)+'. O serviço não compensa uma margem baixa da madeira.');
  if(source.zeroValueLines)warnings.push(source.zeroValueLines+' item(ns) sem valor de venda. Confira os preços no carregamento.');
  if(source.manualEntryId)warnings.push('Esta carga substitui um lançamento manual anterior, preservado como cancelado.');
  const manual=(source.possibleManualIds||[]).map(id=>financeRowsV722.find(entry=>entry.id===id)).filter(Boolean),disabled=financeCanWriteV722?'':' disabled';
@@ -137,14 +140,15 @@ function financeMinimumSummaryV726(summary){
  const node=finElV722('finMinimumSummaryV726');if(!node)return;node.hidden=!summary.enabled;node.className='note';if(!summary.enabled)return;
  const notes=['Mínimo da empresa: '+financeMinimumPercentV726()+' sobre o custo da madeira.'];
  if(summary.belowCount)notes.push(summary.belowCount+' venda(s) com preço abaixo do mínimo.');
- if(summary.periodBelow)notes.push('O resultado após as despesas ficou '+finMoneyV722(summary.shortfallCents)+' abaixo do lucro mínimo esperado para o período.');
- if(summary.pendingCount)notes.push(summary.pendingCount+' venda(s) aguardando custo ou conferência para avaliar o mínimo.');
+ if(summary.periodBelow)notes.push('O resultado após as despesas, sem usar o adicional de serviços para cobrir a meta da madeira, ficou '+finMoneyV722(summary.shortfallCents)+' abaixo do lucro mínimo esperado para o período.');
+ if(summary.pendingCount)notes.push(summary.pendingCount+' venda(s) aguardando custo, separação dos serviços ou conferência para avaliar o mínimo.');
  if(!summary.saleCount)notes.push('Sem vendas ativas para avaliar neste período.');
  else if(!summary.pendingCount&&!summary.belowCount&&!summary.periodBelow)notes.push('Mínimo atendido nas vendas e no resultado do período.');
  if(summary.belowCount||summary.periodBelow)node.className+=' fin-minimum-warning';node.textContent=notes.join(' ');
 }
 function financeSaleMinimumV726(row){
  const check=evaluateMinimumProfit(row,financeProfitPolicyV726);if(check.status==='disabled'||check.status==='ignored')return '';
+ if(check.status==='pending-service')return '<p class="note">Lucro mínimo da madeira: pendente de separar o serviço no valor original da carga.</p>';
  if(check.status==='pending-cost'||check.status==='pending-review')return '<p class="note">Lucro mínimo: avaliação pendente de custo ou conferência.</p>';
- return check.status==='below'?'<p class="fin-minimum-warning"><strong>Abaixo do mínimo da empresa</strong><br>Lucro da venda antes das despesas: '+finMoneyV722(check.grossCents)+'. Mínimo esperado: '+finMoneyV722(check.requiredCents)+'. Valor mínimo de venda para este custo: '+finMoneyV722(check.minimumSaleCents)+'.</p>':'<p class="note fin-minimum-met">Mínimo atendido no preço da venda ('+financeMinimumPercentV726()+' sobre o custo, antes das despesas).</p>';
+ return check.status==='below'?'<p class="fin-minimum-warning"><strong>Abaixo do mínimo da empresa</strong><br>Margem da madeira antes das despesas, sem adicional de serviços: '+finMoneyV722(check.grossCents)+'. Mínimo esperado: '+finMoneyV722(check.requiredCents)+'. Valor mínimo da madeira, sem serviços, para este custo: '+finMoneyV722(check.minimumSaleCents)+'.</p>':'<p class="note fin-minimum-met">Mínimo atendido no preço da madeira, sem adicional de serviços ('+financeMinimumPercentV726()+' sobre o custo, antes das despesas).</p>';
 }

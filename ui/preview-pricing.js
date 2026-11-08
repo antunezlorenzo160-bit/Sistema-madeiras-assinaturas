@@ -9,7 +9,7 @@ function attachPriceV710(item,others=[]){
  return {...item,autoPriceV1:{...pair,policy:existing?.policy||JSON.parse(JSON.stringify(pricePolicyV710))}};
 }
 function updatePricedRowsV710(items,collectionName,budget=false){
- const priced=applyDocumentPrices(items).map(i=>i.autoPriceV1&&!i.autoPriceV1.locked?(budget?aplicarCobrancaOrcamento(i):{...i,valor:Number(i.volume||0)*Number(i.preco||0)}):i);
+ const priced=applyDocumentPrices(items).map(i=>i.autoPriceV1&&!i.autoPriceV1.locked?(budget?aplicarCobrancaOrcamento(i):(i.tipoMedida==='linear'?cobrarServicosLinear(i):i.servicePricingV727===true?priceLoadServices(i):{...i,valor:Number(i.volume||0)*Number(i.preco||0)})):i);
  for(let n=0;n<items.length;n++){
   const old=items[n],next=priced[n];
   if(old.preco!==next.preco||old.valor!==next.valor||old.priceTierV1!==next.priceTierV1||old.priceWarningV1!==next.priceWarningV1){
