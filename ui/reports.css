@@ -53,3 +53,15 @@
 #financePanelV722 .fin-minimum-policy-v726 button{min-height:44px;font-size:13px}
 #financePanelV722 .fin-minimum-warning{border-left:3px solid var(--accent);background:var(--panel2);padding:10px;font-size:13px;line-height:1.5;color:var(--text)}
 #financePanelV722 .fin-minimum-met{color:var(--success)}
+#financePanelV722 #finStatsV722{grid-template-columns:repeat(4,minmax(0,1fr))}
+#financePanelV722 .fin-review-v735{color:var(--accent)}
+#financePanelV722 #finSaleChecksV735{margin:22px 0}
+#financePanelV722 .fin-sale-check-v735{border:1px solid var(--line);border-radius:10px;padding:12px;margin:12px 0;min-width:0}
+#financePanelV722 .fin-sale-check-v735 h4{font-size:16px;overflow-wrap:anywhere}
+#financePanelV722 .fin-sale-line-v735{display:flex;justify-content:space-between;align-items:baseline;gap:12px;border-bottom:1px solid var(--line);padding:9px 0;font-size:13px}
+#financePanelV722 .fin-sale-line-v735 span{min-width:0;overflow-wrap:anywhere}
+#financePanelV722 .fin-sale-line-v735 strong{flex-shrink:0;font-variant-numeric:tabular-nums}
+#financePanelV722 .fin-sale-closing-v735{margin:16px 0;padding-top:8px;border-top:2px solid var(--line)}
+#financePanelV722 .fin-sale-check-v735 button{min-height:44px;margin-top:12px;font-size:13px}
+#financePanelV722 #finOtherTotalsV735{margin:16px 0}
+@media(max-width:760px){#financePanelV722 #finStatsV722{grid-template-columns:repeat(2,minmax(0,1fr))}}

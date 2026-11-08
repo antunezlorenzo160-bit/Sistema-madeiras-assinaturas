@@ -234,3 +234,12 @@ Saldo positivo anterior a todo o histórico é agora valorado pela política ant
 Tolerância limitada ao erro acumulado de arredondamento em unidades de1e-9m³, máximo1e-6m³; falta real não é liberada. Quantidade consumida para custo não excede saldo positivo disponível e centavos são preservados. Projeção retorna motivos específicos para compra sem referência/custo, movimento ausente, entrada posterior ao corte, saldo divergente, dados inválidos ou limites de conferência. Detalhes existentes da venda exibem esses motivos; sem novo painel. Nenhuma mudança da política salva, compra/despesa/venda, preços, quantidade ou custos manuais conferidos. Consultas seguem sem escrita.
 
 Validação:4novos casos de modelo (abertura posterior ao corte, conferência antiga/futura, arredondamento e proteção/diagnóstico),1integração de política salva antes da primeira saída sem regravar nem duplicar ledger;12casos de modelo ao todo.8suítes pertinentes passaram; build e32scripts válidos. Apenas prévia12. Nenhuma ferramenta leu ou alterou Firebase real.
+
+
+## Conferência financeira por venda V735 — 08/11
+
+Resumo principal reduzido a vendas, custo total vendido, despesas e resultado. Conta de cada venda antes dos gráficos: total vendido, custo TOTAL, volume físico quando disponível, equivalente aproximado por m³, origem manual/média e gasto de entrega vinculado no período. Custo manual diferente do automático recebe aviso de conferência; nenhum valor é corrigido automaticamente. Compras/metas/totais adicionais e gráficos ficam recolhidos. Cadastro esclarece diferença entre custo total e preço por m³.
+
+Reconciliação usa somente registros ativos nas datas consultadas; despesa geral ou de outra carga não é rateada por suposição. Frete cobrado permanece na receita e gasto real separado. Soma dos custos e resultado por venda são validados contra o agregador existente. Volume vem das dimensões físicas, sem volume comercial acrescido. Sem mudanças de estoque, preços, políticas, escrita financeira, filas ou regras.
+
+Validação:8 suítes pertinentes passaram (interface, reconciliação, vendas, compras, custo médio, mínimo, transporte e teclado); build limpo e32scripts válidos. Caso sintético reproduz os totaisR$71.176,17/R$14.330/R$4.000, sem presumir quais são os custos reais por carga. Sem sessão Firebase autenticada para auditar registros reais. Apenas prévia12; produção inalterada.

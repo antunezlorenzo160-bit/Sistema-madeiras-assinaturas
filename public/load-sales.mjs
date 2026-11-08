@@ -1,3 +1,13 @@
+// Physical wood volume for explanation only; this never changes document prices or stored costs.
+export function loadPhysicalM3(items){
+ if(!Array.isArray(items)||!items.length)return null;let units=0;
+ for(const item of items){
+  const kind=item.tipoMedida||item.tipoCadastro||'m3';if(!['m3','granel'].includes(kind))return null;
+  const volume=kind==='granel'?Number(item.volume):Number(item.largura)/100*Number(item.espessura)/100*Number(item.comprimento)*Number(item.quantidade),part=Math.round(volume*1e9);
+  if(!Number.isFinite(volume)||volume<=0||!Number.isSafeInteger(part)||part<=0)return null;units+=part;if(!Number.isSafeInteger(units))return null;
+ }
+ return units/1e9;
+}
 // Used only for newly created load lines and their subsequent automatic repricing.
 export function priceLoadServices(item){
  if((item.tipoMedida||'m3')!=='m3'||item.vendaFechadaM3===true)return item;
