@@ -252,3 +252,12 @@ Conferido o fluxo existente: entrada recebe preço por m³, calcula o custo tota
 Correção do custo de carga permite escolher Total ou Preço por m³ quando há volume físico confirmado. Troca de modo limpa o campo para não reinterpretar o número anterior; prévia mostra volume×preço=total e envia somente o total à API existente. Custo automático continua padrão quando disponível. Conversão em centavos/BigInt com arredondamento e limites, sem usar volume comercial ou valor de venda. Falhas preservam a entrada para retry. Madeira sem custo continua pendente, sem estimativa silenciosa. Sem migração de dados ou regravação de compras/custos reais.
 
 Validação:8suítes pertinentes passaram; testes de conversão, limites, UI/retentativa e integração compra→venda. Build limpo e32scripts válidos. Nenhum acesso autenticado ao Firebase real; pendência específica da nova carga ainda depende de sua mensagem de diagnóstico. Apenas prévia12, produção inalterada.
+
+
+## Automático como padrão e diagnóstico de compra V737 — 08/11
+
+Usuário confirmou que não viu mensagem antes de preencher1300 manualmente. Ligação compra→média→saída já existe e foi validada naV736; não há sessão Firebase para determinar o bloqueio específico real. Esta revisão não declara a causa resolvida sem evidência.
+
+UI agora mantém opção de custo automático marcada também quando ainda pendente, em vez de conduzir a digitação manual. Campo de correção fica desabilitado enquanto automático. Mensagem de motivo é exibida junto à venda e nos detalhes. API expõe automaticCostPendingReason mesmo quando há override manual; a conta da venda mostra o motivo e informa que o valor manual foi mantido. Alteração de peças/quantidade tem diagnóstico próprio. Retentativa mantém campos automáticos desabilitados e custo pendente nunca é mostrado como0. Nenhum custo manual existente é substituído ou reinterpretado.
+
+Validação:8suítes pertinentes passaram, incluindo novos casos de automático pendente, motivo sob override manual e ausência dezero indevido. Regressões compra→venda, média, transporte, meta e teclado verdes. Build limpo/32scripts válidos. Sem mudanças de algoritmo contábil, estoque, escrita financeira, preço, filas ou regras. Apenas prévia12. Para investigar uma carga real, consultar o motivo após atualizar a prévia.

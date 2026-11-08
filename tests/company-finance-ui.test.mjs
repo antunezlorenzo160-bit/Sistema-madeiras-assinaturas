@@ -89,3 +89,16 @@ test('manual price per m3 previews and posts the full load cost, and retries pre
  await s.c.financeSaveLoadSaleV724(root);assert.match(s.nodes.finSaleChecksV735.innerHTML,/16.869,19/);
  mode.value='total';s.c.financeLoadCostPreviewV736(root);assert.match(preview.textContent,/1.300,00/);
 });
+
+test('pending automatic cost explains missing purchase and is not displayed as zero',async()=>{
+ const s=setup(),reason='Falta o movimento de entrada de uma compra registrada.',row=automaticSale({source:{...automaticSale().source,costMode:'pending',automaticCostCents:null,automaticCostPendingReason:reason,costPendingReason:reason,physicalM3:10}});
+ s.setRequest(async()=>response({empresaId:'tenant',entries:[row],canWrite:true}));await s.c.financeLoadV722();
+ assert.match(s.nodes.finEntriesV722.innerHTML,/data-load-sale-auto checked/);assert.match(s.nodes.finEntriesV722.innerHTML,/Automático — aguardando custo da compra/);assert.match(s.nodes.finSaleChecksV735.innerHTML,/Falta o movimento de entrada/);assert.match(s.nodes.finSaleChecksV735.innerHTML,/Pendente/);
+ const root=saleRoot(row),previous=root.querySelector,auto={checked:true},preview={textContent:''};root.querySelector=selector=>selector==='[data-load-sale-auto]'?auto:selector==='[data-load-sale-cost-preview]'?preview:previous(selector);
+ s.c.financeLoadCostPreviewV736(root);assert.match(preview.textContent,/aguardando custo da compra/);assert(!preview.textContent.includes('R$ 0,00'));
+ s.setRequest(async(url,options)=>{assert.equal(JSON.parse(options.body).costCents,null);return response({empresaId:'tenant',entry:row});});await s.c.financeSaveLoadSaleV724(root);assert.equal(root.fields.cost.disabled,true);
+});
+test('manual correction remains manual but exposes why purchase cost cannot be calculated',async()=>{
+ const s=setup(),row=automaticSale({costCents:130000,source:{...automaticSale().source,costMode:'manual',automaticCostCents:null,automaticCostPendingReason:'Há entrada sem preço posterior ao salvamento do custo antigo.'}});
+ s.setRequest(async()=>response({empresaId:'tenant',entries:[row],canWrite:true}));await s.c.financeLoadV722();assert(!s.nodes.finEntriesV722.innerHTML.includes('data-load-sale-auto checked'));assert.match(s.nodes.finSaleChecksV735.innerHTML,/entrada sem preço/);assert.match(s.nodes.finSaleChecksV735.innerHTML,/total manual foi mantido/);assert.equal(vm.runInContext('financeRowsV722[0].costCents',s.c),130000);
+});
