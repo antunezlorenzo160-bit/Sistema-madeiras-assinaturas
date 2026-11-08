@@ -3,7 +3,7 @@
  const media=window.matchMedia('(max-width:760px) and (pointer:coarse)');
  const calc=document.getElementById('calculadora'),main=document.querySelector('body > main');if(!calc||!main)return;
  let viewport=window.visualViewport,frame=null;try{if(window.parent!==window&&window.parent.visualViewport){viewport=window.parent.visualViewport;frame=window.frameElement;}}catch{}
- let baseline=0,visible=false,dismissed=false,armed=false,generation=0,launchGeneration=-1,editVersion=0,launchEditVersion=0,launchField=null,launchValue=null,raf=0,checkField=false;
+ let baseline=0,visible=false,dismissed=false,armed=false,generation=0,launchGeneration=-1,editVersion=0,launchEditVersion=0,launchField=null,launchValue=null,lastFocused=null,raf=0,checkField=false;
  const active=()=>media.matches&&calc.classList.contains('active')&&!document.body.classList.contains('mobile-menu-open');
  const editable=el=>!!el&&calc.contains(el)&&el.tagName==='INPUT'&&!el.disabled&&!el.readOnly&&!['checkbox','radio','button','submit','hidden','file','range','color'].includes(el.type);
  function release(){dismissed=true;armed=false;generation++;}
@@ -52,7 +52,7 @@
   const background=calc.contains(event.target)&&!event.target.closest?.('input,textarea,select,button,a,label,summary,[tabindex],[role="button"],[role="dialog"]');
   if((control||background)&&event.cancelable){event.preventDefault();if(control?.id==='btnLancar'||control?.id==='btnLimparCampos')launchGeneration=generation;}
  },true);
- document.addEventListener('focusin',event=>{if(active()&&editable(event.target)){schedule(true);}},true);
+ document.addEventListener('focusin',event=>{if(active()&&editable(event.target)){if(event.target!==lastFocused){generation++;lastFocused=event.target;}schedule(true);}},true);
  document.addEventListener('focusout',event=>{if(active()&&editable(event.target)&&!editable(event.relatedTarget))release();},true);
  document.addEventListener('input',event=>{if(active()&&editable(event.target)&&event.isTrusted){if(event.target!==launchField||event.target.value!==launchValue)editVersion++;if(!dismissed)armed=true;}},true);
  document.addEventListener('keydown',event=>{

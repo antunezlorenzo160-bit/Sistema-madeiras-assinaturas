@@ -31,7 +31,7 @@ test('native hide arrow disarms delayed focus immediately, even before animation
  s.focus(s.width);s.api.beginLaunch();assert(s.api.canRestoreFocus(s.width),'an explicit new field tap allows typing again');
 });
 test('another field or leaving the calculator cancels a pending return to width; desktop remains native',()=>{
- const s=setup();s.focus(s.width);s.api.beginLaunch();s.focus(s.length);assert.equal(s.api.canRestoreFocus(s.width),false);s.inactive();assert.equal(s.api.canRestoreFocus(s.length),false);
+ const s=setup();s.focus(s.width);s.api.beginLaunch();s.document.activeElement=s.length;s.fire('focusin',s.length);s.flush();assert.equal(s.api.canRestoreFocus(s.width),false,'native Next must also cancel a delayed return');s.inactive();assert.equal(s.api.canRestoreFocus(s.length),false);
  const desktop=setup({mobile:false});assert.equal(desktop.fire('mousedown',desktop.button).prevented,false);assert.equal(desktop.api.canRestoreFocus(desktop.width),true);assert(!desktop.styles.has('--calc-visible-height-v733'));
 });
 test('packages Enter no longer blurs the mobile input',()=>{
