@@ -194,3 +194,10 @@ Nova captura confirmou que o checkbox estava desmarcado. Preencher limites não 
 Ao ativar/recarregar política, e ao abrir/recalcular a carga atual, o grupo atual em montagem passa a usar os limites habilitados, inclusive linhas iniciadas sem autoPriceV1. Não exige outro botão. Somente dono, grupo ativo, sem baixa/fechamento e com catálogo carregado; outras cargas conservam suas políticas e fechadas não são reprecificadas. Metadados/valores são enfileirados por ID e resumo/local atualizados; rerender estável não repete a escrita. Verde/bloqueado e serviços preservados. Políticas desativadas não adotam carga legada. Orçamentos salvos continuam preservados.
 
 Validação:7casosUIatualizados, incluindo10,4748m³ desativado→ativado,29,2285m³ sem largura com mudança no valor real da carga, limite exato10/previsão, ausência de painel, somente grupo atual, outros grupos/fechados, verde e serviço;8suítes pertinentes, build e31scripts passaram. Testes usam preços sintéticos, sem Firebase real. Apenas prévia12; navegador automatizado do ambiente segue bloqueado.
+
+
+## Ícones nas opções do menu V731 — 08/11
+
+Pedido: usar referências visuais em cada seletor, como a engrenagem existente. Títulos dos12atalhos de início ganham ícones relacionados à ação; os clones do menu lateral herdam os mesmos ícones. Início dinâmico ganha casa; Produção usa fábrica via CSS, preservando integralmente o módulo de permissões/geração desse botão. Ícones inline, sem dependência externa; os elementos decorativos dos títulos são aria-hidden. Rótulos, descrições, rotas, eventos e visibilidade por permissões mantidos.
+
+Validação: build completo,31scripts,12opções de atalhos e entradas dinâmicas conferidos. employee-navigation-visibility e preview-integration aprovados; caso de regras/guardas em employee-load-access aprovado. Um caso antigo dessa suíte continua falhando por falta de priceLoadServices no contexto simulado, reproduzido também sem nenhuma alteração de ícones. Nenhuma regra nem dado alterados. Apenas prévia12.

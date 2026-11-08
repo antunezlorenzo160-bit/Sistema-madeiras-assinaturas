@@ -29,6 +29,12 @@ export function applyPendingPreview(html){
  replace('<section id="estoque" class="tab">',reports+'<section id="estoque" class="tab">');
  const loadMenu='<button type="button" class="inicio-atalho-v464" data-inicio-destino="carregamentos">';
  replace(loadMenu,'<button type="button" class="inicio-atalho-v464" data-inicio-destino="relatorios"><strong>Gráficos e relatórios</strong><span>Indicadores e acompanhamento</span></button>'+loadMenu);
+ // Menu action icons are cloned into the sidebar along with their existing controls.
+ const menuIconsV731={'Sair da conta':['🚪','Sair da conta'],'⚙ Configurações':['⚙','Configurações'],'Clientes':['👥','Clientes'],'Empresa':['🏢','Empresa'],'Madeiras':['🌳','Madeiras'],'Calculadora':['🧮','Calculadora'],'Orçamentos':['📝','Orçamentos'],'Pedidos':['📋','Pedidos'],'Estoque':['📦','Estoque'],'Movimentações':['🔄','Movimentações'],'Gráficos e relatórios':['📊','Gráficos e relatórios'],'Carregamentos':['🚚','Carregamentos']};
+ const menuIconV731=icon=>'<i class="menu-acao-v731" aria-hidden="true">'+icon+'</i> ';
+ app=app.replace(/(<button\b[^>]*class="[^"]*\binicio-atalho-v464\b[^"]*"[^>]*>\s*<strong>)([^<]+)(<\/strong>)/g,(original,start,title,end)=>{const entry=menuIconsV731[title.trim()];return entry?start+menuIconV731(entry[0])+entry[1]+end:original;});
+ replace("irInicioV525.innerHTML='<strong>Início</strong>","irInicioV525.innerHTML='<strong>"+menuIconV731('🏠')+"Início</strong>");
+ app=app.replace('</head>','<style>#employee-production-home::before,#employee-production-menu::before{content:"🏭";display:inline-block;width:1.3em;margin-inline-end:.2em;text-align:center}.inicio-atalho-v464 .menu-acao-v731{display:inline-block;width:1.3em;margin-inline-end:.2em;font-style:normal;line-height:1;text-align:center;vertical-align:-.05em}</style></head>');
  replace('function renderEstoque(){\n  if(lotePacotesEmCurso)return;','function renderEstoque(){\n  if(lotePacotesEmCurso)return;\n  queueStockChartsV720();');
  replace('function renderPlanilhasM3Especies(){\n  if(lotePacotesEmCurso)return;','function renderPlanilhasM3Especies(){\n  if(lotePacotesEmCurso)return;\n  queueStockChartsV720();');
  replace('function avisoHistoricoV701(texto){','function avisoHistoricoV701(texto){\n queueStockChartsV720(texto);');
