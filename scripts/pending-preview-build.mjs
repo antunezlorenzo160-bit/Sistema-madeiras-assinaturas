@@ -17,6 +17,8 @@ export function applyPendingPreview(html){
  replace('function renderOrcamento(){\n  if(lotePacotesEmCurso)return;','function renderOrcamento(){\n  if(lotePacotesEmCurso)return;\n  repriceBudgetV710();\n  priceDocumentNoticeV710(orcamento,document.getElementById("orcamento"));');
  replace('function renderLancamentos(){\n  if(lotePacotesEmCurso)return;','function renderLancamentos(){\n  if(lotePacotesEmCurso)return;\n  repriceLoadsV710();\n  priceDocumentNoticeV710(typeof carregamentos!=="undefined"?carregamentos.filter(i=>i.grupoCargaId===sessaoCargaAtual&&i.cargaStatus==="montagem"):[],document.getElementById("resumoCalculadoraExport"));');
  replace('    carregamentos.push({...salvo});\n    lancamentos.push({...salvo});','    const priced=attachPriceV710(salvo,carregamentos.filter(i=>i.grupoCargaId===salvo.grupoCargaId));\n    Object.assign(salvo,priceLoadServices(priced));\n    carregamentos.push({...salvo});\n    lancamentos.push({...salvo});\n    repriceLoadsV710();\n    Object.assign(salvo,carregamentos.find(i=>i.id===salvo.id)||salvo);');
+ // The reusable-client listener lives outside V407's closure; use its own field schema.
+ replace('for(const[k]of camposClienteV407){const campo=form.querySelector(', 'for(const[k]of camposClientesV492){const campo=form.querySelector(');
  // Mobile keeps the native keyboard focused while launch completes, and honors explicit hiding.
  replace('function prepararProximoLancamentoM3(){', 'function prepararProximoLancamentoM3(){\n  if(window.__smCalcKeyboardV733?.canResetAfterLaunch()===false)return;');
  replace('async function lancar(){', 'async function lancar(){\n  window.__smCalcKeyboardV733?.beginLaunch();');

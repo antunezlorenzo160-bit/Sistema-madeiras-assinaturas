@@ -261,3 +261,10 @@ Usuário confirmou que não viu mensagem antes de preencher1300 manualmente. Lig
 UI agora mantém opção de custo automático marcada também quando ainda pendente, em vez de conduzir a digitação manual. Campo de correção fica desabilitado enquanto automático. Mensagem de motivo é exibida junto à venda e nos detalhes. API expõe automaticCostPendingReason mesmo quando há override manual; a conta da venda mostra o motivo e informa que o valor manual foi mantido. Alteração de peças/quantidade tem diagnóstico próprio. Retentativa mantém campos automáticos desabilitados e custo pendente nunca é mostrado como0. Nenhum custo manual existente é substituído ou reinterpretado.
 
 Validação:8suítes pertinentes passaram, incluindo novos casos de automático pendente, motivo sob override manual e ausência dezero indevido. Regressões compra→venda, média, transporte, meta e teclado verdes. Build limpo/32scripts válidos. Sem mudanças de algoritmo contábil, estoque, escrita financeira, preço, filas ou regras. Apenas prévia12. Para investigar uma carga real, consultar o motivo após atualizar a prévia.
+
+
+## Selecionar cliente sem ReferenceError V738 — 08/11
+
+Screenshot:camposClienteV407 is not defined ao escolher cliente cadastrado para a carga. Causa reproduzida:listenerV492 executa fora da closureV407 e referenciava seu const privado. Build passa a usar camposClientesV492, schema local já usado pelo cadastro. Campos inexistentes no formulário são ignorados; dados são atribuídos por value, nunca por HTML. Seleção só marca formulário pendente, sem salvar carga/cliente, emitir operações offline, mexer em estoque ou financeiro.
+
+Validação:no handler real extraído do TEMPLATE gerado, versão anterior reproduz exatamente ReferenceError; corrigida preenche16campos, preserva registro cadastrado e exige Salvar dados do cliente. Seleção vazia/removida não modifica formulário.3suítes pertinentes passaram (cliente/financeiro/teclado); build limpo e32scripts válidos. Somente prévia12; não há alteração de regras, permissões, login ou produção.
