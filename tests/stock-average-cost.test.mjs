@@ -33,3 +33,16 @@ test('missing or edited history, missing receipt marker and impossible balances 
   const result=projectWeightedStockCosts({purchases:[a.receipt],movements:rows,stock:[{...physical(),volume:1}]});assert.equal(cost(result,'x',1).costCents,null);
  }
 });
+const opening={unitCents:100000,cutoffAt:Date.UTC(2026,10,8,15),revision:1};
+test('R1000 old wood and R2000 new purchase form a real weighted mean, without replacing the new purchase cost',()=>{
+ const a=buy('a',1,200000,9),events=[move('old','entrada',1,8),a.row,move('x','saida',1,10,{grupoCargaId:'x'})],before=JSON.stringify(events),result=projectWeightedStockCosts({openingPolicy:opening,purchases:[a.receipt],movements:events,stock:[{...physical(),volume:1}]});assert.equal(cost(result,'x',1).costCents,150000);assert.equal(JSON.stringify(events),before);assert.equal(a.receipt.lines[0].acquisitionCents,200000);
+});
+test('old valuation also covers a reconstructed opening balance, while later unpriced entries remain pending',()=>{
+ const a=buy('a',1,200000,9),exit=move('x','saida',1,10,{grupoCargaId:'x'});let result=projectWeightedStockCosts({openingPolicy:opening,purchases:[a.receipt],movements:[a.row,exit],stock:[{...physical(),volume:1}]});assert.equal(cost(result,'x',1).costCents,150000);
+ result=projectWeightedStockCosts({openingPolicy:opening,purchases:[],movements:[move('old','entrada',1,8),move('new-unpriced','entrada',1,14),move('y','saida',1,15,{grupoCargaId:'y'})],stock:[{...physical(),volume:1}]});assert.equal(cost(result,'y',1).costCents,null);
+});
+test('old valuation works without a purchase receipt but does not cover granel or broken physical history',()=>{
+ const events=[move('old','entrada',2,8),move('x','saida',1,10,{grupoCargaId:'x'})];const result=projectWeightedStockCosts({openingPolicy:opening,purchases:[],movements:events,stock:[{...physical(),volume:1}]});assert.equal(cost(result,'x',1).costCents,100000);
+ const broken=projectWeightedStockCosts({openingPolicy:opening,purchases:[],movements:events,stock:[]});assert.equal(cost(broken,'x',1).costCents,null);
+ const rows=events.map(e=>({...e,tipoMedida:'granel',largura:0,espessura:0,comprimento:0})),granel=projectWeightedStockCosts({openingPolicy:opening,purchases:[],movements:rows,stock:[{...physical({tipoMedida:'granel',largura:0,espessura:0,comprimento:0}),volume:1}]});assert.equal(weightedCostForLoad([{...physical({tipoMedida:'granel'}),grupoCargaId:'x',volume:1}],granel).costCents,null);
+});

@@ -9,7 +9,7 @@ export function applyPendingPreview(html){
  let app=JSON.parse(html.slice(start,end));if(app.includes('// PENDING_PREVIEW_V710'))return html;
  const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
  const replace=(a,b)=>{if(!app.includes(a)||app.indexOf(a)!==app.lastIndexOf(a))throw Error('Trecho da prévia mudou: '+a.slice(0,80));app=app.replace(a,()=>b);};
- const pure=['public/document-pricing.mjs','public/compact-load-tables.mjs','public/compact-documents.mjs','public/sheet-item-totals.mjs','public/stock-charts.mjs','public/company-finance.mjs','public/load-transport.mjs','public/load-sales.mjs','public/minimum-profit.mjs','public/stock-purchase.mjs'].map(p=>read(p).replace(/^import .*;\n/gm,'').replaceAll('export ','')).join('\n');
+ const pure=['public/document-pricing.mjs','public/compact-load-tables.mjs','public/compact-documents.mjs','public/sheet-item-totals.mjs','public/stock-charts.mjs','public/company-finance.mjs','public/load-transport.mjs','public/load-sales.mjs','public/minimum-profit.mjs','public/stock-purchase.mjs','public/opening-stock-cost.mjs'].map(p=>read(p).replace(/^import .*;\n/gm,'').replaceAll('export ','')).join('\n');
  const helpers=read('ui/preview-pricing.js')+'\n'+read('ui/compact-print-settings.js')+'\n'+read('ui/sheet-totals.js')+'\n'+read('ui/stock-charts.js')+'\n'+read('ui/company-finance.js')+'\n'+read('ui/reports.js')+'\n'+read('ui/load-transport.js')+'\n'+read('ui/stock-purchase.js');
  replace('function calcPreview(){','// PENDING_PREVIEW_V710\n'+pure+'\n'+helpers+'\nfunction calcPreview(){');
  app=app.replace('function calcPreview(){', 'function calcPreview(){calcPreviewBaseV710();stockPurchaseVisibilityV728();document.getElementById("pricePreviewV710")?.remove();previewDocumentValueV710();}\nfunction calcPreviewBaseV710(){');
@@ -19,6 +19,7 @@ export function applyPendingPreview(html){
  replace('    carregamentos.push({...salvo});\n    lancamentos.push({...salvo});','    const priced=attachPriceV710(salvo,carregamentos.filter(i=>i.grupoCargaId===salvo.grupoCargaId));\n    Object.assign(salvo,priceLoadServices(priced));\n    carregamentos.push({...salvo});\n    lancamentos.push({...salvo});\n    repriceLoadsV710();\n    Object.assign(salvo,carregamentos.find(i=>i.id===salvo.id)||salvo);');
  // New stock exits keep an immutable instant for cost chronology, including offline recovery.
  replace("    const mov={\n      id:crypto.randomUUID(),\n      ...(ehCarga?", "    const mov={\n      costRecordedAtV728:Date.now(),\n      id:crypto.randomUUID(),\n      ...(ehCarga?");
+ replace("const mov={id:crypto.randomUUID(),data:nowBR(),madeira:item.madeira,madeiraId:item.madeiraId,tipo:'entrada',origem:nome,", "const mov={id:crypto.randomUUID(),costRecordedAtV728:Date.now(),data:nowBR(),madeira:item.madeira,madeiraId:item.madeiraId,tipo:'entrada',origem:nome,");
  // Opt-in purchase capture happens before the legacy stock arrays or offline queue are touched.
  replace("      const eh2=destino==='estoque2',col=eh2?COL.estoque2:COL.estoque1,nome=eh2?'Estoque 2':'Estoque 1';", "      if(stockPurchaseCaptureV728(item,destino))return;\n      const eh2=destino==='estoque2',col=eh2?COL.estoque2:COL.estoque1,nome=eh2?'Estoque 2':'Estoque 1';");
  replace('<div id="cargaEstoqueEscolha"',read('ui/stock-purchase.html')+'<div id="cargaEstoqueEscolha"');

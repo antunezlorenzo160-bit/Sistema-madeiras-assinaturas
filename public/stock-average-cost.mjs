@@ -1,3 +1,4 @@
+import {normalizeOpeningStockCost} from './opening-stock-cost.mjs';
 import {stockCostKey,purchaseVolumeUnits} from './stock-purchase.mjs';
 const costPrecisionV728=1000000n;
 const costRoundV728=(n,d)=>(n+d/2n)/d;
@@ -10,7 +11,8 @@ function movementTimeV728(row){
  return null;
 }
 // Pooled across locations, but never across species, dimensions, units or dry/green state.
-export function projectWeightedStockCosts({purchases,movements,stock}){
+export function projectWeightedStockCosts({purchases,movements,stock,openingPolicy={}}){
+ const opening=normalizeOpeningStockCost(openingPolicy),oldValue=qty=>costRoundV728(BigInt(qty)*BigInt(opening.unitCents),1000000000n)*costPrecisionV728;
  const pools=new Map(),byMovement=new Map(),loads=new Map();
  const pool=key=>{if(!pools.has(key))pools.set(key,{current:0,delta:0,events:[],invalid:false});return pools.get(key);};
  for(const receipt of purchases)for(const line of receipt.lines||[]){
@@ -26,6 +28,7 @@ export function projectWeightedStockCosts({purchases,movements,stock}){
   let quantity;try{quantity=purchaseVolumeUnits(Math.abs(Number(row.volume)));if(!quantity)continue;}catch{p.invalid=true;continue;}
   const purchase=byMovement.get(row.id),at=movementTimeV728(row);let value=null;
   if(purchase){seen.add(row.id);if(row.tipo!=='entrada'||purchase.costKey!==key||Math.abs(purchaseVolumeUnits(purchase.volume)-quantity)>1||row.purchaseReceiptV728!==purchase.receiptId||!Number.isSafeInteger(purchase.acquisitionCents)||purchase.acquisitionCents<0)p.invalid=true;else value=BigInt(purchase.acquisitionCents)*costPrecisionV728;}
+  if(!purchase&&!row.purchaseReceiptV728&&(row.tipoMedida||row.tipoCadastro||'m3')==='m3'&&opening.unitCents!==null&&at!==null&&at<=opening.cutoffAt)value=oldValue(quantity);
   if(at===null)p.invalid=true;
   p.delta+=row.tipo==='entrada'?quantity:-quantity;if(!Number.isSafeInteger(p.delta))p.invalid=true;
   p.events.push({id:row.id,type:row.tipo,quantity,at:at||0,value,loadId:row.tipo==='saida'?row.grupoCargaId:null});
@@ -33,6 +36,7 @@ export function projectWeightedStockCosts({purchases,movements,stock}){
  for(const [id,line] of byMovement)if(!seen.has(id))pool(line.costKey).invalid=true;
  for(const [key,p] of pools){
   let qty=p.current-p.delta,value=0n,unknown=qty>0;if(qty<0||!Number.isSafeInteger(qty))p.invalid=true;
+  if(qty>0&&!p.invalid&&opening.unitCents!==null&&JSON.parse(key)[1]==='m3'&&p.events.some(e=>e.at>0&&e.at<=opening.cutoffAt)){value=oldValue(qty);unknown=false;}
   const events=p.events.sort((a,b)=>a.at-b.at||(a.type===b.type?String(a.id).localeCompare(String(b.id)):a.type==='entrada'?-1:1));
   // Recorded history has second precision. Mixed directions in one second cannot establish order.
   for(let n=1;n<events.length;n++)if(events[n].at===events[n-1].at&&events[n].type!==events[n-1].type)p.invalid=true;

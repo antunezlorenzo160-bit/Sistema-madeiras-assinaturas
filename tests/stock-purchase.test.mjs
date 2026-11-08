@@ -61,3 +61,14 @@ test('a large unloading stays within one atomic confirmation and the Firestore w
  const result=await confirmStockPurchase(s.db,s.identity,purchase({lines}),at);assert.equal(result.receipt.lines.length,200);assert.equal(s.writes.length,403);assert.equal(result.receipt.totalCents,20030000);
  assert.throws(()=>normalizeStockPurchase(purchase({lines:[...lines,line({id:randomUUID()})]})));
 });
+test('old stock receives the authorized R1000 cost without creating another financial purchase',async()=>{
+ const {saveOpeningStockCost}=await import('../Netlify/Funtions/lib/opening-stock-cost.mjs'),{listFinanceEntries}=await import('../Netlify/Funtions/lib/company-finance.mjs'),s=purchaseTestDb();
+ const physical={madeiraId:'wood',tipoMedida:'m3',largura:100,espessura:100,comprimento:1,quantidade:1,volume:1};
+ s.records.set('empresas/tenant/dados/sm2_movimentos/registros/old',{...physical,tipo:'entrada',data:'08/11/2026, 08:00:00'});
+ s.records.set('empresas/tenant/dados/sm2_movimentos/registros/out',{...physical,tipo:'saida',grupoCargaId:'old-load',data:'08/11/2026, 10:00:00'});
+ s.records.set('empresas/tenant/dados/sm2_carregamentos/registros/old-load',{...physical,grupoCargaId:'old-load',valor:3000,cargaStatus:'concluido',cargaBaixadaEm:at+3600000});
+ const range={from:'2026-11-08',to:'2026-11-08'};let report=await listFinanceEntries(s.db,s.identity,range,at+7200000);assert.equal(report.entries[0].costCents,null);
+ await saveOpeningStockCost(s.db,s.identity,{companyId:'tenant',unitCents:100000,revision:0},at+7200000);const count=s.writes.length;report=await listFinanceEntries(s.db,s.identity,range,at+7200001);assert.equal(report.entries.length,1);assert.equal(report.entries[0].type,'sale');assert.equal(report.entries[0].costCents,100000);assert.equal(report.entries[0].source.costMode,'average');assert.equal(s.writes.length,count);
+ let sale=report.entries[0];await saveLoadSaleConfig(s.db,s.identity,{loadId:'old-load',revision:0,signature:sale.source.signature,include:true,costCents:130000,manualEntry:null,resolution:'none'},at+7200002);
+ await saveOpeningStockCost(s.db,s.identity,{companyId:'tenant',unitCents:120000,revision:1},at+7200003);sale=(await listFinanceEntries(s.db,s.identity,range,at+7200004)).entries[0];assert.equal(sale.costCents,130000);assert.equal(sale.source.costMode,'manual');assert.equal(sale.source.automaticCostCents,120000);
+});

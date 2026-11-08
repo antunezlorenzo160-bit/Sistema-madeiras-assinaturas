@@ -1,3 +1,4 @@
+let financeOpeningPolicyV732={unitCents:null,cutoffAt:null,revision:0};
 // COMPANY_FINANCE_V722 — manual records; owner-only server endpoints; no stock writes.
 let financeProfitPolicyV726={minimumBasisPoints:null,revision:0};
 let financeRowsV722=[],financeLoadedRangeV722=null,financeCanWriteV722=false,financeBusyV722=false,financeSequenceV722=0,financeEditV722=null,financeDraftIdV722=null;
@@ -8,7 +9,7 @@ function financeNewV722(){
  financeEditV722=null;financeDraftIdV722=crypto.randomUUID();finElV722('finFormV722').reset();const d=new Date();finElV722('finDateV722').value=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
  finElV722('finSaveV722').textContent='Salvar lançamento';finElV722('finCostLabelV722').hidden=true;
 }
-function finWriteStateV722(){for(const field of finElV722('finFormV722').querySelectorAll('input,select,button'))field.disabled=financeBusyV722||!financeCanWriteV722;finElV722('finLoadV722').disabled=financeBusyV722;finElV722('finGroupV722').disabled=financeBusyV722;for(const id of ['finMinimumPercentV726','finMinimumSaveV726']){const field=finElV722(id);if(field)field.disabled=financeBusyV722||!financeCanWriteV722;}}
+function finWriteStateV722(){for(const field of finElV722('finFormV722').querySelectorAll('input,select,button'))field.disabled=financeBusyV722||!financeCanWriteV722;finElV722('finLoadV722').disabled=financeBusyV722;finElV722('finGroupV722').disabled=financeBusyV722;for(const id of ['finMinimumPercentV726','finMinimumSaveV726','finOpeningUnitV732','finOpeningSaveV732']){const field=finElV722(id);if(field)field.disabled=financeBusyV722||!financeCanWriteV722;}}
 async function financeRequestV722(input,range,endpoint='company-finance'){
  if(!finOwnerV722())throw Error('O financeiro é exclusivo do responsável pela empresa.');
  if(!navigator.onLine)throw Error('Conecte-se à internet. O formulário foi preservado.');
@@ -41,7 +42,7 @@ async function financeLoadV722(){
  const from=finElV722('finFromV722').value,to=finElV722('finToV722').value;
  if(stockChartDate(from)!==from||stockChartDate(to)!==to||from>to){finStatusV722('Confira as datas da consulta.');return;}
  const sequence=++financeSequenceV722;financeBusyV722=true;finWriteStateV722();finStatusV722('Consultando lançamentos…');
- try{const result=await financeRequestV722(null,{from,to});if(sequence!==financeSequenceV722)return;financeRowsV722=result.entries;financeLoadedRangeV722={from,to};financeCanWriteV722=result.canWrite===true;financeProfitPolicyV726=normalizeMinimumProfitPolicy(result.profitPolicy||{});financeMinimumFillV726();finElV722('finPreviewV722').hidden=result.preview!==true;financeRenderV722();finStatusV722((result.canWrite?'':'Acesso somente para consulta. ')+stockChartLabelV720(from)+' a '+stockChartLabelV720(to)+' · '+result.entries.length+' registro(s).');}
+ try{const result=await financeRequestV722(null,{from,to});if(sequence!==financeSequenceV722)return;financeRowsV722=result.entries;financeLoadedRangeV722={from,to};financeCanWriteV722=result.canWrite===true;financeProfitPolicyV726=normalizeMinimumProfitPolicy(result.profitPolicy||{});financeMinimumFillV726();financeOpeningPolicyV732=normalizeOpeningStockCost(result.openingPolicy||{});financeOpeningFillV732();finElV722('finPreviewV722').hidden=result.preview!==true;financeRenderV722();finStatusV722((result.canWrite?'':'Acesso somente para consulta. ')+stockChartLabelV720(from)+' a '+stockChartLabelV720(to)+' · '+result.entries.length+' registro(s).');}
  catch(e){finStatusV722(e.name==='TimeoutError'?'A consulta demorou. Tente novamente.':e.message);}
  finally{financeBusyV722=false;finWriteStateV722();}
 }
@@ -64,7 +65,7 @@ async function financeCancelV722(id){
 function mountFinanceV722(){
  const panel=finElV722('financePanelV722');if(!panel||!finOwnerV722())return;
  const now=new Date(),start=new Date(now.getFullYear(),now.getMonth(),1),day=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');finElV722('finFromV722').value=day(start);finElV722('finToV722').value=day(now);financeNewV722();finWriteStateV722();financeMinimumFillV726();
- finElV722('finMinimumPercentV726').oninput=()=>{financeMinimumExampleV726();finElV722('finMinimumStatusV726').textContent='Percentual ainda não salvo. Toque em Salvar mínimo da empresa para aplicar.';};finElV722('finMinimumSaveV726').onclick=financeMinimumSaveV726;
+ finElV722('finMinimumPercentV726').oninput=()=>{financeMinimumExampleV726();finElV722('finMinimumStatusV726').textContent='Percentual ainda não salvo. Toque em Salvar mínimo da empresa para aplicar.';};finElV722('finMinimumSaveV726').onclick=financeMinimumSaveV726;finElV722('finOpeningSaveV732').onclick=financeOpeningSaveV732;
  finElV722('finLoadV722').onclick=financeLoadV722;finElV722('finGroupV722').onchange=financeRenderV722;
  for(const id of ['finFromV722','finToV722'])finElV722(id).onchange=()=>finStatusV722('Toque em Consultar período para atualizar os valores.');
  finElV722('finTypeV722').onchange=()=>{finElV722('finCostLabelV722').hidden=finElV722('finTypeV722').value!=='sale';};finElV722('finFormV722').onsubmit=financeSaveV722;
@@ -155,4 +156,20 @@ function financeSaleMinimumV726(row){
  if(check.status==='pending-service')return '<p class="note">Lucro mínimo da madeira: pendente de separar o serviço no valor original da carga.</p>';
  if(check.status==='pending-cost'||check.status==='pending-review')return '<p class="note">Lucro mínimo: avaliação pendente de custo ou conferência.</p>';
  return check.status==='below'?'<p class="fin-minimum-warning"><strong>Abaixo do mínimo da empresa</strong><br>Margem da madeira antes das despesas, sem adicional de serviços: '+finMoneyV722(check.grossCents)+'. Mínimo esperado: '+finMoneyV722(check.requiredCents)+'. Valor mínimo da madeira, sem serviços, para este custo: '+finMoneyV722(check.minimumSaleCents)+'.</p>':'<p class="note fin-minimum-met">Mínimo atendido no preço da madeira, sem adicional de serviços ('+financeMinimumPercentV726()+' sobre o custo, antes das despesas).</p>';
+}
+
+function financeOpeningFillV732(){
+ const field=finElV722('finOpeningUnitV732'),note=finElV722('finOpeningStatusV732');if(!field||!note)return;
+ field.value=financeOpeningPolicyV732.unitCents===null?(financeOpeningPolicyV732.revision?'':'1000,00'):(financeOpeningPolicyV732.unitCents/100).toFixed(2).replace('.',',');
+ note.textContent=financeOpeningPolicyV732.unitCents===null?(financeOpeningPolicyV732.revision?'Custo antigo desativado.':'R$ 1.000,00/m³ preenchido, ainda não aplicado. Toque em Salvar para registrar na empresa.'):'Custo antigo salvo: '+finMoneyV722(financeOpeningPolicyV732.unitCents)+'/m³. Compras com preço próprio são preservadas.';
+}
+async function financeOpeningSaveV732(){
+ if(financeBusyV722||!financeCanWriteV722||!finOwnerV722())return;
+ const field=finElV722('finOpeningUnitV732'),note=finElV722('finOpeningStatusV732');let unitCents;
+ try{unitCents=field.value.trim()===''?null:financeCents(field.value);normalizeOpeningStockCost({unitCents});}catch(e){note.textContent=e.message;return;}
+ financeBusyV722=true;finWriteStateV722();note.textContent='Salvando custo do estoque antigo…';let saved=false;
+ try{const result=await financeRequestV722({companyId:empresaV456,unitCents,revision:financeOpeningPolicyV732.revision},null,'company-opening-stock-cost');financeOpeningPolicyV732=normalizeOpeningStockCost(result.policy);financeOpeningFillV732();saved=true;}
+ catch(e){note.textContent=e.message+' O valor preenchido foi preservado.';}
+ finally{financeBusyV722=false;finWriteStateV722();}
+ if(saved)await financeLoadV722();
 }

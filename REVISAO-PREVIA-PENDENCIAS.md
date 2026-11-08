@@ -201,3 +201,14 @@ Validação:7casosUIatualizados, incluindo10,4748m³ desativado→ativado,29,228
 Pedido: usar referências visuais em cada seletor, como a engrenagem existente. Títulos dos12atalhos de início ganham ícones relacionados à ação; os clones do menu lateral herdam os mesmos ícones. Início dinâmico ganha casa; Produção usa fábrica via CSS, preservando integralmente o módulo de permissões/geração desse botão. Ícones inline, sem dependência externa; os elementos decorativos dos títulos são aria-hidden. Rótulos, descrições, rotas, eventos e visibilidade por permissões mantidos.
 
 Validação: build completo,31scripts,12opções de atalhos e entradas dinâmicas conferidos. employee-navigation-visibility e preview-integration aprovados; caso de regras/guardas em employee-load-access aprovado. Um caso antigo dessa suíte continua falhando por falta de priceLoadServices no contexto simulado, reproduzido também sem nenhuma alteração de ícones. Nenhuma regra nem dado alterados. Apenas prévia12.
+
+
+## Custo do estoque antigo V732 — 08/11
+
+Usuário informou mistura de saldo antigo sem custo e autorizouR$1000/m³ para esse saldo. Adicionada opção recolhida Financeiro → Custo do estoque antigo, com1000,00preenchido como proposta ainda não aplicada. Não há sessão autenticada do usuário nas ferramentas: gravação exige clique em Salvar dentro da conta. Nenhum valor é aplicado automaticamente a nenhuma empresa pela publicação.
+
+POSTcompany-opening-stock-cost e política privada por empresa/contexto financeiro, dono canônico, empresa da tela, e-mail/plano/vínculo rechecados em transação, revisão, histórico e tentativas idempotentes. Primeiro salvamento define corte temporal; alterações/desativação conservam esse corte. Não escreve compra, despesa, preço de venda, cadastro ou quantidade. GETfinanceiro retorna política e a mesma instância alimenta a projeção de custo.
+
+Custo médio usa o valor autorizado para entradas antigas de madeira m³ sem compra com custo e para saldo inicial inferido com evidência histórica anterior ao corte. Compras com preço guardado mantêm custo real, inclusive frete de aquisição; custo manual conferido permanece prioritário. Madeira seca/verde continua separada por medidas. Granel, m² e linear não recebem essa valorização geral da madeira. Entradas sem preço posteriores ao corte continuam pendentes; novas entradas legadas recebem instante imutável. Histórico/balanço inconsistente não é liberado pela mera configuração de preço. Sem recibos de compra, a valorização antiga ainda funciona se houver histórico físico suficiente. Nenhuma regra alterada.
+
+Validação:12suítes pertinentes, build e31scripts aprovados.2casos política/servidor,3cenários de média nova/antiga/corte,1integração GET+salvar+recalcular sem nova compra e preservação manual,1UI exige clique autenticado e mantém formulário na falha. Teste1m³ antigo1000+1m³ novo2000→média1500. Bancos simulados; nenhuma chamada Firebase real. Apenas prévia12.
