@@ -58,3 +58,9 @@ test('service breakdown stays within sale revenue but does not hide a low wood m
  assert.match(s.nodes.finStatsV722.innerHTML,/Serviços incluídos nas vendas/);assert.match(s.nodes.finEntriesV722.innerHTML,/Abaixo do mínimo da empresa/);assert.match(s.nodes.finEntriesV722.innerHTML,/sem adicional de serviços/);assert.match(s.nodes.finMinimumSummaryV726.textContent,/abaixo do lucro mínimo/);
  s.setRequest(async()=>response({empresaId:'tenant',entries:[{...row,source:{...row.source,woodCents:null,serviceCents:null,pendingServiceLines:1}}],canWrite:true,profitPolicy:{minimumBasisPoints:2000,revision:1}}));await s.c.financeLoadV722();assert.match(s.nodes.finEntriesV722.innerHTML,/pendente de separar o serviço/);assert(!s.nodes.finEntriesV722.innerHTML.includes('Mínimo atendido'));
 });
+test('automatic average cost is visible and saving its conference does not freeze it as a manual cost',async()=>{
+ const s=setup(),row=automaticSale({costCents:115000,source:{...automaticSale().source,costMode:'average',automaticCostCents:115000}});s.setRequest(async()=>response({empresaId:'tenant',entries:[row],canWrite:true}));await s.c.financeLoadV722();
+ assert.match(s.nodes.finEntriesV722.innerHTML,/Custo médio automático/);assert.match(s.nodes.finEntriesV722.innerHTML,/data-load-sale-auto checked/);
+ const root=saleRoot(row),previous=root.querySelector;root.fields.cost.value='1150,00';root.querySelector=selector=>selector==='[data-load-sale-auto]'?{checked:true}:previous(selector);
+ s.setRequest(async(url,options)=>{assert.equal(JSON.parse(options.body).costCents,null);return response({entry:{...row,revision:1}});});await s.c.financeSaveLoadSaleV724(root);assert.equal(s.calls.length,2);
+});

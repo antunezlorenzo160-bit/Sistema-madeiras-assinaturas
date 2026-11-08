@@ -24,6 +24,7 @@ export async function saveFinanceEntry(db,identity,input,now=Date.now()){
  return db.runTransaction(async tx=>{
   const context=await financeOwnerContext(db,identity,r=>tx.get(r),true,now);if(context.empresaId!==initial.empresaId)throw new PlatformError(409,'O vínculo da conta mudou. Entre novamente.');
   const ref=db.doc(financeCollectionPath(context.empresaId)+'/'+entry.id),snapshot=await tx.get(ref),previous=snapshot.exists?snapshot.data():null;
+  if(previous?.source?.type==='stock-purchase')throw new PlatformError(409,'Compra vinculada ao descarregamento. O registro é preservado para conferir estoque e custo.');
   if(previous?.source?.type==='load-transport')throw new PlatformError(409,'Altere estes gastos em Gastos do transporte, no carregamento.');
   if(previous?.status==='cancelled')throw new PlatformError(409,'Este registro foi cancelado. Crie um novo lançamento.');
   if((previous?.revision||0)!==entry.revision){
@@ -44,6 +45,7 @@ export async function cancelFinanceEntry(db,identity,input,now=Date.now()){
   const context=await financeOwnerContext(db,identity,r=>tx.get(r),true,now);if(context.empresaId!==initial.empresaId)throw new PlatformError(409,'O vínculo da conta mudou. Entre novamente.');
   const ref=db.doc(financeCollectionPath(context.empresaId)+'/'+input.id),snapshot=await tx.get(ref),previous=snapshot.exists?snapshot.data():null;
   if(!previous)throw new PlatformError(404,'Registro não encontrado.');
+  if(previous.source?.type==='stock-purchase')throw new PlatformError(409,'Compra vinculada ao descarregamento. Não cancele apenas o financeiro sem conferir o estoque.');
   if(previous.source?.type==='load-transport')throw new PlatformError(409,'Altere estes gastos em Gastos do transporte, no carregamento.');
   if(previous.status==='cancelled'&&previous.revision===input.revision+1)return {empresaId:context.empresaId,entry:previous};
   if(previous.status!=='active'||previous.revision!==input.revision)throw new PlatformError(409,'Registro alterado. Atualize a lista.');

@@ -1,0 +1,23 @@
+<details id="stockPurchaseV728" class="card no-print" hidden>
+ <summary>Compra / descarregamento — entrada no estoque</summary>
+ <p class="note">Disponível para madeira em m³ e a granel. Informe o preço de compra, adicione as medidas pela calculadora e confirme a lista no final. O preço de venda do cadastro não muda.</p>
+ <label><input type="checkbox" id="purchaseEnabledV728"> Registrar esta entrada como compra</label>
+ <div id="purchaseFieldsV728" hidden>
+  <label>Fornecedor<input type="text" id="purchaseSupplierV728" maxlength="120" placeholder="Nome do fornecedor"></label>
+  <label>Data da compra<input type="date" id="purchaseDateV728"></label>
+  <p class="note">A entrada física usa o momento da confirmação; a data acima identifica a compra no financeiro.</p>
+  <label>Nota / documento (opcional)<input type="text" id="purchaseReferenceV728" maxlength="180"></label>
+  <label>Preço de compra por m³ (R$)<input type="text" inputmode="decimal" id="purchaseUnitV728" placeholder="Ex.: 1300,00"></label>
+  <p class="note">Pode trocar o preço para cada medida. Ao tocar em Lançar peça, o item entra na lista abaixo; o estoque só muda após confirmar o descarregamento. Até 200 itens por confirmação.</p>
+  <label>Frete da compra (R$)<input type="text" inputmode="decimal" id="purchaseFreightV728" placeholder="0,00"></label>
+  <label><input type="checkbox" id="purchaseFreightIncludedV728"> Frete já incluído no preço de compra informado</label>
+  <label>Outros gastos da compra (R$)<input type="text" inputmode="decimal" id="purchaseOtherV728" placeholder="0,00"></label>
+  <label><input type="checkbox" id="purchaseOtherIncludedV728"> Outros gastos já incluídos no preço informado</label>
+  <p class="note">Gastos não incluídos são somados e rateados pelo valor dos itens. Entram no custo do estoque e na compra; não viram outra despesa automática. Não registre esses mesmos gastos novamente no financeiro.</p>
+  <div id="purchaseLinesV728"></div>
+  <p class="note" id="purchaseTotalV728"></p>
+  <button type="button" class="btn btn-primary" id="purchaseConfirmV728">Confirmar descarregamento e compra</button>
+  <button type="button" class="btn btn-secondary" id="purchaseNewV728">Novo descarregamento</button>
+ </div>
+ <p class="note" id="purchaseStatusV728" role="status"></p>
+</details>
