@@ -43,3 +43,6 @@ test('preview load repricing retains service charges at wholesale and preserves 
  const closed=item('closed',2,{grupoCargaId:'closed',cargaStatus:'concluido',cargaBaixadaEm:1,valor:220,endireitamento:true,precoEndireitamento:10});c.carregamentos=[closed];c.repriceLoadsV710();assert.equal(c.carregamentos[0].valor,220);assert.equal(writes.length,1);
  const locked=item('locked',2,{valor:220});locked.autoPriceV1.locked=true;assert.equal(c.updatePricedRowsV710([locked],'loads')[0].valor,220);
 });
+test('legacy catalog without a thickness table still supplies its registered wholesale price',()=>{
+ assert.deepEqual(catalogPricePair({tipoMedida:'m3',preco:2500,espessura:5},{preco:2500,precoAtacado:2200}),{retail:2500,wholesale:2200});
+});

@@ -45,7 +45,7 @@ export function catalogPricePair(item,catalog){
  }
  if(type==='granel')return {retail:retail(m),wholesale:wholesale(m)};
  const bit=(m.bitolas||[]).find(b=>has(b.espessuraRegra??b.espessura,item.espessura));
- if(!bit)return {retail:n(item.preco),wholesale:0};
+ if(!bit)return (m.bitolas||[]).length?{retail:n(item.preco),wholesale:0}:{retail:retail(m)||n(item.preco),wholesale:wholesale(m)};
  const width=(bit.regrasLargura||[]).find(r=>has(r.larguraRegra??r.larguras,item.largura));
  let r=retail(bit),w=wholesale(bit);
  if(width){if(retail(width)>0)r=retail(width);if(wholesale(width)>0)w=wholesale(width);}

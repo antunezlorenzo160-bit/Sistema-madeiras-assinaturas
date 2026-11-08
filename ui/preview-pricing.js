@@ -1,8 +1,8 @@
 // PRICING_PREVIEW_V710 — settings are company scoped; no migration of existing documents.
 let pricePolicyV710=(()=>{try{return normalizePricePolicy(JSON.parse(window.__v456Local.getItem('price_policy_v710')||'{}'));}catch{return normalizePricePolicy();}})();
 function attachPriceV710(item,others=[]){
- if(!pricePolicyV710.enabled||others.some(x=>!x.autoPriceV1))return item;
  const existing=others.find(x=>x.autoPriceV1)?.autoPriceV1;
+ if(!(existing?.policy||pricePolicyV710).enabled||others.some(x=>!x.autoPriceV1))return item;
  const wood=madeiras.find(x=>String(x.id)===String(item.madeiraId));
  const normalized=wood?{...wood,bitolas:normalizarBitolasCadastroV347(wood.bitolas||[])}:{};
  const pair=catalogPricePair(item,normalized);
@@ -66,21 +66,55 @@ function priceDocumentNoticeV710(items,host){
  box.textContent='Preços do documento: '+tiers.join(' / ')+(warnings.length?' — '+warnings.join(' '):'')+'.';
 }
 setTimeout(mountPricePolicyV710,0);
+function pricePreviewNoteV729(){
+ let note=document.getElementById('pricePreviewV710');if(!note){note=document.createElement('p');note.id='pricePreviewV710';note.className='note';$('previewValor').parentElement.append(note);}return note;
+}
+function pricePolicySameV729(a,b){return (a?.enabled===true)===(b?.enabled===true)&&['m3','m2','linear'].every(u=>(a?.limits?.[u]??null)===(b?.limits?.[u]??null));}
+function priceCurrentLoadActionV729(note,items){
+ if(destinoSelecionado()!=='carga'||!items.length||!pricePolicyV710.enabled||parent.__smEmployeeMember?.()?.papel!=='admin')return;
+ const first=items.find(i=>i.autoPriceV1)?.autoPriceV1;
+ if(items.every(i=>i.autoPriceV1)&&pricePolicySameV729(first?.policy,pricePolicyV710))return;
+ const button=document.createElement('button');button.type='button';button.className='btn btn-secondary';button.textContent='Aplicar limites e preços atuais';button.onclick=applyCurrentLoadPricingV729;note.append(document.createElement('br'),button);
+}
+function applyCurrentLoadPricingV729(){
+ if(parent.__smEmployeeMember?.()?.papel!=='admin'||!pricePolicyV710.enabled||destinoSelecionado()!=='carga')return;
+ const items=carregamentos.filter(i=>String(i.grupoCargaId||'')===String(sessaoCargaAtual));
+ if(!items.length||items.some(i=>i.cargaStatus!=='montagem'||i.cargaBaixadaEm||i.cargaFechadaEm)){pricePreviewNoteV729().textContent='Só é possível aplicar os limites a uma carga ainda em montagem.';return;}
+ try{
+  const prepared=items.map(i=>i.autoPriceV1?.locked?{...i,autoPriceV1:{...i.autoPriceV1,policy:JSON.parse(JSON.stringify(pricePolicyV710))}}:attachPriceV710(i,[]));
+  const changed=updatePricedRowsV710(prepared,COL.cargas),byId=new Map(changed.map(i=>[i.id,i]));
+  // Persist new snapshots even when the resulting monetary price happens to be equal.
+  changed.forEach(i=>enfileirarOffline(COL.cargas,i.id,i,'set'));
+  carregamentos=carregamentos.map(i=>byId.get(i.id)||i);lancamentos=lancamentos.map(i=>byId.get(i.id)||i);
+  window.__v456Local.setItem('carregamentos_lancamentos_v1',JSON.stringify(carregamentos));window.__v456Local.setItem(STORAGE.lancamentos,JSON.stringify(lancamentos));
+  renderLancamentos();calcPreview();sincronizarOfflineOps().catch(()=>{});
+ }catch(e){pricePreviewNoteV729().textContent='Não foi possível concluir a atualização dos preços: '+e.message;}
+}
 function previewDocumentValueV710(){
- if(!pricePolicyV710.enabled)return;
+ // The base input remains the catalog price; only the visible rate is overlaid.
+ if((modoMedida==='m3'||modoMedida==='m3fechado')&&$('precoBitolaAoLado')){const base=Number($('precoM3')?.value||0),span=$('precoBitolaAoLado');span.textContent=base>0?moeda(base)+'/m³':'sem preço';span.title='';span.classList.toggle('sem-preco',!(base>0));}
  const destination=destinoSelecionado();if(!['orcamento','carga'].includes(destination))return;
  const wood=madeiras.find(m=>String(m.id)===String($('calcMadeira')?.value||''));if(!wood)return;
  const kind=modoMedida==='m3fechado'?'m3':modoMedida;
  const width=Number($('largura')?.value||0),thickness=Number($('espessura')?.value||0),length=Number($('comprimento')?.value||0),quantity=Number($('quantidade')?.value||0);
- let v=kind==='m2'?width/100*length*quantity*(quantidadePacotesPrevia()||1):kind==='linear'?length*quantity:kind==='granel'?Number($('volumeGranelV384')?.value||0):modoMedida==='m3fechado'?Number($('volumeFechadoV387')?.value||0):width/100*thickness/100*length*quantity;
- if(!(v>0))return;
+ const v=kind==='m2'?width/100*length*quantity*(quantidadePacotesPrevia()||1):kind==='linear'?length*quantity:kind==='granel'?Number($('volumeGranelV384')?.value||0):modoMedida==='m3fechado'?Number($('volumeFechadoV387')?.value||0):width/100*thickness/100*length*quantity;
  const others=destination==='orcamento'?orcamento:carregamentos.filter(i=>i.grupoCargaId===sessaoCargaAtual&&i.cargaStatus==='montagem');
- const candidate={id:'price-preview-only',madeiraId:wood.id,tipoMedida:kind,largura:width,espessura:thickness,comprimento:length,quantidade:quantity,volume:v,volumeReal:v,preco:Number($('precoM3')?.value||0),produto:kind==='linear'?regraLinearSelecionadaV381()?.tipo||'':wood.produto||'',estadoMadeira:modoMedida==='m3fechado'&&$('chkVerdeFechado')?.checked?'verde':'seca'};
- const attached=attachPriceV710(candidate,others);if(!attached.autoPriceV1)return;
- const price=applyDocumentPrices([...others,attached]).at(-1);let total=v*price.preco;
- if(kind==='linear')total=cobrarServicosLinear({...candidate,preco:price.preco,...selecionarServicosLinear()}).valor;
+ const candidate={id:'price-preview-only',madeiraId:wood.id,tipoMedida:kind,largura:width,espessura:thickness,comprimento:length,quantidade:quantity,volume:v>0?v:0,volumeReal:v>0?v:0,preco:Number($('precoM3')?.value||0),produto:kind==='linear'?regraLinearSelecionadaV381()?.tipo||'':wood.produto||'',estadoMadeira:modoMedida==='m3fechado'&&$('chkVerdeFechado')?.checked?'verde':'seca'};
+ const attached=attachPriceV710(candidate,others),note=pricePreviewNoteV729();
+ if(!attached.autoPriceV1){
+  note.textContent=others.some(i=>!i.autoPriceV1)?'Esta carga mantém os preços salvos e ainda não usa os limites automáticos.':'Preços automáticos desativados. Ative em Cadastro → Preços automáticos por documento.';
+  priceCurrentLoadActionV729(note,others);return;
+ }
+ const price=applyDocumentPrices([...others,attached]).at(-1),unit=priceUnit(candidate),policy=attached.autoPriceV1.policy,limit=policy?.limits?.[unit],totalVolume=documentQuantities(v>0?[...others,candidate]:others)[unit],unitLabel=unit==='m3'?'m³':unit==='m2'?'m²':'m';
+ if(kind==='m3'){
+  const span=$('precoBitolaAoLado');if(span){span.textContent=price.preco>0?moeda(price.preco)+'/m³':'sem preço';span.title=price.autoPriceV1.locked?'Preço próprio da madeira verde':price.priceTierV1==='atacado'?'Preço de atacado':'Preço de varejo';span.classList.toggle('sem-preco',!(price.preco>0));}
+ }else if(kind==='linear'&&$('precoTipoLinear'))$('precoTipoLinear').textContent=moeda(price.preco)+'/m';
+ else if(kind==='granel'&&$('precoGranelV384'))$('precoGranelV384').textContent=moeda(price.preco)+'/m³';
+ let total=v>0?v*price.preco:0;
+ if(v>0&&kind==='linear')total=cobrarServicosLinear({...candidate,preco:price.preco,...selecionarServicosLinear()}).valor;
  if(kind==='m3'&&modoMedida!=='m3fechado')total*=1+(($('chkEndireitamento')?.checked?Number(servicosM3.endireitamento||0):0)+($('chkAplainamento')?.checked?Number(servicosM3.aplainamento||0):0))/100;
  $('previewValor').textContent=moeda(total);
- let note=document.getElementById('pricePreviewV710');if(!note){note=document.createElement('p');note.id='pricePreviewV710';note.className='note';$('previewValor').parentElement.append(note);}
- note.textContent=price.autoPriceV1.locked?'Preço próprio da madeira verde':('Preço previsto: '+price.priceTierV1+(price.priceWarningV1?' · '+price.priceWarningV1:''));
+ note.textContent=price.autoPriceV1.locked?'Preço próprio da madeira verde':('Preço '+(v>0?'previsto para o lançamento':'do documento')+': '+price.priceTierV1+' · '+Number(totalVolume||0).toLocaleString('pt-BR',{maximumFractionDigits:4})+' '+unitLabel+(v>0?' após o lançamento':' no documento')+(limit===undefined?' · sem limite automático nesta unidade':' · varejo até '+Number(limit).toLocaleString('pt-BR')+' '+unitLabel)+(price.priceWarningV1?' · '+price.priceWarningV1:''));
+ if(!pricePolicySameV729(policy,pricePolicyV710))note.append(document.createTextNode(' Este documento usa os limites salvos quando foi iniciado.'));
+ priceCurrentLoadActionV729(note,others);
 }
