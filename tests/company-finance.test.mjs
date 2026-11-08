@@ -50,3 +50,18 @@ test('listing filters the period and never presents truncated totals; invalid pe
 test('preview records and production records use different server-controlled collections',()=>{
  assert.equal(financeCollectionPath('tenant','deploy-preview'),'empresas/tenant/financeiroPreviaRegistros');assert.equal(financeCollectionPath('tenant','production'),'empresas/tenant/financeiroRegistros');
 });
+test('margin and financial deficit are derived once, separate from physical material loss',()=>{
+ const sale=sample({amountCents:2000000,costCents:1300000,status:'active'}),expense=sample({type:'expense',amountCents:800000,costCents:null,status:'active'}),range={from:'2026-11-01',to:'2026-11-30'};
+ const total=aggregateFinance([sale,expense],range).total;assert.equal(total.grossMargin,700000);assert.equal(total.expense,800000);assert.equal(total.result,-100000);assert.equal(total.deficit,100000);assert.equal(total.profit,0);assert.equal(total.loss,0);
+ const physical=sample({type:'loss',amountCents:10000,costCents:null,status:'active'}),withLoss=aggregateFinance([sale,expense,physical],range).total;assert.equal(withLoss.loss,10000);assert.equal(withLoss.result,-110000);assert.equal(withLoss.deficit,110000);
+});
+test('profit, break-even and pending data do not produce invented deficit figures',()=>{
+ const range={from:'2026-11-01',to:'2026-11-30'},sale=sample({amountCents:2000000,costCents:1300000,status:'active'}),expense=amount=>sample({type:'expense',amountCents:amount,costCents:null,status:'active'});
+ let total=aggregateFinance([sale,expense(68000)],range).total;assert.equal(total.profit,632000);assert.equal(total.deficit,0);
+ total=aggregateFinance([sale,expense(700000)],range).total;assert.equal(total.profit,0);assert.equal(total.deficit,0);assert.equal(total.result,0);
+ total=aggregateFinance([{...sale,costCents:null},expense(800000)],range).total;assert.equal(total.grossMargin,null);assert.equal(total.profit,null);assert.equal(total.deficit,null);
+});
+test('period profit and deficit use the net result, not the sum of signs from different months',()=>{
+ const entries=[sample({date:'2026-10-07',status:'active',amountCents:100000,costCents:0}),sample({date:'2026-11-07',type:'expense',status:'active',amountCents:40000,costCents:null})],r=aggregateFinance(entries,{from:'2026-10-01',to:'2026-11-30'});
+ assert.equal(r.rows[0].profit,100000);assert.equal(r.rows[1].deficit,40000);assert.equal(r.total.result,60000);assert.equal(r.total.profit,60000);assert.equal(r.total.deficit,0);
+});

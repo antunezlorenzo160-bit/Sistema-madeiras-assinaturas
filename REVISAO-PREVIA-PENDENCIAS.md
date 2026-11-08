@@ -136,3 +136,12 @@ Validação:10novos casos de modelo/servidor passaram: paridade com função rea
 Print reportou ReferenceError: preencherTaraPorPlacaV587 is not defined. A função real existia dentro do módulo de carregamentos, mas o oninput da placa a chamava como global e somente atualizarTransportePendenteV414 havia sido exposta. Adicionada a ponte window.preencherTaraPorPlacaV587 no mesmo módulo, preservando a função e as permissões existentes, sem stub nem supressão do aviso.
 
 Teste executa o oninput gerado pelo formulário real em ambiente com módulo fechado: placa normalizada busca a tara válida mais recente; tara manual não é sobrescrita; placa vazia/desconhecida e evento após fechamento do formulário não lançam erro; nenhuma escrita de dados ocorre ao preencher.4casos novos,3suítes de transporte/permissão, build e scripts passaram. Não altera dados, cache, login ou regras. Somente prévia; versão oficial preservada.
+
+
+## Margem, lucro e prejuízo automático V725
+
+Usuário esclareceu que “perda” no resumo significa prejuízo quando as despesas ultrapassam a margem, e não perda física de madeira. Quadro agora mostra Margem antes das despesas, Lucro do período e Prejuízo do período. Margem = vendas − custo da madeira vendida; resultado continua margem − despesas − perdas físicas registradas. Lucro=max(resultado,0); prejuízo=max(-resultado,0). Prejuízo é somente indicador derivado, nunca novo lançamento nem nova dedução. Exemplo validado: venda20000, custo13000, margem7000, despesa8000 → prejuízo1000.
+
+Gráficos e tabela por período mostram lucro/prejuízo derivados, com alerta quando despesas superam a margem ou venda fica abaixo do custo. Perdas físicas seguem preservadas, rotuladas “Perdas de madeira / material”, e o cartão só aparece quando há valor registrado. Formulário explica essa distinção. Sem custos completos/conferência de duplicidade, margem/lucro/prejuízo permanecem pendentes. Total do período usa o resultado líquido e não soma lucros/prejuízos de meses separadamente. Nenhum registro existente é alterado, nem os preços são reajustados automaticamente.
+
+Três casos novos de cálculo cobrem margem ultrapassada/dedução única, lucro/equilíbrio/pendência e compensação de meses. Um caso UI verifica alerta/cartão/gráfico de prejuízo automático sem criar perda manual.12testes financeiros e7UI passaram; build/scripts e suites de carregamentos/transporte conferidos. Apenas prévia.

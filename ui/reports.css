@@ -42,3 +42,8 @@
 #financePanelV722 .fin-load-sale-v724 label{margin:10px 0}
 #financePanelV722 .fin-load-sale-v724 input[type=checkbox]{display:inline-block;min-height:20px;width:20px;vertical-align:middle}
 #financePanelV722 .fin-load-sale-v724 button{min-height:44px;margin-top:10px;font-size:13px}
+
+#financePanelV722 .fin-positive{color:var(--success)}
+#financePanelV722 .fin-bar-profit{background:#239b79}
+#financePanelV722 .fin-bar-deficit{background:#d85d5d}
+@media(max-width:640px){#financePanelV722 .fin-stats>div:last-child:nth-child(odd){grid-column:1/-1}}

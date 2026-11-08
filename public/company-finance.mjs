@@ -1,5 +1,5 @@
 import {stockChartDate,stockChartPeriods} from './stock-charts.mjs';
-export const FINANCE_TYPES=Object.freeze({purchase:'Compra',sale:'Venda',expense:'Despesa',loss:'Perda'});
+export const FINANCE_TYPES=Object.freeze({purchase:'Compra',sale:'Venda',expense:'Despesa',loss:'Perda de madeira / material'});
 export const FINANCE_CATEGORIES=Object.freeze({wood:'Madeira / produtos',freight:'Frete',processing:'Beneficiamento',tax:'Impostos e taxas',payroll:'Mão de obra',energy:'Energia',maintenance:'Manutenção',other:'Outros'});
 export function financeCents(value){
  const text=String(value??'').trim();if(!/^\d+(?:[.,]\d{1,2})?$/.test(text))throw Error('Informe valores em reais, sem separador de milhar, com até duas casas decimais.');
@@ -31,6 +31,6 @@ export function aggregateFinance(entries,{from,to,group='month'}){
   const row=map.get(entry.date.slice(0,group==='month'?7:10));if(!row)throw Error('Data inválida na lista financeira.');
   for(const target of [row,total]){target[entry.type]+=entry.amountCents;target.count++;if(entry.type==='sale'){if(entry.costCents===null)target.pendingCosts++;else if(Number.isSafeInteger(entry.costCents)&&entry.costCents>=0)target.cost+=entry.costCents;else throw Error('Custo inválido na venda.');}}
  }
- for(const row of [...rows,total]){row.result=row.pendingCosts||row.pendingSales?null:row.sale-row.cost-row.expense-row.loss;if(Object.entries(row).some(([key,n])=>key!=='key'&&n!==null&&!Number.isSafeInteger(n)))throw Error('Limite de cálculo financeiro atingido. Selecione um período menor.');}
+ for(const row of [...rows,total]){const pending=row.pendingCosts||row.pendingSales;row.grossMargin=pending?null:row.sale-row.cost;row.result=pending?null:row.grossMargin-row.expense-row.loss;row.profit=row.result===null?null:Math.max(row.result,0);row.deficit=row.result===null?null:Math.max(-row.result,0);if(Object.entries(row).some(([key,n])=>key!=='key'&&n!==null&&!Number.isSafeInteger(n)))throw Error('Limite de cálculo financeiro atingido. Selecione um período menor.');}
  return {rows,total};
 }
