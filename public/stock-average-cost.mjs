@@ -48,7 +48,7 @@ export function projectWeightedStockCosts({purchases,movements,stock,openingPoli
   }
   if(at===null)invalidate(p,'Falta uma data válida em uma entrada ou saída desta medida.');
   p.delta+=type==='entrada'?quantity:-quantity;if(!Number.isSafeInteger(p.delta))invalidate(p,'O histórico desta medida ultrapassa o limite de cálculo.');
-  p.events.push({id:row.id,type,quantity,at:at||0,value,missingReason,loadId:type==='saida'?row.grupoCargaId:null});
+  p.events.push({id:row.id,type,quantity,at:at||0,value,missingReason,conference:row.tipo==='ajuste'&&(row.ajusteConferenciaV391===true||row.ajusteConferenciaV390===true),loadId:type==='saida'?row.grupoCargaId:null});
  }
  for(const [id,line] of byMovement)if(!seen.has(id))invalidate(pool(line.costKey),'Falta o movimento de entrada de uma compra registrada. Aguarde a sincronização ou confira essa entrada.');
  for(const [key,p] of pools){
@@ -60,19 +60,25 @@ export function projectWeightedStockCosts({purchases,movements,stock,openingPoli
   // Positive pre-history balance is opening stock even when its first recorded exit
   // happened after the valuation date. Later, recorded unpriced entries stay unknown.
   if(qty>0&&!p.invalid&&oldEnabled&&JSON.parse(key)[1]==='m3'){value=oldValue(qty);unknown=false;unknownReason=null;}
+  let conferenceValued=false;
   const events=p.events.sort((a,b)=>a.at-b.at||(a.type===b.type?String(a.id).localeCompare(String(b.id)):a.type==='entrada'?-1:1));
   for(let n=1;n<events.length;n++)if(events[n].at===events[n-1].at&&events[n].type!==events[n-1].type)invalidate(p,'Há entrada e saída com o mesmo horário, sem ordem suficiente para conferir o custo.');
   for(const event of events){
    if(event.type==='entrada'){
-    if(qty===0){value=0n;unknown=false;unknownReason=null;}qty+=event.quantity;
-    if(event.value===null){unknown=true;unknownReason=event.missingReason||'Há madeira sem custo de compra completo nesta medida.';}else value+=event.value;
+    let entryValue=event.value;
+    // An explicit physical conference changes quantity, not the purchase price.
+    // Value the surplus at the known carrying average immediately before this entry.
+    // Unknown stock, future buys or a different measure never supply this basis.
+    if(entryValue===null&&event.conference&&qty>0&&!unknown&&!p.invalid){entryValue=costRoundV728(value*BigInt(event.quantity),BigInt(qty));conferenceValued=true;}
+    if(qty===0){value=0n;unknown=false;unknownReason=null;conferenceValued=false;}qty+=event.quantity;
+    if(entryValue===null){unknown=true;unknownReason=event.missingReason||'Há madeira sem custo de compra completo nesta medida.';}else value+=entryValue;
     continue;
    }
    if(qty<=0||event.quantity>qty+tolerance)invalidate(p,'A saída registrada supera o saldo reconstituído desta medida.');
    const valid=!p.invalid&&!unknown&&qty>0,consumed=valid?costRoundV728(value*BigInt(Math.min(event.quantity,qty)),BigInt(qty)*costPrecisionV728)*costPrecisionV728:null;
    if(event.loadId){
     if(!loads.has(event.loadId))loads.set(event.loadId,{pending:false,reason:null,value:0n,volumes:new Map(),tolerances:new Map()});
-    const load=loads.get(event.loadId);load.pending||=!valid;if(!valid)load.reason||=p.reason||unknownReason;
+    const load=loads.get(event.loadId);load.usesConferenceAverage||=valid&&conferenceValued;load.pending||=!valid;if(!valid)load.reason||=p.reason||unknownReason;
     load.volumes.set(key,(load.volumes.get(key)||0)+event.quantity);load.tolerances.set(key,(load.tolerances.get(key)||0)+1);if(consumed!==null)load.value+=consumed;
    }
    if(valid)value-=consumed;qty-=event.quantity;
@@ -86,5 +92,5 @@ export function weightedCostForLoad(items,projection){
  const id=String(items[0]?.grupoCargaId||''),found=projection?.get(id);if(!found||found.pending)return {costCents:null,reason:projection?.unavailableReason||found?.reason||'Falta o movimento de saída vinculado a esta carga. Aguarde a sincronização ou confira a baixa.'};
  const expected=new Map();for(const item of items){const key=stockCostKey(item);if(!key)return {costCents:null,reason:'Custo automático disponível para madeira em m³ e a granel.'};let quantity;try{const physical=(item.tipoMedida||item.tipoCadastro||'m3')==='granel'?Number(item.volume):Number(item.largura)/100*Number(item.espessura)/100*Number(item.comprimento)*Number(item.quantidade);quantity=purchaseVolumeUnits(physical);}catch{return {costCents:null,reason:'Volume da carga inválido.'};}expected.set(key,(expected.get(key)||0)+quantity);}
  if(expected.size!==found.volumes.size||[...expected].some(([key,qty])=>Math.abs(qty-(found.volumes.get(key)||0))>Math.min(1000,Math.max(10,items.length+(found.tolerances?.get(key)||0)))))return {costCents:null,reason:'As medidas ou volumes da carga não coincidem com a baixa registrada.'};
- const costCents=Number(costRoundV728(found.value,costPrecisionV728));if(!Number.isSafeInteger(costCents)||costCents<0)return {costCents:null,reason:'Custo acima do limite de cálculo.'};return {costCents,reason:null};
+ const costCents=Number(costRoundV728(found.value,costPrecisionV728));if(!Number.isSafeInteger(costCents)||costCents<0)return {costCents:null,reason:'Custo acima do limite de cálculo.'};return {costCents,reason:null,usesConferenceAverage:found.usesConferenceAverage===true};
 }

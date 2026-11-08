@@ -79,3 +79,15 @@ test('new conference entries do not borrow the selling price or old valuation af
  for(const policy of [{},opening]){const result=projectWeightedStockCosts({openingPolicy:policy,purchases:[],movements:[adjustment,exit],stock:[]}),checked=cost(result,'load-new',1);assert.equal(checked.costCents,null);assert.match(checked.reason,/ajuste de conferência acrescentou madeira sem custo/);}
  const unmarked=projectWeightedStockCosts({openingPolicy:opening,purchases:[],movements:[{...adjustment,ajusteConferenciaV391:false},exit],stock:[]});assert.match(cost(unmarked,'load-new',1).reason,/ajuste no histórico/);
 });
+
+test('owner rule: conference quantity inherits the known carrying cost without creating a purchase',()=>{
+ const a=buy('basis',10,1300000,8),adjust=move('surplus','ajuste',2,13,{grupoCargaId:'conference',ajusteConferenciaV391:true,valor:999999}),out=move('sale-out','saida',4,14,{grupoCargaId:'sale'}),input={purchases:[a.receipt],movements:[a.row,adjust,out],stock:[{...physical(),volume:8}]},before=JSON.stringify(input);
+ const result=projectWeightedStockCosts(input),checked=cost(result,'sale',4);assert.equal(checked.costCents,520000);assert.equal(checked.usesConferenceAverage,true);assert.equal(JSON.stringify(input),before);
+ const b=buy('second-basis',10,1500000,10),mixed=projectWeightedStockCosts({purchases:[a.receipt,b.receipt],movements:[a.row,b.row,adjust,out],stock:[{...physical(),volume:18}]});assert.equal(cost(mixed,'sale',4).costCents,560000);
+});
+test('conference never borrows a future purchase, another species, or an unknown stock cost',()=>{
+ const a=buy('future',1,130000,15),adjust=move('unpriced-adjust','ajuste',1,13,{grupoCargaId:'unpriced',ajusteConferenciaV391:true}),out=move('out-unpriced','saida',1,14,{grupoCargaId:'unpriced'});
+ const future=projectWeightedStockCosts({purchases:[a.receipt],movements:[adjust,out,a.row],stock:[{...physical(),volume:1}]});assert.equal(cost(future,'unpriced',1).costCents,null);
+ const b=buy('other',1,130000,8,{madeiraId:'other'}),other=projectWeightedStockCosts({purchases:[b.receipt],movements:[b.row,adjust,out],stock:[{...physical({madeiraId:'other'}),volume:1}]});assert.equal(cost(other,'unpriced',1).costCents,null);
+ const unknown=projectWeightedStockCosts({purchases:[],movements:[move('unknown','entrada',1,8),adjust,out],stock:[{...physical(),volume:1}]});assert.equal(cost(unknown,'unpriced',1).costCents,null);
+});

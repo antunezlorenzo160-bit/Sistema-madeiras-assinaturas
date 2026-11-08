@@ -90,3 +90,14 @@ test('10 m3 bought at 1300 automatically supplies the cost of a 4 m3 sale withou
  const writes=s.writes.length,sale=(await projectLoadSales(s.db,'tenant',{from:'2026-11-08',to:'2026-11-08'}))[0];
  assert.equal(sale.amountCents,800000);assert.equal(sale.costCents,520000);assert.equal(sale.source.physicalM3,4);assert.equal(sale.source.costMode,'average');assert.equal(sale.amountCents-sale.costCents,280000);assert.equal(s.writes.length,writes);
 });
+
+test('purchase cost reaches a load after an explicit stock conference, with no extra purchase ledger entry',async()=>{
+ const s=purchaseTestDb(),{receipt}=await confirmStockPurchase(s.db,s.identity,purchase({freightCents:0,otherCents:0,lines:[line({quantidade:10,volume:10,unitCents:130000})]}),at),p=receipt.lines[0],path='empresas/tenant/dados/sm2_estoque1/registros/'+p.stockId;
+ s.records.set(path,{...s.records.get(path),quantidade:8,volume:8});
+ const shape={madeiraId:'wood',tipoCadastro:'m3',largura:100,espessura:100,comprimento:1};
+ s.records.set('empresas/tenant/dados/sm2_movimentos/registros/adjust',{...shape,id:'adjust',tipo:'ajuste',ajusteConferenciaV391:true,grupoCargaId:'load',quantidade:2,volume:2,data:'08/11/2026, 09:30:00',valor:99999});
+ s.records.set('empresas/tenant/dados/sm2_movimentos/registros/out',{...shape,id:'out',tipo:'saida',grupoCargaId:'load',quantidade:4,volume:4,data:'08/11/2026, 10:00:00'});
+ s.records.set('empresas/tenant/dados/sm2_carregamentos/registros/load-line',{...shape,id:'load-line',tipoMedida:'m3',quantidade:4,volume:4,valor:8000,cargaStatus:'concluido',cargaBaixadaEm:at+3600000,grupoCargaId:'load'});
+ const writes=s.writes.length,sale=(await projectLoadSales(s.db,'tenant',{from:'2026-11-08',to:'2026-11-08'}))[0];
+ assert.equal(sale.costCents,520000);assert.equal(sale.source.costMode,'average');assert.equal(sale.source.usesConferenceAverage,true);assert.equal(s.writes.length,writes);
+});
