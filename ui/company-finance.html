@@ -1,0 +1,28 @@
+<div id="financePanelV722" class="finance-panel-v722" hidden>
+ <div class="card">
+  <h3>Compras, vendas e resultado</h3>
+  <p class="note">Registre os valores reais. Orçamentos, carregamentos e entradas de estoque não viram lançamentos financeiros automaticamente.</p>
+  <p class="note">Resultado = vendas − custo da madeira vendida − despesas − perdas. Compras que continuam no estoque não são descontadas novamente do resultado.</p>
+  <div class="fin-period"><label>De<input type="date" id="finFromV722"></label><label>Até<input type="date" id="finToV722"></label><label>Agrupar por<select id="finGroupV722"><option value="month">Mês</option><option value="day">Dia</option></select></label><button type="button" id="finLoadV722" class="btn btn-secondary">Consultar período</button></div>
+  <p id="finStatusV722" role="status" class="note"></p><p id="finPreviewV722" class="note" hidden>Registros de teste da prévia: não entram no financeiro oficial.</p>
+  <div id="finNumbersV722" hidden><p id="finShownPeriodV722" class="note"></p><div id="finStatsV722" class="fin-stats"></div><p id="finPendingV722" class="note"></p><div id="finChartV722"></div><details><summary>Conferir valores por período</summary><div id="finPeriodTableV722" class="fin-table-scroll"></div></details></div>
+ </div>
+ <details class="card" id="finEntryBoxV722"><summary>Novo lançamento / editar registro</summary>
+  <p class="note">Este registro é financeiro e não altera o estoque. Para salvar ou cancelar, conecte-se à internet.</p>
+  <form id="finFormV722">
+   <div class="fin-form-grid">
+    <label>Tipo<select id="finTypeV722"><option value="purchase">Compra</option><option value="sale">Venda</option><option value="expense">Despesa</option><option value="loss">Perda (custo)</option></select></label>
+    <label>Data do fato<input type="date" id="finDateV722" required></label>
+    <label>Descrição<input type="text" id="finDescriptionV722" required maxlength="180" placeholder="Ex.: compra de Garapeira"></label>
+    <label>Cliente / fornecedor<input type="text" id="finPartnerV722" maxlength="120"></label>
+    <label>Categoria<select id="finCategoryV722"><option value="wood">Madeira / produtos</option><option value="freight">Frete</option><option value="processing">Beneficiamento</option><option value="tax">Impostos e taxas</option><option value="payroll">Mão de obra</option><option value="energy">Energia</option><option value="maintenance">Manutenção</option><option value="other">Outros</option></select></label>
+    <label>Valor total (R$)<input type="text" inputmode="decimal" id="finAmountV722" required placeholder="Ex.: 1500,00"></label>
+    <label id="finCostLabelV722" hidden>Custo da madeira vendida (R$)<input type="text" inputmode="decimal" id="finCostV722" placeholder="Vazio = custo pendente"><small>Somente o custo dos produtos desta venda. Zero deve ser informado somente quando o custo realmente for zero.</small></label>
+    <label>Referência / documento<input type="text" id="finReferenceV722" maxlength="120" placeholder="Nota, pedido ou carregamento"></label>
+   </div>
+   <p class="note">Nas despesas, registre frete, impostos, mão de obra e outros gastos. Não repita como despesa um valor já incluído no custo da madeira vendida. Nas perdas, informe o custo da madeira perdida, sem repetir esse custo nas vendas.</p>
+   <div class="fin-actions"><button type="submit" id="finSaveV722" class="btn btn-primary">Salvar lançamento</button><button type="button" id="finNewV722" class="btn btn-secondary">Limpar / novo lançamento</button></div>
+  </form><p id="finWriteStatusV722" role="status" class="note"></p>
+ </details>
+ <div class="card"><h3>Lançamentos financeiros</h3><p class="note">O cancelamento preserva o registro e o retira dos cálculos.</p><div id="finEntriesV722"></div></div>
+</div>

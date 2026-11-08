@@ -9,7 +9,7 @@ function stockChartFormatV720(value,kind,unit=true){
 function stockChartLabelV720(key){return key.length===7?key.slice(5)+'/'+key.slice(0,4):key.split('-').reverse().join('/');}
 function queueStockChartsV720(message){
  if(typeof message==='string')stockChartsSyncV720=message;
- const panel=stockChartFieldV720('stockChartsV720');if(!panel?.open||stockChartsQueuedV720)return;
+ const panel=stockChartFieldV720('stockChartsV720');if(!panel?.open||panel.hidden||stockChartsQueuedV720||document.getElementById('relatorios')&&!document.getElementById('relatorios').classList.contains('active'))return;
  stockChartsQueuedV720=true;queueMicrotask(()=>{stockChartsQueuedV720=false;renderStockChartsV720();});
 }
 function movementChartMarkupV720(rows,kind,availableWidth){
@@ -29,7 +29,7 @@ function movementChartMarkupV720(rows,kind,availableWidth){
 }
 function renderStockChartsV720(){
  const panel=stockChartFieldV720('stockChartsV720');if(!panel)return;
- if(!stockChartsAllowedV720()){panel.hidden=true;return;}if(!panel.open)return;
+ if(!stockChartsAllowedV720()){panel.hidden=true;return;}if(!panel.open||panel.hidden)return;
  const stock=stockChartFieldV720('scStockV720').value,kind=stockChartFieldV720('scKindV720').value;
  const inventory=stock==='estoque1'?estoque1Lancamentos:estoque2Lancamentos;
  const names=[...new Set([...inventory,...movimentos.filter(i=>String(i.origem||'').trim()===(stock==='estoque1'?'Estoque 1':'Estoque 2'))].filter(i=>stockChartKind(i)===kind).map(stockChartName))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
@@ -68,7 +68,7 @@ function mountStockChartsV720(){
  const end=new Date(),start=new Date(end);start.setDate(start.getDate()-29);
  stockChartFieldV720('scFromV720').value=localDay(start);stockChartFieldV720('scToV720').value=localDay(end);
  panel.addEventListener('toggle',()=>{
-  if(!panel.open)return;
+  if(!panel.open||panel.hidden||document.getElementById('relatorios')&&!document.getElementById('relatorios').classList.contains('active'))return;
   if(!panel.dataset.initialized){const isHistory=stockChartFieldV720('estoqueHistoricoPainel')?.classList.contains('ativo');stockChartFieldV720('scStockV720').value=isHistory?historicoEstoqueAtivo:estoquePlanilhaAtivo;stockChartFieldV720('scKindV720').value=isHistory?historicoTipo:estoqueTipo;panel.dataset.initialized='1';}
   if(stockChartsAllowedV720())abrirHistoricoMovimentosV701();queueStockChartsV720();
  });

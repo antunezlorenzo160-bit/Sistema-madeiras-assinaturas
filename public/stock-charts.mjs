@@ -23,7 +23,7 @@ export function stockChartMovementDay(item){
  return stockChartDate(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'));
 }
 export function stockChartPeriods(from,to,group='day'){
- if(stockChartDate(from)!==from||stockChartDate(to)!==to||from>to)throw Error('Confira as datas: o início precisa ser anterior ou igual ao fim.');
+ if(typeof from!=='string'||typeof to!=='string'||stockChartDate(from)!==from||stockChartDate(to)!==to||from>to)throw Error('Confira as datas: o início precisa ser anterior ou igual ao fim.');
  if(!['day','month'].includes(group))throw Error('Agrupamento inválido.');
  const start=new Date(from+'T00:00:00Z'),end=new Date(to+'T00:00:00Z');
  const days=Math.round((end-start)/86400000)+1;

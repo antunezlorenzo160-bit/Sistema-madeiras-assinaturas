@@ -1,0 +1,40 @@
+#relatorios{min-width:0;max-width:100%;box-sizing:border-box}
+#relatorios>h2{font-size:22px;margin:4px 0 14px}
+#relatorios [hidden]{display:none!important}
+.reports-tabs-v722{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 16px}
+.reports-tabs-v722 button{min-height:44px}
+.reports-tabs-v722 button[aria-pressed=true]{background:var(--accent)!important;color:#18120a!important}
+#financePanelV722{min-width:0;max-width:100%;contain:inline-size}
+#financePanelV722 .note{color:var(--muted);font-size:12px;line-height:1.6}
+#financePanelV722 h3{font-size:18px;margin:0 0 12px}
+#financePanelV722 h4{font-size:14px;margin:6px 0 12px}
+#financePanelV722 summary{cursor:pointer;font-weight:700;min-height:36px;line-height:1.5}
+#financePanelV722 .fin-period,#financePanelV722 .fin-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:14px 0}
+#financePanelV722 label{display:flex;flex-direction:column;gap:6px;min-width:0;font-size:13px;font-weight:700}
+#financePanelV722 input,#financePanelV722 select{width:100%;min-width:0;box-sizing:border-box;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:10px;min-height:44px;font-size:14px}
+#financePanelV722 label small{font-weight:400;font-size:11px;color:var(--muted);line-height:1.4}
+#financePanelV722 .fin-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:16px 0}
+#financePanelV722 .fin-stats>div{min-width:0;padding:12px;background:var(--panel2);border:1px solid var(--line);border-radius:9px}
+#financePanelV722 .fin-stats small{display:block;color:var(--muted);font-size:12px;margin-bottom:7px}
+#financePanelV722 .fin-stats strong{display:block;font-size:19px;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+#financePanelV722 .fin-negative{color:var(--danger)}
+#financePanelV722 .fin-actions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+#financePanelV722 .fin-actions button{min-height:42px;font-size:13px}
+#financePanelV722 .fin-entry{padding:14px 0;border-top:1px solid var(--line);font-size:13px;line-height:1.5;overflow-wrap:anywhere}
+#financePanelV722 .fin-entry p{margin:5px 0}
+#financePanelV722 .fin-entry small{color:var(--muted)}
+#financePanelV722 .fin-cancelled{opacity:.65}
+#financePanelV722 .fin-period-chart{border-top:1px solid var(--line);padding:12px 0;margin-top:10px}
+#financePanelV722 .fin-chart-label{display:flex;justify-content:space-between;gap:8px;font-size:12px;margin:8px 0 4px}
+#financePanelV722 .fin-track{height:9px;background:var(--panel2);border-radius:4px;overflow:hidden}
+#financePanelV722 .fin-track>span{display:block;height:100%}
+#financePanelV722 .fin-bar-sale{background:#239b79}
+#financePanelV722 .fin-bar-purchase{background:#7296d8}
+#financePanelV722 .fin-bar-expense{background:#d9a441}
+#financePanelV722 .fin-bar-loss{background:#d85d5d}
+#financePanelV722 .fin-table-scroll{width:100%;min-width:0;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+#financePanelV722 .fin-table-scroll table{min-width:720px!important;display:table!important;width:100%!important;border-collapse:collapse;table-layout:auto!important}
+#financePanelV722 .fin-table-scroll table tr{display:table-row!important}
+#financePanelV722 .fin-table-scroll table td:nth-child(n),#financePanelV722 .fin-table-scroll table th:nth-child(n){display:table-cell!important;width:auto!important;white-space:nowrap!important;padding:8px!important;font-size:12px!important;text-align:right!important;background:transparent!important;color:var(--text)!important}
+#financePanelV722 .fin-table-scroll table td:first-child,#financePanelV722 .fin-table-scroll table th:first-child{text-align:left!important}
+@media(max-width:640px){#relatorios>h2{font-size:19px}#financePanelV722 .fin-stats{grid-template-columns:repeat(2,minmax(0,1fr))}#financePanelV722 .fin-stats strong{font-size:16px}#financePanelV722 .fin-period,#financePanelV722 .fin-form-grid{grid-template-columns:1fr}#financePanelV722 .card{padding:12px}#financePanelV722 .fin-actions button{flex:1 1 130px}.reports-tabs-v722 button{flex:1 1 140px;font-size:12px;padding:10px 7px}}
