@@ -1,28 +1,21 @@
+import {reviewLoadSaleDuplicates} from '../../../public/load-sales.mjs';
+import {financeCollectionPath,financeOwnerContext} from './finance-access.mjs';
+import {projectLoadSales} from './load-sales.mjs';
 import {FINANCE_PREVIEW} from './finance-context.mjs';
 import {PlatformError} from './platform.mjs';
-import {resolveCompanyMemberRole} from './company-session.mjs';
-import {billingAccessRef,billingAccessState} from './billing-access.mjs';
 import {normalizeFinanceEntry} from '../../../public/company-finance.mjs';
 import {stockChartDate} from '../../../public/stock-charts.mjs';
-export function financeCollectionPath(empresaId,context=FINANCE_PREVIEW?'deploy-preview':'production'){return `empresas/${empresaId}/${context==='deploy-preview'?'financeiroPreviaRegistros':'financeiroRegistros'}`;}
-export async function financeOwnerContext(db,identity,read=ref=>ref.get(),write=false,now=Date.now()){
- if(!identity.emailVerified)throw new PlatformError(403,'Confirme seu e-mail para acessar o financeiro.');
- const snapshot=await read(db.doc('membros/'+identity.uid)),member=snapshot.exists?snapshot.data():null;
- if(member?.ativo!==true||!/^[-\w]{1,120}$/.test(member.empresaId||''))throw new PlatformError(403,'Conta sem empresa ativa.');
- const company=await read(db.doc('empresas/'+member.empresaId));
- const role=resolveCompanyMemberRole(member,company.exists?company.data():null,identity);
- if(!role.roleContext.isCompanyOwner)throw new PlatformError(403,'O financeiro é exclusivo do responsável pela empresa.');
- const policy=await read(billingAccessRef(db,member.empresaId)),access=billingAccessState(policy.exists?policy.data():null,now);
- if(!access.read||write&&!access.write)throw new PlatformError(403,'Renove o acesso da empresa para '+(write?'alterar':'consultar')+' o financeiro.');
- return {empresaId:member.empresaId,canWrite:access.write};
-}
+export {financeCollectionPath,financeOwnerContext} from './finance-access.mjs';
 export async function listFinanceEntries(db,identity,{from,to},now=Date.now()){
  if(typeof from!=='string'||typeof to!=='string'||stockChartDate(from)!==from||stockChartDate(to)!==to||from>to)throw new PlatformError(400,'Confira o período de consulta.');
  const context=await financeOwnerContext(db,identity,undefined,false,now);
  const snapshot=await db.collection(financeCollectionPath(context.empresaId)).where('date','>=',from).where('date','<=',to).orderBy('date','desc').limit(1001).get();
  if(snapshot.docs.length>1000)throw new PlatformError(409,'Há mais de 1.000 registros. Selecione um período menor para conferir todos os valores.');
+ const manual=snapshot.docs.map(doc=>({...doc.data(),id:doc.id}));
+ const automatic=await projectLoadSales(db,context.empresaId,{from,to});
+ if(automatic.some(sale=>manual.some(entry=>entry.id===sale.id)))throw new PlatformError(409,'Há um conflito na identificação de uma venda. Consulte o suporte.');
  const latest=await financeOwnerContext(db,identity,undefined,false,now);if(latest.empresaId!==context.empresaId)throw new PlatformError(409,'O vínculo da conta mudou. Entre novamente.');
- return {...latest,preview:FINANCE_PREVIEW,entries:snapshot.docs.map(doc=>({...doc.data(),id:doc.id})).sort((a,b)=>b.date.localeCompare(a.date)||b.updatedAt-a.updatedAt)};
+ return {...latest,preview:FINANCE_PREVIEW,entries:reviewLoadSaleDuplicates([...manual,...automatic]).sort((a,b)=>b.date.localeCompare(a.date)||b.updatedAt-a.updatedAt)};
 }
 export async function saveFinanceEntry(db,identity,input,now=Date.now()){
  let entry;try{entry=normalizeFinanceEntry(input);}catch(e){throw new PlatformError(400,e.message);}

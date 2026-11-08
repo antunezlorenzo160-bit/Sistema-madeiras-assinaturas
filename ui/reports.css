@@ -38,3 +38,7 @@
 #financePanelV722 .fin-table-scroll table td:nth-child(n),#financePanelV722 .fin-table-scroll table th:nth-child(n){display:table-cell!important;width:auto!important;white-space:nowrap!important;padding:8px!important;font-size:12px!important;text-align:right!important;background:transparent!important;color:var(--text)!important}
 #financePanelV722 .fin-table-scroll table td:first-child,#financePanelV722 .fin-table-scroll table th:first-child{text-align:left!important}
 @media(max-width:640px){#relatorios>h2{font-size:19px}#financePanelV722 .fin-stats{grid-template-columns:repeat(2,minmax(0,1fr))}#financePanelV722 .fin-stats strong{font-size:16px}#financePanelV722 .fin-period,#financePanelV722 .fin-form-grid{grid-template-columns:1fr}#financePanelV722 .card{padding:12px}#financePanelV722 .fin-actions button{flex:1 1 130px}.reports-tabs-v722 button{flex:1 1 140px;font-size:12px;padding:10px 7px}}
+#financePanelV722 .fin-load-sale-v724{margin:10px 0;padding:10px;border:1px solid var(--line);border-radius:9px;max-width:100%;min-width:0}
+#financePanelV722 .fin-load-sale-v724 label{margin:10px 0}
+#financePanelV722 .fin-load-sale-v724 input[type=checkbox]{display:inline-block;min-height:20px;width:20px;vertical-align:middle}
+#financePanelV722 .fin-load-sale-v724 button{min-height:44px;margin-top:10px;font-size:13px}

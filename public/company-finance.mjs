@@ -21,14 +21,16 @@ export function normalizeFinanceEntry(input){
  return {id:input.id.toLowerCase(),revision:input.revision,type:input.type,date:input.date,description,partner,reference,category:input.category,amountCents:input.amountCents,costCents:cost};
 }
 export function aggregateFinance(entries,{from,to,group='month'}){
- const rows=stockChartPeriods(from,to,group).map(key=>({key,purchase:0,sale:0,expense:0,loss:0,cost:0,pendingCosts:0,count:0})),map=new Map(rows.map(r=>[r.key,r]));
- const total={purchase:0,sale:0,expense:0,loss:0,cost:0,pendingCosts:0,count:0};
+ const rows=stockChartPeriods(from,to,group).map(key=>({key,purchase:0,sale:0,expense:0,loss:0,cost:0,pendingCosts:0,pendingSales:0,count:0})),map=new Map(rows.map(r=>[r.key,r]));
+ const total={purchase:0,sale:0,expense:0,loss:0,cost:0,pendingCosts:0,pendingSales:0,count:0};
  for(const entry of entries){
-  if(entry.status!=='active'||entry.date<from||entry.date>to)continue;
+  if(entry.date<from||entry.date>to)continue;
+  if(entry.status==='pending-review'&&entry.source?.type==='load-sale'){const row=map.get(entry.date.slice(0,group==='month'?7:10));if(!row)throw Error('Data inválida na venda da carga.');row.pendingSales++;total.pendingSales++;continue;}
+  if(entry.status!=='active')continue;
   if(!Object.hasOwn(FINANCE_TYPES,entry.type)||!Number.isSafeInteger(entry.amountCents)||entry.amountCents<0)throw Error('Registro financeiro inconsistente. Atualize a lista.');
   const row=map.get(entry.date.slice(0,group==='month'?7:10));if(!row)throw Error('Data inválida na lista financeira.');
   for(const target of [row,total]){target[entry.type]+=entry.amountCents;target.count++;if(entry.type==='sale'){if(entry.costCents===null)target.pendingCosts++;else if(Number.isSafeInteger(entry.costCents)&&entry.costCents>=0)target.cost+=entry.costCents;else throw Error('Custo inválido na venda.');}}
  }
- for(const row of [...rows,total]){row.result=row.pendingCosts?null:row.sale-row.cost-row.expense-row.loss;if(Object.entries(row).some(([key,n])=>key!=='key'&&n!==null&&!Number.isSafeInteger(n)))throw Error('Limite de cálculo financeiro atingido. Selecione um período menor.');}
+ for(const row of [...rows,total]){row.result=row.pendingCosts||row.pendingSales?null:row.sale-row.cost-row.expense-row.loss;if(Object.entries(row).some(([key,n])=>key!=='key'&&n!==null&&!Number.isSafeInteger(n)))throw Error('Limite de cálculo financeiro atingido. Selecione um período menor.');}
  return {rows,total};
 }
