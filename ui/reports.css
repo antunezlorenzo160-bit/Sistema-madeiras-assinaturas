@@ -47,3 +47,9 @@
 #financePanelV722 .fin-bar-profit{background:#239b79}
 #financePanelV722 .fin-bar-deficit{background:#d85d5d}
 @media(max-width:640px){#financePanelV722 .fin-stats>div:last-child:nth-child(odd){grid-column:1/-1}}
+
+#financePanelV722 .fin-minimum-policy-v726{padding:12px;margin:14px 0;border:1px solid var(--line);border-radius:9px}
+#financePanelV722 .fin-minimum-policy-v726 label{max-width:420px;margin:12px 0}
+#financePanelV722 .fin-minimum-policy-v726 button{min-height:44px;font-size:13px}
+#financePanelV722 .fin-minimum-warning{border-left:3px solid var(--accent);background:var(--panel2);padding:10px;font-size:13px;line-height:1.5;color:var(--text)}
+#financePanelV722 .fin-minimum-met{color:var(--success)}

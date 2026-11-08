@@ -1,3 +1,4 @@
+import {readMinimumProfitPolicy} from './minimum-profit.mjs';
 import {reviewLoadSaleDuplicates} from '../../../public/load-sales.mjs';
 import {financeCollectionPath,financeOwnerContext} from './finance-access.mjs';
 import {projectLoadSales} from './load-sales.mjs';
@@ -12,10 +13,10 @@ export async function listFinanceEntries(db,identity,{from,to},now=Date.now()){
  const snapshot=await db.collection(financeCollectionPath(context.empresaId)).where('date','>=',from).where('date','<=',to).orderBy('date','desc').limit(1001).get();
  if(snapshot.docs.length>1000)throw new PlatformError(409,'Há mais de 1.000 registros. Selecione um período menor para conferir todos os valores.');
  const manual=snapshot.docs.map(doc=>({...doc.data(),id:doc.id}));
- const automatic=await projectLoadSales(db,context.empresaId,{from,to});
+ const [automatic,profitPolicy]=await Promise.all([projectLoadSales(db,context.empresaId,{from,to}),readMinimumProfitPolicy(db,context.empresaId)]);
  if(automatic.some(sale=>manual.some(entry=>entry.id===sale.id)))throw new PlatformError(409,'Há um conflito na identificação de uma venda. Consulte o suporte.');
  const latest=await financeOwnerContext(db,identity,undefined,false,now);if(latest.empresaId!==context.empresaId)throw new PlatformError(409,'O vínculo da conta mudou. Entre novamente.');
- return {...latest,preview:FINANCE_PREVIEW,entries:reviewLoadSaleDuplicates([...manual,...automatic]).sort((a,b)=>b.date.localeCompare(a.date)||b.updatedAt-a.updatedAt)};
+ return {...latest,preview:FINANCE_PREVIEW,profitPolicy,entries:reviewLoadSaleDuplicates([...manual,...automatic]).sort((a,b)=>b.date.localeCompare(a.date)||b.updatedAt-a.updatedAt)};
 }
 export async function saveFinanceEntry(db,identity,input,now=Date.now()){
  let entry;try{entry=normalizeFinanceEntry(input);}catch(e){throw new PlatformError(400,e.message);}

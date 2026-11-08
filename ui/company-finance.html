@@ -3,9 +3,18 @@
   <h3>Compras, vendas e resultado</h3>
   <p class="note">Vendas dos carregamentos baixados aparecem automaticamente, pelo total do documento original e na data da baixa. Cargas em montagem e orçamentos não entram como vendas. Registre manualmente as compras e as vendas avulsas.</p>
   <p class="note">Margem antes das despesas = vendas − custo da madeira vendida. Depois de descontar despesas e eventuais perdas de madeira, o resultado aparece como lucro ou prejuízo. O prejuízo é calculado, não é uma nova despesa. Compras ainda no estoque não são descontadas novamente.</p>
+  <details class="fin-minimum-policy-v726" id="finMinimumPolicyV726">
+   <summary>Configurar lucro mínimo da empresa</summary>
+   <p class="note">Um percentual geral para todas as madeiras e vendas. Exemplo: custo de R$ 100 e mínimo de 20% → venda mínima de R$ 120.</p>
+   <label for="finMinimumPercentV726">Lucro mínimo sobre o custo da madeira (%)<input type="text" inputmode="decimal" id="finMinimumPercentV726" placeholder="Ex.: 20 — vazio desliga o aviso"></label>
+   <p class="note" id="finMinimumExampleV726"></p>
+   <p class="note">A venda é comparada ao custo da madeira, antes das despesas. O resultado final do período também é comparado à meta, após os gastos. Sem custo informado, a avaliação fica pendente. Este aviso não muda preços nem bloqueia a venda.</p>
+   <button type="button" id="finMinimumSaveV726" class="btn btn-primary">Salvar mínimo da empresa</button>
+   <p class="note" id="finMinimumStatusV726" role="status">Consulte o período para carregar o mínimo salvo.</p>
+  </details>
   <div class="fin-period"><label>De<input type="date" id="finFromV722"></label><label>Até<input type="date" id="finToV722"></label><label>Agrupar por<select id="finGroupV722"><option value="month">Mês</option><option value="day">Dia</option></select></label><button type="button" id="finLoadV722" class="btn btn-secondary">Consultar período</button></div>
   <p id="finStatusV722" role="status" class="note"></p><p id="finPreviewV722" class="note" hidden>Registros de teste da prévia: não entram no financeiro oficial.</p>
-  <div id="finNumbersV722" hidden><p id="finShownPeriodV722" class="note"></p><div id="finStatsV722" class="fin-stats"></div><p id="finPendingV722" class="note"></p><div id="finChartV722"></div><details><summary>Conferir valores por período</summary><div id="finPeriodTableV722" class="fin-table-scroll"></div></details></div>
+  <div id="finNumbersV722" hidden><p id="finShownPeriodV722" class="note"></p><p id="finMinimumSummaryV726" class="note" role="status"></p><div id="finStatsV722" class="fin-stats"></div><p id="finPendingV722" class="note"></p><div id="finChartV722"></div><details><summary>Conferir valores por período</summary><div id="finPeriodTableV722" class="fin-table-scroll"></div></details></div>
  </div>
  <details class="card" id="finEntryBoxV722"><summary>Novo lançamento / editar registro</summary>
   <p class="note">Este registro é financeiro e não altera o estoque. Para salvar ou cancelar, conecte-se à internet.</p>
