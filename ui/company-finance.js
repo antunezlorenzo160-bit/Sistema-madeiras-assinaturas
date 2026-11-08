@@ -97,7 +97,7 @@ async function financeSaveLoadSaleV724(root){
  const status=root.querySelector('[data-load-sale-status]'),select=root.querySelector('[data-load-sale-manual]'),choice=select?.value;
  if(choice==='__choose__'){status.textContent='Escolha se o lançamento manual representa esta mesma venda ou outra venda.';return;}
  const manual=choice&&choice!=='__separate__'?financeRowsV722.find(entry=>entry.id===choice):null;
- let cost;try{const raw=root.querySelector('[data-load-sale-cost]').value.trim();cost=root.querySelector('[data-load-sale-auto]')?.checked?null:raw===''?null:financeCents(raw);}catch(e){status.textContent=e.message;return;}
+ let cost;try{const raw=root.querySelector('[data-load-sale-cost]').value.trim(),automatic=root.querySelector('[data-load-sale-auto]');if(automatic&&!automatic.checked&&raw==='')throw Error('Informe o custo manual ou marque Usar custo médio automático.');cost=automatic?.checked?null:raw===''?null:financeCents(raw);}catch(e){status.textContent=e.message;return;}
  const include=root.querySelector('[data-load-sale-include]').checked;
  if(manual&&!include){status.textContent='Marque a carga como venda para substituir o lançamento manual.';return;}
  financeBusyV722=true;finWriteStateV722();for(const field of root.querySelectorAll('input,select,button'))field.disabled=true;status.textContent='Salvando custo e conferência…';

@@ -64,3 +64,7 @@ test('automatic average cost is visible and saving its conference does not freez
  const root=saleRoot(row),previous=root.querySelector;root.fields.cost.value='1150,00';root.querySelector=selector=>selector==='[data-load-sale-auto]'?{checked:true}:previous(selector);
  s.setRequest(async(url,options)=>{assert.equal(JSON.parse(options.body).costCents,null);return response({entry:{...row,revision:1}});});await s.c.financeSaveLoadSaleV724(root);assert.equal(s.calls.length,2);
 });
+test('switching from automatic cost to manual requires an explicit amount and never silently falls back',async()=>{
+ const s=setup(),row=automaticSale({costCents:115000,source:{...automaticSale().source,costMode:'average',automaticCostCents:115000}});s.setRequest(async()=>response({empresaId:'tenant',entries:[row],canWrite:true}));await s.c.financeLoadV722();
+ const root=saleRoot(row),previous=root.querySelector;root.fields.cost.value='';root.querySelector=selector=>selector==='[data-load-sale-auto]'?{checked:false}:previous(selector);await s.c.financeSaveLoadSaleV724(root);assert.equal(s.calls.length,1);assert.match(root.fields.status.textContent,/Informe o custo manual/);
+});
