@@ -39,6 +39,6 @@ test('packages Enter no longer blurs the mobile input',()=>{
 });
 test('real generated post-launch callbacks preserve quickly typed digits and respect native keyboard dismissal',()=>{
  const html=readFileSync(new URL('../public/index.html',import.meta.url),'utf8'),app=JSON.parse(html.match(/const TEMPLATE\s*=\s*("(?:\\.|[^"\\])*")/)[1]),start=app.indexOf('function prepararProximoLancamentoM3(){'),end=app.indexOf('// Renderizações fora da tela',start);assert(start>=0&&end>start);
- const s=setup();vm.runInContext(app.slice(start,end),s.c);s.focus(s.width);s.api.beginLaunch();s.width.value='10';s.c.prepararProximoLancamentoM3();s.width.value='12';s.flush();s.timers.splice(0).forEach(fn=>fn());assert.equal(s.width.value,'12');
+ const s=setup();vm.runInContext(app.slice(start,end),s.c);s.focus(s.width);s.api.beginLaunch();s.width.value='12';s.fire('input',s.width,{isTrusted:true});s.c.prepararProximoLancamentoM3();assert.equal(s.width.value,'12','an async launch must not clear the next edit');s.api.beginLaunch();s.width.value='10';s.c.prepararProximoLancamentoM3();s.width.value='12';s.flush();s.timers.splice(0).forEach(fn=>fn());assert.equal(s.width.value,'12');
  s.resize(430);s.flush();s.api.beginLaunch();s.width.value='10';s.c.prepararProximoLancamentoM3();const focusCount=s.width.focuses,selectCount=s.width.selects;s.resize(800);s.flush();s.timers.splice(0).forEach(fn=>fn());assert.equal(s.width.focuses,focusCount);assert.equal(s.width.selects,selectCount);
 });

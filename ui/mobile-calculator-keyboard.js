@@ -3,7 +3,7 @@
  const media=window.matchMedia('(max-width:760px) and (pointer:coarse)');
  const calc=document.getElementById('calculadora'),main=document.querySelector('body > main');if(!calc||!main)return;
  let viewport=window.visualViewport,frame=null;try{if(window.parent!==window&&window.parent.visualViewport){viewport=window.parent.visualViewport;frame=window.frameElement;}}catch{}
- let baseline=0,visible=false,dismissed=false,armed=false,generation=0,launchGeneration=-1,raf=0,checkField=false;
+ let baseline=0,visible=false,dismissed=false,armed=false,generation=0,launchGeneration=-1,editVersion=0,launchEditVersion=0,launchField=null,launchValue=null,raf=0,checkField=false;
  const active=()=>media.matches&&calc.classList.contains('active')&&!document.body.classList.contains('mobile-menu-open');
  const editable=el=>!!el&&calc.contains(el)&&el.tagName==='INPUT'&&!el.disabled&&!el.readOnly&&!['checkbox','radio','button','submit','hidden','file','range','color'].includes(el.type);
  function release(){dismissed=true;armed=false;generation++;}
@@ -32,7 +32,8 @@
  }
  function schedule(reveal=false){checkField||=reveal;if(!raf)raf=requestAnimationFrame(update);}
  window.__smCalcKeyboardV733={
-  beginLaunch(){if(active()){launchGeneration=generation;}},
+  beginLaunch(){if(active()){launchGeneration=generation;launchEditVersion=editVersion;launchField=document.activeElement;launchValue=launchField?.value;}},
+  canResetAfterLaunch(){return !media.matches||editVersion===launchEditVersion;},
   canRestoreFocus(field){
    if(!media.matches)return true;
    if(!active()||dismissed||!armed||!editable(field)||generation!==launchGeneration&&document.activeElement!==field)return false;
@@ -53,7 +54,7 @@
  },true);
  document.addEventListener('focusin',event=>{if(active()&&editable(event.target)){schedule(true);}},true);
  document.addEventListener('focusout',event=>{if(active()&&editable(event.target)&&!editable(event.relatedTarget))release();},true);
- document.addEventListener('input',event=>{if(active()&&editable(event.target)&&event.isTrusted&&!dismissed){armed=true;}},true);
+ document.addEventListener('input',event=>{if(active()&&editable(event.target)&&event.isTrusted){if(event.target!==launchField||event.target.value!==launchValue)editVersion++;if(!dismissed)armed=true;}},true);
  document.addEventListener('keydown',event=>{
   if(!active()||!editable(event.target))return;
   if(event.key==='Escape'){release();return;}
