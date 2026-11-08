@@ -80,3 +80,13 @@ test('saving old cost once also values old stock whose first exit is recorded la
  s.records.set('empresas/tenant/dados/sm2_carregamentos/registros/later-load',{...physical,grupoCargaId:'later-load',valor:2500,cargaStatus:'concluido',cargaBaixadaEm:at+3600000});
  const before=JSON.stringify([...s.records]),writes=s.writes.length,report=await listFinanceEntries(s.db,s.identity,{from:'2026-11-08',to:'2026-11-08'},at+7200000);assert.equal(report.entries.length,1);assert.equal(report.entries[0].costCents,100000);assert.equal(report.entries[0].source.costMode,'average');assert.equal(report.openingPolicy.revision,1);assert.equal(s.writes.length,writes);assert.equal(JSON.stringify([...s.records]),before);
 });
+
+test('10 m3 bought at 1300 automatically supplies the cost of a 4 m3 sale without manual entry',async()=>{
+ const s=purchaseTestDb(),{receipt}=await confirmStockPurchase(s.db,s.identity,purchase({freightCents:0,otherCents:0,lines:[line({quantidade:10,volume:10,unitCents:130000})]}),at),p=receipt.lines[0];
+ assert.equal(receipt.totalCents,1300000);
+ s.records.set('empresas/tenant/dados/sm2_estoque1/registros/'+p.stockId,{...s.records.get('empresas/tenant/dados/sm2_estoque1/registros/'+p.stockId),quantidade:6,volume:6});
+ s.records.set('empresas/tenant/dados/sm2_movimentos/registros/out',{id:'out',madeiraId:'wood',tipoCadastro:'m3',tipo:'saida',largura:100,espessura:100,comprimento:1,quantidade:4,volume:4,origem:'Estoque 1',grupoCargaId:'load',data:'08/11/2026, 10:00:00',atualizadoEm:at+3600000});
+ s.records.set('empresas/tenant/dados/sm2_carregamentos/registros/load-line',{id:'load-line',madeiraId:'wood',tipoMedida:'m3',largura:100,espessura:100,comprimento:1,quantidade:4,volume:4,valor:8000,cargaStatus:'concluido',cargaBaixadaEm:at+3600000,grupoCargaId:'load'});
+ const writes=s.writes.length,sale=(await projectLoadSales(s.db,'tenant',{from:'2026-11-08',to:'2026-11-08'}))[0];
+ assert.equal(sale.amountCents,800000);assert.equal(sale.costCents,520000);assert.equal(sale.source.physicalM3,4);assert.equal(sale.source.costMode,'average');assert.equal(sale.amountCents-sale.costCents,280000);assert.equal(s.writes.length,writes);
+});

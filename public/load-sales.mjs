@@ -66,3 +66,14 @@ export function reviewLoadSaleDuplicates(entries){
   return {...row,status:matches.length&&!row.source.separateConfirmed?'pending-review':'active',source:{...row.source,possibleManualIds:matches}};
  });
 }
+
+// Manual correction only: convert a declared unit price to the full physical load cost.
+export function loadSaleManualCost(valueCents,mode,physicalM3){
+ if(!['total','m3'].includes(mode)||!Number.isSafeInteger(valueCents)||valueCents<0||valueCents>100000000000)throw Error('Informe um custo válido.');
+ if(mode==='total')return valueCents;
+ const units=Math.round(physicalM3*1e9);
+ if(!Number.isFinite(physicalM3)||physicalM3<=0||!Number.isSafeInteger(units)||units<=0)throw Error('Esta carga não tem volume físico em m³ disponível. Informe o custo total.');
+ const total=Number((BigInt(valueCents)*BigInt(units)+500000000n)/1000000000n);
+ if(!Number.isSafeInteger(total)||total>100000000000)throw Error('Custo total acima do limite.');
+ return total;
+}

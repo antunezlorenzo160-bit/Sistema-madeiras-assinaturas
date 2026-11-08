@@ -77,3 +77,15 @@ test('four primary totals lead to per-sale cost explanations, while purchases an
  const s=setup(),row=automaticSale({amountCents:2500000,costCents:130000,source:{...automaticSale().source,costMode:'manual',physicalM3:10,automaticCostCents:1000000}}),before=JSON.stringify(row);s.setRequest(async()=>response({empresaId:'tenant',entries:[row],canWrite:true,profitPolicy:{minimumBasisPoints:3000,revision:1}}));await s.c.financeLoadV722();
  assert.equal((s.nodes.finStatsV722.innerHTML.match(/<small>/g)||[]).length,4);assert(!s.nodes.finStatsV722.innerHTML.includes('Lucro mínimo'));assert.match(s.nodes.finOtherStatsV735.innerHTML,/Lucro mínimo esperado/);assert.match(s.nodes.finSaleChecksV735.innerHTML,/1\.300,00/);assert.match(s.nodes.finSaleChecksV735.innerHTML,/130,00.*m³/);assert.match(s.nodes.finSaleChecksV735.innerHTML,/10\.000,00/);assert.match(s.nodes.finSaleChecksV735.innerHTML,/Total informado manualmente/);assert.match(s.nodes.finEntriesV722.innerHTML,/Custo TOTAL da madeira desta venda/);assert.match(s.nodes.finStatsV722.innerHTML,/fin-review-v735/);assert.match(s.nodes.finPendingV722.textContent,/manual.*diferente/);assert.equal(vm.runInContext('financeRowsV722[0].costCents',s.c),130000);assert.equal(JSON.stringify(row),before);assert.equal(s.calls.length,1);
 });
+
+test('manual price per m3 previews and posts the full load cost, and retries preserve unit input',async()=>{
+ const s=setup(),row=automaticSale({source:{...automaticSale().source,physicalM3:12.9763,costMode:'manual'}});
+ s.setRequest(async()=>response({empresaId:'tenant',entries:[row],canWrite:true}));await s.c.financeLoadV722();
+ const root=saleRoot(row),previous=root.querySelector,mode={value:'m3'},preview={textContent:''},label={textContent:''};
+ root.fields.cost.value='1300,00';root.querySelector=selector=>({'[data-load-sale-cost-mode]':mode,'[data-load-sale-cost-preview]':preview,'[data-load-sale-cost-label]':label}[selector]||previous(selector));
+ s.c.financeLoadCostPreviewV736(root);assert.match(preview.textContent,/16.869,19/);assert.match(label.textContent,/por m³/);
+ let fail=true;s.setRequest(async(url,options)=>{const body=JSON.parse(options.body);assert.equal(body.costCents,1686919);assert(!Object.hasOwn(body,'amountCents'));if(fail){fail=false;throw Error('Sem resposta');}return response({empresaId:'tenant',entry:{...row,costCents:body.costCents,revision:1}});});
+ await s.c.financeSaveLoadSaleV724(root);assert.equal(root.fields.cost.value,'1300,00');assert.equal(mode.value,'m3');assert.match(root.fields.status.textContent,/preservados/);
+ await s.c.financeSaveLoadSaleV724(root);assert.match(s.nodes.finSaleChecksV735.innerHTML,/16.869,19/);
+ mode.value='total';s.c.financeLoadCostPreviewV736(root);assert.match(preview.textContent,/1.300,00/);
+});

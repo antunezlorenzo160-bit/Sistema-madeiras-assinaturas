@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';import vm from 'node:vm';import {readFileSync} from 'node:fs';
-import {completedLoadSale,reviewLoadSaleDuplicates} from '../public/load-sales.mjs';
+import {completedLoadSale,reviewLoadSaleDuplicates,loadSaleManualCost} from '../public/load-sales.mjs';
 import {describeLoadSale,projectLoadSales,saveLoadSaleConfig,loadSaleKeys} from '../Netlify/Funtions/lib/load-sales.mjs';
 import {listFinanceEntries,financeCollectionPath} from '../Netlify/Funtions/lib/company-finance.mjs';
 import {aggregateFinance} from '../public/company-finance.mjs';
@@ -81,4 +81,15 @@ test('new load services use saved percentages and repricing keeps both services 
  assert.equal(priced.valorMaterial,200);assert.equal(priced.valorServicos,30);assert.equal(priced.valor,230);assert.equal(priced.volume,2);assert.equal(JSON.stringify(input),before);
  const repriced=priceLoadServices({...priced,preco:200});assert.equal(repriced.valor,460);assert.equal(repriced.valorServicos,60);assert.equal(completedLoadSale([repriced]).serviceCents,6000);
  assert.equal(priceLoadServices({...priced,endireitamento:false,aplainamento:false}).valor,200);assert.throws(()=>priceLoadServices({...input,precoEndireitamento:-10}));
+});
+
+test('manual unit cost uses physical volume with exact cent rounding; total mode preserves old totals',()=>{
+ assert.equal(loadSaleManualCost(130000,'m3',10),1300000);
+ assert.equal(loadSaleManualCost(130000,'m3',12.9763),1686919);
+ assert.equal(loadSaleManualCost(130000,'total',12.9763),130000);
+ assert.equal(loadSaleManualCost(1,'m3',0.5),1);
+ for(const volume of [null,undefined,NaN,0,-1,Infinity])assert.throws(()=>loadSaleManualCost(130000,'m3',volume));
+ assert.throws(()=>loadSaleManualCost(100000000000,'m3',100));
+ assert.throws(()=>loadSaleManualCost(-1,'total',10));
+ assert.throws(()=>loadSaleManualCost(130000,'other',10));
 });

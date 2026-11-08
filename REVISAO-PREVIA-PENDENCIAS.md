@@ -243,3 +243,12 @@ Resumo principal reduzido a vendas, custo total vendido, despesas e resultado. C
 Reconciliação usa somente registros ativos nas datas consultadas; despesa geral ou de outra carga não é rateada por suposição. Frete cobrado permanece na receita e gasto real separado. Soma dos custos e resultado por venda são validados contra o agregador existente. Volume vem das dimensões físicas, sem volume comercial acrescido. Sem mudanças de estoque, preços, políticas, escrita financeira, filas ou regras.
 
 Validação:8 suítes pertinentes passaram (interface, reconciliação, vendas, compras, custo médio, mínimo, transporte e teclado); build limpo e32scripts válidos. Caso sintético reproduz os totaisR$71.176,17/R$14.330/R$4.000, sem presumir quais são os custos reais por carga. Sem sessão Firebase autenticada para auditar registros reais. Apenas prévia12; produção inalterada.
+
+
+## Compra unitária e correção de custo da carga V736 — 08/11
+
+Conferido o fluxo existente: entrada recebe preço por m³, calcula o custo total privado e fornece média às saídas vinculadas. Teste integrado confirma compra10m³×R$1300=R$13000 e saída4m³ com custo automáticoR$5200, sem escrita na consulta. Custos manuais existentes mantêm prioridade e não são reinterpretados.
+
+Correção do custo de carga permite escolher Total ou Preço por m³ quando há volume físico confirmado. Troca de modo limpa o campo para não reinterpretar o número anterior; prévia mostra volume×preço=total e envia somente o total à API existente. Custo automático continua padrão quando disponível. Conversão em centavos/BigInt com arredondamento e limites, sem usar volume comercial ou valor de venda. Falhas preservam a entrada para retry. Madeira sem custo continua pendente, sem estimativa silenciosa. Sem migração de dados ou regravação de compras/custos reais.
+
+Validação:8suítes pertinentes passaram; testes de conversão, limites, UI/retentativa e integração compra→venda. Build limpo e32scripts válidos. Nenhum acesso autenticado ao Firebase real; pendência específica da nova carga ainda depende de sua mensagem de diagnóstico. Apenas prévia12, produção inalterada.
