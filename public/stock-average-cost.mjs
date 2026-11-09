@@ -10,7 +10,8 @@ function movementTimeV728(row){
  if(row.purchaseReceiptV728&&Number.isSafeInteger(row.atualizadoEm))return row.atualizadoEm;
  return null;
 }
-// Pooled across locations, but never across species, dimensions, units or dry/green state.
+// Physical pools remain distinct. Only an unpriced conference may borrow a prior
+// carrying-cost reference from other dimensions of the same species/unit/state.
 export function projectWeightedStockCosts({purchases,movements,stock,openingPolicy={}}){
  const opening=normalizeOpeningStockCost(openingPolicy),oldEnabled=opening.unitCents!==null&&opening.revision>0&&opening.cutoffAt>0;
  const oldValue=qty=>costRoundV728(BigInt(qty)*BigInt(opening.unitCents),1000000000n)*costPrecisionV728;
@@ -51,40 +52,63 @@ export function projectWeightedStockCosts({purchases,movements,stock,openingPoli
   p.events.push({id:row.id,type,quantity,at:at||0,value,missingReason,conference:row.tipo==='ajuste'&&(row.ajusteConferenciaV391===true||row.ajusteConferenciaV390===true),loadId:type==='saida'?row.grupoCargaId:null});
  }
  for(const [id,line] of byMovement)if(!seen.has(id))invalidate(pool(line.costKey),'Falta o movimento de entrada de uma compra registrada. Aguarde a sincronização ou confira essa entrada.');
+ const familyKey=key=>JSON.stringify(JSON.parse(key).slice(0,3)),families=new Map();
+ const known=p=>!p.invalid&&!p.unknown&&p.qty>0;
+ const contribution=p=>known(p)?{qty:BigInt(p.qty),value:p.value}:{qty:0n,value:0n};
+ const updateFamily=(p,previous)=>{
+  const id=familyKey(p.key);if(!families.has(id))families.set(id,{qty:0n,value:0n,lastKnown:null});
+  const total=families.get(id),next=contribution(p);total.qty+=next.qty-previous.qty;total.value+=next.value-previous.value;
+  if(known(p))p.lastOwn={qty:BigInt(p.qty),value:p.value,species:p.speciesValued};
+ };
+ const allEvents=[];
  for(const [key,p] of pools){
-  // One unit is 1e-9 m³. Allow only the bounded accumulated rounding error, never a real shortage.
-  const tolerance=Math.min(1000,p.currentCount+p.events.length+1);
-  let qty=p.current-p.delta,value=0n,unknown=qty>0,unknownReason='O saldo inicial desta medida ainda não tem custo definido.';
-  if(qty<0&&qty>=-tolerance)qty=0;
-  if(qty<0||!Number.isSafeInteger(qty))invalidate(p,'As entradas e saídas desta medida não fecham com o saldo atual.');
-  // Positive pre-history balance is opening stock even when its first recorded exit
-  // happened after the valuation date. Later, recorded unpriced entries stay unknown.
-  if(qty>0&&!p.invalid&&oldEnabled&&JSON.parse(key)[1]==='m3'){value=oldValue(qty);unknown=false;unknownReason=null;}
-  let conferenceValued=false;
-  const events=p.events.sort((a,b)=>a.at-b.at||(a.type===b.type?String(a.id).localeCompare(String(b.id)):a.type==='entrada'?-1:1));
-  for(let n=1;n<events.length;n++)if(events[n].at===events[n-1].at&&events[n].type!==events[n-1].type)invalidate(p,'Há entrada e saída com o mesmo horário, sem ordem suficiente para conferir o custo.');
-  for(const event of events){
+  p.key=key;p.tolerance=Math.min(1000,p.currentCount+p.events.length+1);
+  p.qty=p.current-p.delta;p.value=0n;p.unknown=p.qty>0;p.unknownReason='O saldo inicial desta medida ainda não tem custo definido.';p.conferenceValued=false;p.speciesValued=false;p.lastOwn=null;
+  if(p.qty<0&&p.qty>=-p.tolerance)p.qty=0;
+  if(p.qty<0||!Number.isSafeInteger(p.qty))invalidate(p,'As entradas e saídas desta medida não fecham com o saldo atual.');
+  if(p.qty>0&&!p.invalid&&oldEnabled&&JSON.parse(key)[1]==='m3'){p.value=oldValue(p.qty);p.unknown=false;p.unknownReason=null;}
+  p.events.sort((a,b)=>a.at-b.at||(a.type===b.type?String(a.id).localeCompare(String(b.id)):a.type==='entrada'?-1:1));
+  for(let n=1;n<p.events.length;n++)if(p.events[n].at===p.events[n-1].at&&p.events[n].type!==p.events[n-1].type)invalidate(p,'Há entrada e saída com o mesmo horário, sem ordem suficiente para conferir o custo.');
+  updateFamily(p,{qty:0n,value:0n});
+  for(const event of p.events)allEvents.push({p,event});
+ }
+ for(const total of families.values())if(total.qty>0n)total.lastKnown={qty:total.qty,value:total.value};
+ allEvents.sort((a,b)=>a.event.at-b.event.at||a.p.key.localeCompare(b.p.key)||(a.event.type===b.event.type?String(a.event.id).localeCompare(String(b.event.id)):a.event.type==='entrada'?-1:1));
+ for(let start=0;start<allEvents.length;){
+  let end=start+1;while(end<allEvents.length&&allEvents[end].event.at===allEvents[start].event.at)end++;
+  // All references at an instant use the balances strictly before that instant.
+  // This avoids borrowing a same-time purchase or depending on document order.
+  const familyBefore=new Map(),ownBefore=new Map();
+  for(let n=start;n<end;n++){const p=allEvents[n].p,id=familyKey(p.key);if(!familyBefore.has(id))familyBefore.set(id,{...families.get(id)});if(!ownBefore.has(p.key))ownBefore.set(p.key,{...contribution(p),lastOwn:p.lastOwn});}
+  for(let n=start;n<end;n++){
+   const {p,event}=allEvents[n],previous=contribution(p);
    if(event.type==='entrada'){
-    let entryValue=event.value;
-    // An explicit physical conference changes quantity, not the purchase price.
-    // Value the surplus at the known carrying average immediately before this entry.
-    // Unknown stock, future buys or a different measure never supply this basis.
-    if(entryValue===null&&event.conference&&qty>0&&!unknown&&!p.invalid){entryValue=costRoundV728(value*BigInt(event.quantity),BigInt(qty));conferenceValued=true;}
-    if(qty===0){value=0n;unknown=false;unknownReason=null;conferenceValued=false;}qty+=event.quantity;
-    if(entryValue===null){unknown=true;unknownReason=event.missingReason||'Há madeira sem custo de compra completo nesta medida.';}else value+=entryValue;
-    continue;
+    let entryValue=event.value,inherited=false,borrowed=false;
+    if(entryValue===null&&event.conference&&p.qty>0&&!p.unknown&&!p.invalid){entryValue=costRoundV728(p.value*BigInt(event.quantity),BigInt(p.qty)*costPrecisionV728)*costPrecisionV728;inherited=true;}
+    if(entryValue===null&&event.conference&&p.qty===0&&!p.invalid){
+     const own=ownBefore.get(p.key),sum=familyBefore.get(familyKey(p.key)),siblings={qty:sum.qty-own.qty,value:sum.value-own.value,species:true},basis=own.lastOwn||(siblings.qty>0n?siblings:sum.lastKnown?{...sum.lastKnown,species:true}:siblings);
+     if(basis.qty>0n&&basis.value>=0n){entryValue=costRoundV728(basis.value*BigInt(event.quantity),basis.qty*costPrecisionV728)*costPrecisionV728;inherited=true;borrowed=basis.species;}
+    }
+    if(p.qty===0){p.value=0n;p.unknown=false;p.unknownReason=null;p.conferenceValued=false;p.speciesValued=false;}p.qty+=event.quantity;
+    if(!Number.isSafeInteger(p.qty))invalidate(p,'O saldo desta medida ultrapassa o limite de cálculo.');
+    p.conferenceValued||=inherited;p.speciesValued||=borrowed;
+    if(entryValue===null){p.unknown=true;p.unknownReason=event.missingReason||'Há madeira sem custo de compra completo nesta medida.';}else p.value+=entryValue;
+   }else{
+    if(p.qty<=0||event.quantity>p.qty+p.tolerance)invalidate(p,'A saída registrada supera o saldo reconstituído desta medida.');
+    const valid=known(p),consumed=valid?costRoundV728(p.value*BigInt(Math.min(event.quantity,p.qty)),BigInt(p.qty)*costPrecisionV728)*costPrecisionV728:null;
+    if(event.loadId){
+     if(!loads.has(event.loadId))loads.set(event.loadId,{pending:false,reason:null,value:0n,volumes:new Map(),tolerances:new Map()});
+     const load=loads.get(event.loadId);load.usesSpeciesReference||=valid&&p.speciesValued;load.usesConferenceAverage||=valid&&p.conferenceValued;load.pending||=!valid;if(!valid)load.reason||=p.reason||p.unknownReason;
+     load.volumes.set(p.key,(load.volumes.get(p.key)||0)+event.quantity);load.tolerances.set(p.key,(load.tolerances.get(p.key)||0)+1);if(consumed!==null)load.value+=consumed;
+    }
+    if(valid)p.value-=consumed;p.qty-=event.quantity;
+    if(p.qty<0){if(p.qty < -p.tolerance)invalidate(p,'A saída registrada supera o saldo reconstituído desta medida.');p.qty=0;}
+    if(p.qty===0){p.unknown=false;p.value=0n;p.unknownReason=null;}
    }
-   if(qty<=0||event.quantity>qty+tolerance)invalidate(p,'A saída registrada supera o saldo reconstituído desta medida.');
-   const valid=!p.invalid&&!unknown&&qty>0,consumed=valid?costRoundV728(value*BigInt(Math.min(event.quantity,qty)),BigInt(qty)*costPrecisionV728)*costPrecisionV728:null;
-   if(event.loadId){
-    if(!loads.has(event.loadId))loads.set(event.loadId,{pending:false,reason:null,value:0n,volumes:new Map(),tolerances:new Map()});
-    const load=loads.get(event.loadId);load.usesConferenceAverage||=valid&&conferenceValued;load.pending||=!valid;if(!valid)load.reason||=p.reason||unknownReason;
-    load.volumes.set(key,(load.volumes.get(key)||0)+event.quantity);load.tolerances.set(key,(load.tolerances.get(key)||0)+1);if(consumed!==null)load.value+=consumed;
-   }
-   if(valid)value-=consumed;qty-=event.quantity;
-   if(qty<0){if(qty < -tolerance)invalidate(p,'A saída registrada supera o saldo reconstituído desta medida.');qty=0;}
-   if(qty===0){unknown=false;value=0n;unknownReason=null;}
+   updateFamily(p,previous);
   }
+  for(const id of familyBefore.keys()){const total=families.get(id);if(total.qty>0n)total.lastKnown={qty:total.qty,value:total.value};}
+  start=end;
  }
  return loads;
 }
@@ -92,5 +116,6 @@ export function weightedCostForLoad(items,projection){
  const id=String(items[0]?.grupoCargaId||''),found=projection?.get(id);if(!found||found.pending)return {costCents:null,reason:projection?.unavailableReason||found?.reason||'Falta o movimento de saída vinculado a esta carga. Aguarde a sincronização ou confira a baixa.'};
  const expected=new Map();for(const item of items){const key=stockCostKey(item);if(!key)return {costCents:null,reason:'Custo automático disponível para madeira em m³ e a granel.'};let quantity;try{const physical=(item.tipoMedida||item.tipoCadastro||'m3')==='granel'?Number(item.volume):Number(item.largura)/100*Number(item.espessura)/100*Number(item.comprimento)*Number(item.quantidade);quantity=purchaseVolumeUnits(physical);}catch{return {costCents:null,reason:'Volume da carga inválido.'};}expected.set(key,(expected.get(key)||0)+quantity);}
  if(expected.size!==found.volumes.size||[...expected].some(([key,qty])=>Math.abs(qty-(found.volumes.get(key)||0))>Math.min(1000,Math.max(10,items.length+(found.tolerances?.get(key)||0)))))return {costCents:null,reason:'As medidas ou volumes da carga não coincidem com a baixa registrada.'};
- const costCents=Number(costRoundV728(found.value,costPrecisionV728));if(!Number.isSafeInteger(costCents)||costCents<0)return {costCents:null,reason:'Custo acima do limite de cálculo.'};return {costCents,reason:null,usesConferenceAverage:found.usesConferenceAverage===true};
+ const costCents=Number(costRoundV728(found.value,costPrecisionV728));if(!Number.isSafeInteger(costCents)||costCents<0)return {costCents:null,reason:'Custo acima do limite de cálculo.'};return {costCents,reason:null,usesConferenceAverage:found.usesConferenceAverage===true,usesSpeciesReference:found.usesSpeciesReference===true};
 }
+

@@ -91,3 +91,41 @@ test('conference never borrows a future purchase, another species, or an unknown
  const b=buy('other',1,130000,8,{madeiraId:'other'}),other=projectWeightedStockCosts({purchases:[b.receipt],movements:[b.row,adjust,out],stock:[{...physical({madeiraId:'other'}),volume:1}]});assert.equal(cost(other,'unpriced',1).costCents,null);
  const unknown=projectWeightedStockCosts({purchases:[],movements:[move('unknown','entrada',1,8),adjust,out],stock:[{...physical(),volume:1}]});assert.equal(cost(unknown,'unpriced',1).costCents,null);
 });
+
+test('an unpriced conference uses other measures as a weighted species/state reference at its recorded time',()=>{
+ const a=buy('ref-a',10,1000000,8,{largura:10}),b=buy('ref-b',30,6000000,9,{largura:20}),adjust=move('new-measure','ajuste',4,10,{grupoCargaId:'new-measure',ajusteConferenciaV391:true,largura:30}),out=move('new-out','saida',4,11,{grupoCargaId:'new-measure',largura:30});
+ const input={purchases:[a.receipt,b.receipt],movements:[a.row,b.row,adjust,out],stock:[{...physical({largura:10}),volume:10},{...physical({largura:20}),volume:30}]},before=JSON.stringify(input),checked=cost(projectWeightedStockCosts(input),'new-measure',4,{largura:30});
+ assert.equal(checked.costCents,700000);assert.equal(checked.usesSpeciesReference,true);assert.equal(JSON.stringify(input),before);
+ // Input array order must not change which historical reference is used.
+ assert.equal(cost(projectWeightedStockCosts({...input,movements:[out,b.row,adjust,a.row]}),'new-measure',4,{largura:30}).costCents,700000);
+});
+test('species reference reflects earlier withdrawals, never future buys or movements at the same time',()=>{
+ const a=buy('ref-low',10,1000000,8,{largura:10}),b=buy('ref-high',10,2000000,8,{largura:20}),future=buy('future-ref',100,90000000,12,{largura:40}),adjust=move('adjust-ref','ajuste',3,10,{grupoCargaId:'ref-sale',ajusteConferenciaV391:true,largura:30}),out=move('ref-sale','saida',3,11,{grupoCargaId:'ref-sale',largura:30}),oldOut=move('old-out','saida',5,9,{grupoCargaId:'old-sale',largura:10});
+ const input={purchases:[a.receipt,b.receipt,future.receipt],movements:[a.row,b.row,oldOut,adjust,out,future.row],stock:[{...physical({largura:10}),volume:5},{...physical({largura:20}),volume:10},{...physical({largura:40}),volume:100}]};
+ assert.equal(cost(projectWeightedStockCosts(input),'ref-sale',3,{largura:30}).costCents,500000);
+ const same=buy('same-time',1,130000,10,{largura:10}),pending=projectWeightedStockCosts({purchases:[same.receipt],movements:[same.row,adjust,out],stock:[{...physical({largura:10}),volume:1}]});assert.equal(cost(pending,'ref-sale',3,{largura:30}).costCents,null);
+});
+test('exact measure cost wins over species reference, including when its stock was depleted',()=>{
+ const own=buy('own',1,130000,8),other=buy('other-price',10,5000000,8,{largura:30}),empty=move('empty','saida',1,9,{grupoCargaId:'earlier'}),adjust=move('own-adjust','ajuste',2,10,{grupoCargaId:'own-sale',ajusteConferenciaV391:true}),out=move('own-out','saida',2,11,{grupoCargaId:'own-sale'});
+ const checked=cost(projectWeightedStockCosts({purchases:[own.receipt,other.receipt],movements:[own.row,other.row,empty,adjust,out],stock:[{...physical({largura:30}),volume:10}]}),'own-sale',2);
+ assert.equal(checked.costCents,260000);assert.equal(checked.usesSpeciesReference,false);
+});
+test('species reference never crosses dry/green or units, and is not used for an unpriced ordinary entry',()=>{
+ const a=buy('dry-ref',10,1300000,8,{largura:10}),adjust=move('green-adjust','ajuste',1,10,{grupoCargaId:'green',ajusteConferenciaV391:true,estadoMadeira:'verde'}),out=move('green-out','saida',1,11,{grupoCargaId:'green',estadoMadeira:'verde'});
+ assert.equal(cost(projectWeightedStockCosts({purchases:[a.receipt],movements:[a.row,adjust,out],stock:[{...physical({largura:10}),volume:10}]}),'green',1,{estadoMadeira:'verde'}).costCents,null);
+ const ordinary=projectWeightedStockCosts({purchases:[a.receipt],movements:[a.row,{...adjust,tipo:'entrada',estadoMadeira:'seca'},{...out,estadoMadeira:'seca'}],stock:[{...physical({largura:10}),volume:10}]});assert.equal(cost(ordinary,'green',1).costCents,null);
+});
+
+test('a referenced adjustment enters the species average for later adjustments without inventing a purchase',()=>{
+ const a=buy('chain-base',10,1300000,8,{largura:10}),b=move('chain-b','ajuste',5,9,{grupoCargaId:'chain-b',ajusteConferenciaV391:true,largura:20}),empty=move('empty-base','saida',10,10,{grupoCargaId:'empty-base',largura:10}),c=move('chain-c','ajuste',4,11,{grupoCargaId:'chain-c',ajusteConferenciaV391:true,largura:30}),out=move('chain-sale','saida',4,12,{grupoCargaId:'chain-sale',largura:30}),input={purchases:[a.receipt],movements:[a.row,b,empty,c,out],stock:[{...physical({largura:20}),volume:5}]};
+ const checked=cost(projectWeightedStockCosts(input),'chain-sale',4,{largura:30});assert.equal(checked.costCents,520000);assert.equal(checked.usesSpeciesReference,true);
+});
+test('reference adjustments preserve cent totals across very small partial exits',()=>{
+ const a=buy('small-ref',3,1,8,{largura:10}),adjust=move('small-adjust','ajuste',2,9,{grupoCargaId:'small-adjust',ajusteConferenciaV391:true,largura:20}),x=move('tiny-x','saida',1,10,{grupoCargaId:'tiny-x',largura:20}),y=move('tiny-y','saida',1,11,{grupoCargaId:'tiny-y',largura:20});
+ const result=projectWeightedStockCosts({purchases:[a.receipt],movements:[a.row,adjust,x,y],stock:[{...physical({largura:10}),volume:3}]});const first=cost(result,'tiny-x',1,{largura:20}).costCents,second=cost(result,'tiny-y',1,{largura:20}).costCents;assert(first>=0&&second>=0);assert.equal(first+second,1);
+});
+
+test('a historical known species reference remains available after its physical balance was depleted',()=>{
+ const a=buy('depleted-ref',10,1300000,8,{largura:10}),empty=move('deplete-ref','saida',10,9,{grupoCargaId:'old',largura:10}),adjust=move('later-measure','ajuste',2,10,{grupoCargaId:'new',ajusteConferenciaV391:true,largura:20}),out=move('later-out','saida',2,11,{grupoCargaId:'new',largura:20});
+ const checked=cost(projectWeightedStockCosts({purchases:[a.receipt],movements:[a.row,empty,adjust,out],stock:[]}),'new',2,{largura:20});assert.equal(checked.costCents,260000);assert.equal(checked.usesSpeciesReference,true);
+});

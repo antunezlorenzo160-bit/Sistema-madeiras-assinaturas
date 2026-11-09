@@ -101,3 +101,12 @@ test('purchase cost reaches a load after an explicit stock conference, with no e
  const writes=s.writes.length,sale=(await projectLoadSales(s.db,'tenant',{from:'2026-11-08',to:'2026-11-08'}))[0];
  assert.equal(sale.costCents,520000);assert.equal(sale.source.costMode,'average');assert.equal(sale.source.usesConferenceAverage,true);assert.equal(s.writes.length,writes);
 });
+
+test('a load in another measure receives the prior same-species purchase average only as a conference reference',async()=>{
+ const s=purchaseTestDb();await confirmStockPurchase(s.db,s.identity,purchase({freightCents:0,otherCents:0,lines:[line({quantidade:10,volume:10,unitCents:130000})]}),at);
+ const shape={madeiraId:'wood',tipoCadastro:'m3',largura:50,espessura:100,comprimento:1};
+ s.records.set('empresas/tenant/dados/sm2_movimentos/registros/adjust-ref',{...shape,id:'adjust-ref',tipo:'ajuste',ajusteConferenciaV391:true,grupoCargaId:'load-ref',quantidade:8,volume:4,data:'08/11/2026, 09:30:00'});
+ s.records.set('empresas/tenant/dados/sm2_movimentos/registros/out-ref',{...shape,id:'out-ref',tipo:'saida',grupoCargaId:'load-ref',quantidade:8,volume:4,data:'08/11/2026, 10:00:00'});
+ s.records.set('empresas/tenant/dados/sm2_carregamentos/registros/ref-line',{...shape,id:'ref-line',tipoMedida:'m3',quantidade:8,volume:4,valor:8000,cargaStatus:'concluido',cargaBaixadaEm:at+3600000,grupoCargaId:'load-ref'});
+ const writes=s.writes.length,sale=(await projectLoadSales(s.db,'tenant',{from:'2026-11-08',to:'2026-11-08'}))[0];assert.equal(sale.costCents,520000);assert.equal(sale.source.usesSpeciesReference,true);assert.equal(sale.source.costMode,'average');assert.equal(s.writes.length,writes);
+});

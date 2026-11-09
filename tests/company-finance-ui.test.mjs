@@ -102,3 +102,8 @@ test('manual correction remains manual but exposes why purchase cost cannot be c
  const s=setup(),row=automaticSale({costCents:130000,source:{...automaticSale().source,costMode:'manual',automaticCostCents:null,automaticCostPendingReason:'Há entrada sem preço posterior ao salvamento do custo antigo.'}});
  s.setRequest(async()=>response({empresaId:'tenant',entries:[row],canWrite:true}));await s.c.financeLoadV722();assert(!s.nodes.finEntriesV722.innerHTML.includes('data-load-sale-auto checked'));assert.match(s.nodes.finSaleChecksV735.innerHTML,/entrada sem preço/);assert.match(s.nodes.finSaleChecksV735.innerHTML,/total manual foi mantido/);assert.equal(vm.runInContext('financeRowsV722[0].costCents',s.c),130000);
 });
+
+test('a sale explains the species reference without calling it a new purchase or changing the cost',async()=>{
+ const s=setup(),row=automaticSale({costCents:130000,source:{...automaticSale().source,costMode:'average',automaticCostCents:130000,usesConferenceAverage:true,usesSpeciesReference:true}});
+ s.setRequest(async()=>response({empresaId:'tenant',entries:[row],canWrite:true}));await s.c.financeLoadV722();assert.match(s.nodes.finSaleChecksV735.innerHTML,/referência de custo de outras medidas da mesma espécie e condição/);assert.match(s.nodes.finEntriesV722.innerHTML,/Não gerou outra compra/);assert.equal(vm.runInContext('financeRowsV722[0].costCents',s.c),130000);
+});
