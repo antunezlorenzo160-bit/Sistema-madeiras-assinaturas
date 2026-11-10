@@ -1,5 +1,5 @@
 import {createHash} from 'node:crypto';
-import {financeOwnerContext,financeCollectionPath} from './company-finance.mjs';
+import {financeOwnerContext,financeCollectionPath} from './finance-access.mjs';
 import {PlatformError} from './platform.mjs';
 import {normalizeLoadTransport} from '../../../public/load-transport.mjs';
 export function transportRecordKeys(loadId){

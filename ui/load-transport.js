@@ -15,7 +15,7 @@ function transportBodyV723(gid){
 function loadTransportFormV723(gid,idx,freteCobrado){
  if(!finOwnerV722())return '';
  const state=transportStateV723(String(gid)),charge=Number(freteCobrado||0);
- return '<details class="card transport-load-v723 no-print" data-transport-load="'+esc(String(gid))+'"'+(state.open?' open':'')+'><summary>Gastos do transporte</summary><p class="note">Frete cobrado do cliente no documento: <strong>'+moeda(charge)+'</strong>. Esse valor compõe a venda, não a despesa.</p><div data-transport-body>'+transportBodyV723(String(gid))+'</div></details>';
+ return '<details class="card transport-load-v723 no-print" data-transport-load="'+esc(String(gid))+'"'+(state.open?' open':'')+'><summary>Gastos do transporte</summary><button type="button" class="btn btn-secondary" data-open-shared-trips>Viagem com vários clientes</button><p class="note">Frete cobrado do cliente no documento: <strong>'+moeda(charge)+'</strong>. Esse valor compõe a venda, não a despesa.</p><div data-transport-body>'+transportBodyV723(String(gid))+'</div></details>';
 }
 function transportRefreshViewV723(root){
  const form=root.querySelector('[data-transport-form]');if(!form)return;

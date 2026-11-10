@@ -1,3 +1,4 @@
+import {projectSharedTripExpenses} from './shared-trips.mjs';
 import {readOpeningStockCost} from './opening-stock-cost.mjs';
 import {readMinimumProfitPolicy} from './minimum-profit.mjs';
 import {reviewLoadSaleDuplicates} from '../../../public/load-sales.mjs';
@@ -13,7 +14,7 @@ export async function listFinanceEntries(db,identity,{from,to},now=Date.now()){
  const context=await financeOwnerContext(db,identity,undefined,false,now);
  const snapshot=await db.collection(financeCollectionPath(context.empresaId)).where('date','>=',from).where('date','<=',to).orderBy('date','desc').limit(1001).get();
  if(snapshot.docs.length>1000)throw new PlatformError(409,'Há mais de 1.000 registros. Selecione um período menor para conferir todos os valores.');
- const manual=snapshot.docs.map(doc=>({...doc.data(),id:doc.id}));
+ const manual=await projectSharedTripExpenses(db,context.empresaId,snapshot.docs.map(doc=>({...doc.data(),id:doc.id})));
  const [openingPolicy,profitPolicy]=await Promise.all([readOpeningStockCost(db,context.empresaId),readMinimumProfitPolicy(db,context.empresaId)]);
  const automatic=await projectLoadSales(db,context.empresaId,{from,to},openingPolicy);
  if(automatic.some(sale=>manual.some(entry=>entry.id===sale.id)))throw new PlatformError(409,'Há um conflito na identificação de uma venda. Consulte o suporte.');
@@ -26,6 +27,7 @@ export async function saveFinanceEntry(db,identity,input,now=Date.now()){
  return db.runTransaction(async tx=>{
   const context=await financeOwnerContext(db,identity,r=>tx.get(r),true,now);if(context.empresaId!==initial.empresaId)throw new PlatformError(409,'O vínculo da conta mudou. Entre novamente.');
   const ref=db.doc(financeCollectionPath(context.empresaId)+'/'+entry.id),snapshot=await tx.get(ref),previous=snapshot.exists?snapshot.data():null;
+  if(previous?.source?.type==='shared-trip')throw new PlatformError(409,'Altere estes gastos na viagem compartilhada.');
   if(previous?.source?.type==='stock-purchase')throw new PlatformError(409,'Compra vinculada ao descarregamento. O registro é preservado para conferir estoque e custo.');
   if(previous?.source?.type==='load-transport')throw new PlatformError(409,'Altere estes gastos em Gastos do transporte, no carregamento.');
   if(previous?.status==='cancelled')throw new PlatformError(409,'Este registro foi cancelado. Crie um novo lançamento.');
@@ -47,6 +49,7 @@ export async function cancelFinanceEntry(db,identity,input,now=Date.now()){
   const context=await financeOwnerContext(db,identity,r=>tx.get(r),true,now);if(context.empresaId!==initial.empresaId)throw new PlatformError(409,'O vínculo da conta mudou. Entre novamente.');
   const ref=db.doc(financeCollectionPath(context.empresaId)+'/'+input.id),snapshot=await tx.get(ref),previous=snapshot.exists?snapshot.data():null;
   if(!previous)throw new PlatformError(404,'Registro não encontrado.');
+  if(previous.source?.type==='shared-trip')throw new PlatformError(409,'Altere estes gastos na viagem compartilhada.');
   if(previous.source?.type==='stock-purchase')throw new PlatformError(409,'Compra vinculada ao descarregamento. Não cancele apenas o financeiro sem conferir o estoque.');
   if(previous.source?.type==='load-transport')throw new PlatformError(409,'Altere estes gastos em Gastos do transporte, no carregamento.');
   if(previous.status==='cancelled'&&previous.revision===input.revision+1)return {empresaId:context.empresaId,entry:previous};
