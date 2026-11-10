@@ -92,3 +92,10 @@ export async function sharedTripReport(db,identity,id,now=Date.now()){
  const latest=await financeOwnerContext(db,identity,undefined,false,now);checkCompany(latest,context.empresaId);
  return {...latest,trip,needsReview:loads.some(l=>l.missing),loads:rows,total:{revenueCents:pendingRevenue?null:revenue,costCents:pending?null:cost,exclusiveCents:exclusive,sharedCents:trip.status==='active'?trip.totalCents:0,resultCents:pending?null:revenue-cost-exclusive-(trip.status==='active'?trip.totalCents:0)}};
 }
+export async function sharedTripCandidates(db,identity,loadIds,now=Date.now()){
+ if(!Array.isArray(loadIds)||loadIds.length<2||loadIds.length>20||new Set(loadIds).size!==loadIds.length||loadIds.some(id=>typeof id!=='string'||!id||id.length>180||/[\u0000-\u001f]/.test(id)))throw new PlatformError(400,'Selecione de 2 a 20 carregamentos diferentes.');
+ const context=await financeOwnerContext(db,identity,undefined,false,now),snapshots=await Promise.all(loadIds.map(id=>queryLoad(db,context.empresaId,id).get()));
+ if(snapshots.reduce((n,s)=>n+s.docs.length,0)>2000)throw new PlatformError(409,'Muitos itens nesta seleção. Use menos carregamentos.');
+ const candidates=await Promise.all(snapshots.map(async(snapshot,index)=>{const id=loadIds[index],load=group(snapshot,id),[link,expense]=await Promise.all([db.doc(tripLinkPath(context.empresaId,id)).get(),db.doc(financeCollectionPath(context.empresaId)+'/'+transportRecordKeys(id).entryId).get()]);return {loadId:id,physicalM3:load.physicalM3,customer:load.customer,tripId:link.exists?link.data().tripId:null,exclusiveCents:expense.exists&&expense.data().status==='active'?expense.data().amountCents:0};}));
+ const latest=await financeOwnerContext(db,identity,undefined,false,now);checkCompany(latest,context.empresaId);return {...latest,candidates};
+}

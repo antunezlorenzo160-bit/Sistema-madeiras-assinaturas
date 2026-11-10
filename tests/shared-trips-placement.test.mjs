@@ -1,0 +1,12 @@
+import test from 'node:test';import assert from 'node:assert/strict';import vm from 'node:vm';import {readFileSync} from 'node:fs';
+const raw=readFileSync(new URL('../public/index.html',import.meta.url),'utf8'),template=JSON.parse(raw.match(/const TEMPLATE\s*=\s*("(?:\\.|[^"\\])*")/)[1]);
+test('the generated manager lives in Carregamentos, with a finance link and exported inline selection handlers',()=>{
+ const start=template.indexOf('<section id="carregamentos"'),end=template.indexOf('</section>',start),section=template.slice(start,end);assert(section.includes('id="sharedTripsV741"'));assert(section.includes('id="sharedTripHostV742"'));assert.equal((template.match(/id="sharedTripsV741"/g)||[]).length,1);const finance=template.slice(template.indexOf('<div id="financePanelV722"'));assert(finance.includes('Abrir viagens em Carregamentos'));assert(template.includes('window.tripHandleLoadClickV742(this.dataset.gid)'));assert(template.includes('${tripLoadSelectorV742(gid,itens,destino)}'));assert(template.includes("control.closest?.('#financePanelV722,#sharedTripsV741')"));
+});
+test('generated search hides the selection wrapper with its destination row',()=>{
+ const start=template.indexOf('function buscarCarregamentosV408(valor){'),end=template.indexOf('function abrirCarregamentoV408(',start),wrapper={hidden:false},row={dataset:{busca:'Leopoldo'},hidden:false,closest:()=>wrapper},nodes={'v408-contador':{},'v413-sugestao':{},'v408-sem-resultado':{}},c={estadoCargasV408:{},normalizarBuscaV408:s=>String(s).toLowerCase(),correspondenciaAproximadaV413:()=>false,document:{querySelectorAll:()=>[row],getElementById:id=>nodes[id]}};vm.createContext(c);vm.runInContext(template.slice(start,end),c);c.buscarCarregamentosV408('Jona');assert.equal(row.hidden,true);assert.equal(wrapper.hidden,true);c.buscarCarregamentosV408('Leopoldo');assert.equal(wrapper.hidden,false);
+});
+
+test('the generated employee guard denies financial journey controls after relocation',()=>{
+ const start=template.indexOf('function employeeActionAllowed(target){'),end=template.indexOf("document.addEventListener('click'",start),c={parent:{__smEmployeeMember:()=>({papel:'employee'}),__smEmployeeCan:()=>true},employeeNavigationRoute:()=>null};vm.createContext(c);vm.runInContext(template.slice(start,end),c);const control={id:'tripSaveV741',dataset:{},closest:selector=>selector.includes('#sharedTripsV741')?{}:null};assert.equal(c.employeeActionAllowed({closest:()=>control}),false);
+});

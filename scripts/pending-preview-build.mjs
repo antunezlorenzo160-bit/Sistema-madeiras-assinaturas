@@ -30,6 +30,7 @@ export function applyPendingPreview(html){
  }
  app=app.replaceAll("if(!ativo||ativo.tagName!=='INPUT')$('largura').focus({preventScroll:true});", "if((!ativo||ativo.tagName!=='INPUT')&&window.__smCalcKeyboardV733?.canRestoreFocus($('largura'))!==false)$('largura').focus({preventScroll:true});");
  replace("if(modoMedida==='granel')$('volumeGranelV384')?.focus();else if(modoMedida==='m3fechado')$('volumeFechadoV387')?.focus();else $('largura').focus()", "const nextField=modoMedida==='granel'?$('volumeGranelV384'):modoMedida==='m3fechado'?$('volumeFechadoV387'):$('largura');if(window.__smCalcKeyboardV733?.canRestoreFocus(nextField)!==false&&document.activeElement!==nextField)nextField?.focus({preventScroll:true})");
+ replace("control.closest?.('#financePanelV722')","control.closest?.('#financePanelV722,#sharedTripsV741')");
  app=app.replace('</body>','<script id="mobile-calculator-keyboard-v733">'+read('ui/mobile-calculator-keyboard.js')+'</script></body>');
  app=app.replace('</head>','<style id="mobile-calculator-keyboard-v733-style">'+read('ui/mobile-calculator-keyboard.css')+'</style></head>');
  // New stock exits keep an immutable instant for cost chronology, including offline recovery.
@@ -40,8 +41,15 @@ export function applyPendingPreview(html){
  replace('<div id="cargaEstoqueEscolha"',read('ui/stock-purchase.html')+'<div id="cargaEstoqueEscolha"');
  // Reopening a saved quote is not consent to reprice its historical lines.
  replace('orcamento=itens.map(x=>aplicarCobrancaOrcamento(x));','orcamento=itens.map(x=>aplicarCobrancaOrcamento(x.autoPriceV1?{...x,autoPriceV1:{...x.autoPriceV1,locked:true}}:x));');
+ // Shared journeys are organized beside the original load list; finance keeps only a link/results.
+ replace('<section id="carregamentos" class="tab"></section>', '<section id="carregamentos" class="tab"><div id="sharedTripHostV742" hidden>'+read('ui/shared-trips.html')+'</div></section>');
+ replace("<section id=\"v408-listagem\" class=\"v408-listagem\" ${naLista?'':'hidden'}>","<section id=\"v408-listagem\" class=\"v408-listagem\" ${naLista?'':'hidden'}>\n      ${tripLoadToolbarV742()}");
+ replace('return `<button type="button" class="v408-destino-linha"', 'return `<div class="trip-list-row-v742">${tripLoadSelectorV742(gid,itens,destino)}<button type="button" class="v408-destino-linha"');
+ replace('onclick="abrirCarregamentoV408(this.dataset.gid)"', 'onclick="if(!window.tripHandleLoadClickV742(this.dataset.gid))abrirCarregamentoV408(this.dataset.gid)"');
+ replace('<span class="v408-destino-seta" aria-hidden="true">›</span>\n      </button>`;', '<span class="v408-destino-seta" aria-hidden="true">›</span>\n      </button></div>`;');
+ app=app.replaceAll("el.hidden=!aparece;","el.hidden=!aparece;if(el.closest('.trip-list-row-v742'))el.closest('.trip-list-row-v742').hidden=!aparece;");
  // Reports are separate from stock. Navigation permissions remain in the existing guard.
- const reports=read('ui/reports.html').replace('__REPORT_STOCK_CHARTS__',read('ui/stock-charts.html')).replace('__REPORT_FINANCE__',read('ui/company-finance.html').replace('__SHARED_TRIPS__',read('ui/shared-trips.html')));
+ const reports=read('ui/reports.html').replace('__REPORT_STOCK_CHARTS__',read('ui/stock-charts.html')).replace('__REPORT_FINANCE__',read('ui/company-finance.html'));
  replace('<section id="estoque" class="tab">',reports+'<section id="estoque" class="tab">');
  const loadMenu='<button type="button" class="inicio-atalho-v464" data-inicio-destino="carregamentos">';
  replace(loadMenu,'<button type="button" class="inicio-atalho-v464" data-inicio-destino="relatorios"><strong>Gráficos e relatórios</strong><span>Indicadores e acompanhamento</span></button>'+loadMenu);

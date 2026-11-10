@@ -4,67 +4,72 @@
 .reports-tabs-v722{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 16px}
 .reports-tabs-v722 button{min-height:44px}
 .reports-tabs-v722 button[aria-pressed=true]{background:var(--accent)!important;color:#18120a!important}
-#financePanelV722{min-width:0;max-width:100%;contain:inline-size}
-#financePanelV722 .note{color:var(--muted);font-size:12px;line-height:1.6}
-#financePanelV722 h3{font-size:18px;margin:0 0 12px}
-#financePanelV722 h4{font-size:14px;margin:6px 0 12px}
-#financePanelV722 summary{cursor:pointer;font-weight:700;min-height:36px;line-height:1.5}
-#financePanelV722 .fin-period,#financePanelV722 .fin-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:14px 0}
-#financePanelV722 label{display:flex;flex-direction:column;gap:6px;min-width:0;font-size:13px;font-weight:700}
-#financePanelV722 input,#financePanelV722 select{width:100%;min-width:0;box-sizing:border-box;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:10px;min-height:44px;font-size:14px}
-#financePanelV722 label small{font-weight:400;font-size:11px;color:var(--muted);line-height:1.4}
-#financePanelV722 .fin-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:16px 0}
-#financePanelV722 .fin-stats>div{min-width:0;padding:12px;background:var(--panel2);border:1px solid var(--line);border-radius:9px}
-#financePanelV722 .fin-stats small{display:block;color:var(--muted);font-size:12px;margin-bottom:7px}
-#financePanelV722 .fin-stats strong{display:block;font-size:19px;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
-#financePanelV722 .fin-negative{color:var(--danger)}
-#financePanelV722 .fin-actions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
-#financePanelV722 .fin-actions button{min-height:42px;font-size:13px}
-#financePanelV722 .fin-entry{padding:14px 0;border-top:1px solid var(--line);font-size:13px;line-height:1.5;overflow-wrap:anywhere}
-#financePanelV722 .fin-entry p{margin:5px 0}
-#financePanelV722 .fin-entry small{color:var(--muted)}
-#financePanelV722 .fin-cancelled{opacity:.65}
-#financePanelV722 .fin-period-chart{border-top:1px solid var(--line);padding:12px 0;margin-top:10px}
-#financePanelV722 .fin-chart-label{display:flex;justify-content:space-between;gap:8px;font-size:12px;margin:8px 0 4px}
-#financePanelV722 .fin-track{height:9px;background:var(--panel2);border-radius:4px;overflow:hidden}
-#financePanelV722 .fin-track>span{display:block;height:100%}
-#financePanelV722 .fin-bar-sale{background:#239b79}
-#financePanelV722 .fin-bar-purchase{background:#7296d8}
-#financePanelV722 .fin-bar-expense{background:#d9a441}
-#financePanelV722 .fin-bar-loss{background:#d85d5d}
-#financePanelV722 .fin-table-scroll{width:100%;min-width:0;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
-#financePanelV722 .fin-table-scroll table{min-width:720px!important;display:table!important;width:100%!important;border-collapse:collapse;table-layout:auto!important}
-#financePanelV722 .fin-table-scroll table tr{display:table-row!important}
-#financePanelV722 .fin-table-scroll table td:nth-child(n),#financePanelV722 .fin-table-scroll table th:nth-child(n){display:table-cell!important;width:auto!important;white-space:nowrap!important;padding:8px!important;font-size:12px!important;text-align:right!important;background:transparent!important;color:var(--text)!important}
-#financePanelV722 .fin-table-scroll table td:first-child,#financePanelV722 .fin-table-scroll table th:first-child{text-align:left!important}
-@media(max-width:640px){#relatorios>h2{font-size:19px}#financePanelV722 .fin-stats{grid-template-columns:repeat(2,minmax(0,1fr))}#financePanelV722 .fin-stats strong{font-size:16px}#financePanelV722 .fin-period,#financePanelV722 .fin-form-grid{grid-template-columns:1fr}#financePanelV722 .card{padding:12px}#financePanelV722 .fin-actions button{flex:1 1 130px}.reports-tabs-v722 button{flex:1 1 140px;font-size:12px;padding:10px 7px}}
-#financePanelV722 .fin-load-sale-v724{margin:10px 0;padding:10px;border:1px solid var(--line);border-radius:9px;max-width:100%;min-width:0}
-#financePanelV722 .fin-load-sale-v724 label{margin:10px 0}
-#financePanelV722 .fin-load-sale-v724 input[type=checkbox]{display:inline-block;min-height:20px;width:20px;vertical-align:middle}
-#financePanelV722 .fin-load-sale-v724 button{min-height:44px;margin-top:10px;font-size:13px}
+:is(#financePanelV722,#sharedTripsV741){min-width:0;max-width:100%;contain:inline-size}
+:is(#financePanelV722,#sharedTripsV741) .note{color:var(--muted);font-size:12px;line-height:1.6}
+:is(#financePanelV722,#sharedTripsV741) h3{font-size:18px;margin:0 0 12px}
+:is(#financePanelV722,#sharedTripsV741) h4{font-size:14px;margin:6px 0 12px}
+:is(#financePanelV722,#sharedTripsV741) summary{cursor:pointer;font-weight:700;min-height:36px;line-height:1.5}
+:is(#financePanelV722,#sharedTripsV741) .fin-period,:is(#financePanelV722,#sharedTripsV741) .fin-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:14px 0}
+:is(#financePanelV722,#sharedTripsV741) label{display:flex;flex-direction:column;gap:6px;min-width:0;font-size:13px;font-weight:700}
+:is(#financePanelV722,#sharedTripsV741) input,:is(#financePanelV722,#sharedTripsV741) select{width:100%;min-width:0;box-sizing:border-box;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:10px;min-height:44px;font-size:14px}
+:is(#financePanelV722,#sharedTripsV741) label small{font-weight:400;font-size:11px;color:var(--muted);line-height:1.4}
+:is(#financePanelV722,#sharedTripsV741) .fin-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:16px 0}
+:is(#financePanelV722,#sharedTripsV741) .fin-stats>div{min-width:0;padding:12px;background:var(--panel2);border:1px solid var(--line);border-radius:9px}
+:is(#financePanelV722,#sharedTripsV741) .fin-stats small{display:block;color:var(--muted);font-size:12px;margin-bottom:7px}
+:is(#financePanelV722,#sharedTripsV741) .fin-stats strong{display:block;font-size:19px;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+:is(#financePanelV722,#sharedTripsV741) .fin-negative{color:var(--danger)}
+:is(#financePanelV722,#sharedTripsV741) .fin-actions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+:is(#financePanelV722,#sharedTripsV741) .fin-actions button{min-height:42px;font-size:13px}
+:is(#financePanelV722,#sharedTripsV741) .fin-entry{padding:14px 0;border-top:1px solid var(--line);font-size:13px;line-height:1.5;overflow-wrap:anywhere}
+:is(#financePanelV722,#sharedTripsV741) .fin-entry p{margin:5px 0}
+:is(#financePanelV722,#sharedTripsV741) .fin-entry small{color:var(--muted)}
+:is(#financePanelV722,#sharedTripsV741) .fin-cancelled{opacity:.65}
+:is(#financePanelV722,#sharedTripsV741) .fin-period-chart{border-top:1px solid var(--line);padding:12px 0;margin-top:10px}
+:is(#financePanelV722,#sharedTripsV741) .fin-chart-label{display:flex;justify-content:space-between;gap:8px;font-size:12px;margin:8px 0 4px}
+:is(#financePanelV722,#sharedTripsV741) .fin-track{height:9px;background:var(--panel2);border-radius:4px;overflow:hidden}
+:is(#financePanelV722,#sharedTripsV741) .fin-track>span{display:block;height:100%}
+:is(#financePanelV722,#sharedTripsV741) .fin-bar-sale{background:#239b79}
+:is(#financePanelV722,#sharedTripsV741) .fin-bar-purchase{background:#7296d8}
+:is(#financePanelV722,#sharedTripsV741) .fin-bar-expense{background:#d9a441}
+:is(#financePanelV722,#sharedTripsV741) .fin-bar-loss{background:#d85d5d}
+:is(#financePanelV722,#sharedTripsV741) .fin-table-scroll{width:100%;min-width:0;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+:is(#financePanelV722,#sharedTripsV741) .fin-table-scroll table{min-width:720px!important;display:table!important;width:100%!important;border-collapse:collapse;table-layout:auto!important}
+:is(#financePanelV722,#sharedTripsV741) .fin-table-scroll table tr{display:table-row!important}
+:is(#financePanelV722,#sharedTripsV741) .fin-table-scroll table td:nth-child(n),:is(#financePanelV722,#sharedTripsV741) .fin-table-scroll table th:nth-child(n){display:table-cell!important;width:auto!important;white-space:nowrap!important;padding:8px!important;font-size:12px!important;text-align:right!important;background:transparent!important;color:var(--text)!important}
+:is(#financePanelV722,#sharedTripsV741) .fin-table-scroll table td:first-child,:is(#financePanelV722,#sharedTripsV741) .fin-table-scroll table th:first-child{text-align:left!important}
+@media(max-width:640px){#relatorios>h2{font-size:19px}:is(#financePanelV722,#sharedTripsV741) .fin-stats{grid-template-columns:repeat(2,minmax(0,1fr))}:is(#financePanelV722,#sharedTripsV741) .fin-stats strong{font-size:16px}:is(#financePanelV722,#sharedTripsV741) .fin-period,:is(#financePanelV722,#sharedTripsV741) .fin-form-grid{grid-template-columns:1fr}:is(#financePanelV722,#sharedTripsV741) .card{padding:12px}:is(#financePanelV722,#sharedTripsV741) .fin-actions button{flex:1 1 130px}.reports-tabs-v722 button{flex:1 1 140px;font-size:12px;padding:10px 7px}}
+:is(#financePanelV722,#sharedTripsV741) .fin-load-sale-v724{margin:10px 0;padding:10px;border:1px solid var(--line);border-radius:9px;max-width:100%;min-width:0}
+:is(#financePanelV722,#sharedTripsV741) .fin-load-sale-v724 label{margin:10px 0}
+:is(#financePanelV722,#sharedTripsV741) .fin-load-sale-v724 input[type=checkbox]{display:inline-block;min-height:20px;width:20px;vertical-align:middle}
+:is(#financePanelV722,#sharedTripsV741) .fin-load-sale-v724 button{min-height:44px;margin-top:10px;font-size:13px}
 
-#financePanelV722 .fin-positive{color:var(--success)}
-#financePanelV722 .fin-bar-profit{background:#239b79}
-#financePanelV722 .fin-bar-deficit{background:#d85d5d}
-@media(max-width:640px){#financePanelV722 .fin-stats>div:last-child:nth-child(odd){grid-column:1/-1}}
+:is(#financePanelV722,#sharedTripsV741) .fin-positive{color:var(--success)}
+:is(#financePanelV722,#sharedTripsV741) .fin-bar-profit{background:#239b79}
+:is(#financePanelV722,#sharedTripsV741) .fin-bar-deficit{background:#d85d5d}
+@media(max-width:640px){:is(#financePanelV722,#sharedTripsV741) .fin-stats>div:last-child:nth-child(odd){grid-column:1/-1}}
 
-#financePanelV722 .fin-minimum-policy-v726{padding:12px;margin:14px 0;border:1px solid var(--line);border-radius:9px}
-#financePanelV722 .fin-minimum-policy-v726 label{max-width:420px;margin:12px 0}
-#financePanelV722 .fin-minimum-policy-v726 button{min-height:44px;font-size:13px}
-#financePanelV722 .fin-minimum-warning{border-left:3px solid var(--accent);background:var(--panel2);padding:10px;font-size:13px;line-height:1.5;color:var(--text)}
-#financePanelV722 .fin-minimum-met{color:var(--success)}
-#financePanelV722 #finStatsV722{grid-template-columns:repeat(4,minmax(0,1fr))}
-#financePanelV722 .fin-review-v735{color:var(--accent)}
-#financePanelV722 #finSaleChecksV735{margin:22px 0}
-#financePanelV722 .fin-sale-check-v735{border:1px solid var(--line);border-radius:10px;padding:12px;margin:12px 0;min-width:0}
-#financePanelV722 .fin-sale-check-v735 h4{font-size:16px;overflow-wrap:anywhere}
-#financePanelV722 .fin-sale-line-v735{display:flex;justify-content:space-between;align-items:baseline;gap:12px;border-bottom:1px solid var(--line);padding:9px 0;font-size:13px}
-#financePanelV722 .fin-sale-line-v735 span{min-width:0;overflow-wrap:anywhere}
-#financePanelV722 .fin-sale-line-v735 strong{flex-shrink:0;font-variant-numeric:tabular-nums}
-#financePanelV722 .fin-sale-closing-v735{margin:16px 0;padding-top:8px;border-top:2px solid var(--line)}
-#financePanelV722 .fin-sale-check-v735 button{min-height:44px;margin-top:12px;font-size:13px}
-#financePanelV722 #finOtherTotalsV735{margin:16px 0}
-@media(max-width:760px){#financePanelV722 #finStatsV722{grid-template-columns:repeat(2,minmax(0,1fr))}}
-#financePanelV722 .trip-check-v741{display:flex;flex-direction:row;align-items:flex-start;gap:10px;margin:12px 0;padding:10px;border:1px solid var(--line);border-radius:8px;overflow-wrap:anywhere}
-#financePanelV722 .trip-check-v741 input{width:22px;min-width:22px;min-height:22px;height:22px;margin:2px 0}
+:is(#financePanelV722,#sharedTripsV741) .fin-minimum-policy-v726{padding:12px;margin:14px 0;border:1px solid var(--line);border-radius:9px}
+:is(#financePanelV722,#sharedTripsV741) .fin-minimum-policy-v726 label{max-width:420px;margin:12px 0}
+:is(#financePanelV722,#sharedTripsV741) .fin-minimum-policy-v726 button{min-height:44px;font-size:13px}
+:is(#financePanelV722,#sharedTripsV741) .fin-minimum-warning{border-left:3px solid var(--accent);background:var(--panel2);padding:10px;font-size:13px;line-height:1.5;color:var(--text)}
+:is(#financePanelV722,#sharedTripsV741) .fin-minimum-met{color:var(--success)}
+:is(#financePanelV722,#sharedTripsV741) #finStatsV722{grid-template-columns:repeat(4,minmax(0,1fr))}
+:is(#financePanelV722,#sharedTripsV741) .fin-review-v735{color:var(--accent)}
+:is(#financePanelV722,#sharedTripsV741) #finSaleChecksV735{margin:22px 0}
+:is(#financePanelV722,#sharedTripsV741) .fin-sale-check-v735{border:1px solid var(--line);border-radius:10px;padding:12px;margin:12px 0;min-width:0}
+:is(#financePanelV722,#sharedTripsV741) .fin-sale-check-v735 h4{font-size:16px;overflow-wrap:anywhere}
+:is(#financePanelV722,#sharedTripsV741) .fin-sale-line-v735{display:flex;justify-content:space-between;align-items:baseline;gap:12px;border-bottom:1px solid var(--line);padding:9px 0;font-size:13px}
+:is(#financePanelV722,#sharedTripsV741) .fin-sale-line-v735 span{min-width:0;overflow-wrap:anywhere}
+:is(#financePanelV722,#sharedTripsV741) .fin-sale-line-v735 strong{flex-shrink:0;font-variant-numeric:tabular-nums}
+:is(#financePanelV722,#sharedTripsV741) .fin-sale-closing-v735{margin:16px 0;padding-top:8px;border-top:2px solid var(--line)}
+:is(#financePanelV722,#sharedTripsV741) .fin-sale-check-v735 button{min-height:44px;margin-top:12px;font-size:13px}
+:is(#financePanelV722,#sharedTripsV741) #finOtherTotalsV735{margin:16px 0}
+@media(max-width:760px){:is(#financePanelV722,#sharedTripsV741) #finStatsV722{grid-template-columns:repeat(2,minmax(0,1fr))}}
+:is(#financePanelV722,#sharedTripsV741) .trip-check-v741{display:flex;flex-direction:row;align-items:flex-start;gap:10px;margin:12px 0;padding:10px;border:1px solid var(--line);border-radius:8px;overflow-wrap:anywhere}
+:is(#financePanelV722,#sharedTripsV741) .trip-check-v741 input{width:22px;min-width:22px;min-height:22px;height:22px;margin:2px 0}
 #tripSavedV741{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}#tripSavedV741 h4{width:100%}#tripSavedV741 button{max-width:100%;white-space:normal;overflow-wrap:anywhere;min-height:44px}
+
+#carregamentos [hidden],#sharedTripsV741 [hidden]{display:none!important}
+.trip-toolbar-v742{padding:12px 0;border-bottom:1px solid var(--line);margin-bottom:12px}.trip-toolbar-v742 .fin-actions{display:flex;flex-wrap:wrap;gap:8px}.trip-toolbar-v742 button{min-height:44px;white-space:normal}.trip-toolbar-v742 .note{font-size:13px;line-height:1.5}
+.trip-list-selector-v742{display:none}.trip-list-row-v742{min-width:0}.trip-selecting-v742 .trip-list-row-v742{display:grid;grid-template-columns:36px minmax(0,1fr);gap:6px;align-items:center}.trip-selecting-v742 .trip-list-row-v742>.v408-destino-linha{grid-column:2}.trip-selecting-v742 .trip-list-selector-v742{display:flex;align-items:center;justify-content:center;grid-column:1;grid-row:1;min-height:44px;margin-top:7px}.trip-list-selector-v742 input{width:24px;height:24px;margin:0;accent-color:var(--accent)}
+@media(max-width:640px){.trip-toolbar-v742 .fin-actions button{flex:1 1 140px}.trip-toolbar-v742{font-size:13px}}

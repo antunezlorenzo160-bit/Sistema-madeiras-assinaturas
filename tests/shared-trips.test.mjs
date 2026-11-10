@@ -1,6 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {normalizeSharedTrip,allocateTripCosts,TRIP_COSTS,sharedTripDocument} from '../public/shared-trips.mjs';
-import {saveSharedTrip,listSharedTrips,sharedTripReport,projectSharedTripExpenses,tripPath,tripLinkPath,tripEntryId} from '../Netlify/Funtions/lib/shared-trips.mjs';
+import {saveSharedTrip,listSharedTrips,sharedTripReport,projectSharedTripExpenses,sharedTripCandidates,tripPath,tripLinkPath,tripEntryId} from '../Netlify/Funtions/lib/shared-trips.mjs';
 import {confirmStockPurchase} from '../Netlify/Funtions/lib/stock-purchase.mjs';
 import {financeCollectionPath,listFinanceEntries,saveFinanceEntry,cancelFinanceEntry} from '../Netlify/Funtions/lib/company-finance.mjs';
 import {saveLoadTransport} from '../Netlify/Funtions/lib/load-transport.mjs';
@@ -73,4 +73,9 @@ test('different wood species in one client order retain their own purchase costs
  s.records.set('empresas/tenant/dados/sm2_movimentos/registros/pine-out',{id:'pine-out',madeiraId:'pine',tipoCadastro:'m3',tipo:'saida',largura:100,espessura:100,comprimento:1,quantidade:1,volume:1,grupoCargaId:'a',costRecordedAtV728:at+3600100});
  s.records.set('empresas/tenant/dados/sm2_carregamentos/registros/pine-line',{id:'pine-line',madeiraId:'pine',madeira:'Pinus',tipoMedida:'m3',largura:100,espessura:100,comprimento:1,quantidade:1,volume:1,valor:3000,grupoCargaId:'a',cargaStatus:'concluido',cargaFechadaEm:at+100,cargaBaixadaEm:at+3600100,dadosClienteCargaV407:{nome:'Cliente A'}});
  await saveSharedTrip(s.db,s.identity,input(),at+4*3600000);const report=await sharedTripReport(s.db,s.identity,id,at+5*3600000),client=report.loads.find(l=>l.loadId==='a');assert.equal(client.physicalM3,6);assert.equal(client.costCents,850000);assert.equal(client.amountCents,1300000);assert.equal(client.items.length,2);assert.equal(report.total.resultCents,500000);assert.equal(report.loads.reduce((n,l)=>n+l.sharedCents,0),300000);assert(sharedTripDocument(report).includes('Pinus'));
+});
+
+test('selected-load lookup is independent of the date list and stays owner-scoped and read-only',async()=>{
+ const s=await fixture(),count=s.writes.length,result=await sharedTripCandidates(s.db,s.identity,['a','c'],at+4*3600000);assert.equal(result.empresaId,'tenant');assert.deepEqual(result.candidates.map(c=>c.loadId),['a','c']);assert.equal(s.writes.length,count);
+ await assert.rejects(sharedTripCandidates(s.db,s.identity,['a','a'],at));await assert.rejects(sharedTripCandidates(s.db,s.identity,['a','not-found'],at),e=>e.status===409);s.records.get('empresas/tenant').ownerUid='other';await assert.rejects(sharedTripCandidates(s.db,s.identity,['a','b'],at),e=>e.status===403);assert.equal(s.writes.length,count);
 });
