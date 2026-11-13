@@ -327,3 +327,12 @@ CSS escopado para o gerenciador fora do Financeiro, com caixas de seleção toc�
 Validação:8suítes pertinentes passaram (viagemUI/serviço/posicionamento, navegação/permissões, financeiroUI, reconciliação, cliente e teclado). Testes novos de seleção/lista sem alterar itens, consulta deIDssem filtro de datas/sem escrita, abertura somente emCarregamentos, erro preservando seleção, cancelamento local, original abrindo fora do modo seleção, reabertura de viagem vinculada semPOST, colocação real no TEMPLATE, busca escondendo checkbox junto da linha e guardnegando controles financeiros movidos para funcionários. Build limpo/32scripts válidos. Teste visual no celular; não houve acesso aos dados privados reais. Apenas prévia12, produção inalterada.
 
 Teste sugerido:Carregamentos→Criar viagem com vários clientes→marcar pedidos→Montar viagem→destino/caminhão/motorista/gastos→Salvar viagem e rateio. Tudo fica nessa área; Financeiro recebe os valores automaticamente conformeV741.
+
+
+## Troca de tipo linear da calculadora no offline V743 — 13/11
+
+Usuário esclareceu que a travada ocorria ao selecionar tipo na Calculadora, não ao salvar o cadastro. Investigação do salvamento não gerou mudanças. Encontrado trabalho indevido na prévia linear:previewDocumentValue chamava repriceLoads em toda seleção/edição, percorrendo carregamentos em montagem, enfileirando diferenças e reescrevendo os arrays locais mesmo sem lançar peça.
+
+Correção restrita ao modo linear:prévia calcula a tarifa/total do candidato sem chamar a rotina de alteração/persistência de cargas. O lançamento/renderização real e alterações de política continuam recalculando itens normalmente. Fluxo m³ e a adoção automática de seus limites foram preservados. Nenhuma alteração de cadastro, estoque, fila existente, políticas, assinatura ou armazenamento de sessão. Não limpa dados/cache e não pede recadastrar.
+
+Teste reproduzido antes da correção:trocar tipo gerava2operações de fila; depois,30trocas offline Ripa/Rodapé atualizam preço/total de atacado sem operação de fila, sem gravação local e sem mutar cargas existentes; chamada posterior da rotina real de lançamento/render continua aplicando preço de atacado.7suítes pertinentes passaram (prévia, preços, teclado, aberturaoffline/autenticaçãooffline, posição eUIviagens); build limpo/32scripts válidos. Sem reprodução nativa no celular, portanto não afirmar que toda possível causa da travada foi eliminada. Apenas prévia12, produção inalterada.

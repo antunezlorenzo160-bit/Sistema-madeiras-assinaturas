@@ -86,7 +86,9 @@ function previewDocumentValueV710(){
  if((modoMedida==='m3'||modoMedida==='m3fechado')&&$('precoBitolaAoLado')){const base=Number($('precoM3')?.value||0),span=$('precoBitolaAoLado');span.textContent=base>0?moeda(base)+'/m³':'sem preço';span.title='';span.classList.toggle('sem-preco',!(base>0));}
  document.getElementById('pricePreviewV710')?.remove();
  const destination=destinoSelecionado();if(!['orcamento','carga'].includes(destination))return;
- if(destination==='carga')repriceLoadsV710();
+ // A linear type change is a read-only preview, including offline. Actual launch,
+ // policy changes and load rendering already reprice and persist real lines.
+ if(destination==='carga'&&modoMedida!=='linear')repriceLoadsV710();
  const wood=madeiras.find(m=>String(m.id)===String($('calcMadeira')?.value||''));if(!wood)return;
  const kind=modoMedida==='m3fechado'?'m3':modoMedida;
  const width=Number($('largura')?.value||0),thickness=Number($('espessura')?.value||0),length=Number($('comprimento')?.value||0),quantity=Number($('quantidade')?.value||0);

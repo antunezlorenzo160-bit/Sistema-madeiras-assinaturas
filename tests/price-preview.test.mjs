@@ -10,7 +10,7 @@ function setup({volume=29.2285,wholesale=2200,snapshot=policy,legacy=false,enabl
  const row={id:'row',madeiraId:'wood',madeira:'Garapeira',tipoMedida:'m3',espessura:5,largura:10,comprimento:5.5,quantidade:1,volume,preco:2500,valor:volume*2500,cargaStatus:'montagem',grupoCargaId:'current',...(legacy?{}:{autoPriceV1:{retail:2500,wholesale,policy:snapshot}})};
  const c={normalizePricePolicy,applyDocumentPrices,catalogPricePair,documentQuantities,priceUnit,priceLoadServices,setTimeout(){},window:{__v456Local:{getItem:k=>local.get(k),setItem:(k,v)=>local.set(k,v)}},parent:{__smEmployeeMember:()=>({papel:'admin'})},document:{getElementById:id=>nodes[id]||null,createElement:()=>element(),createTextNode:text=>({textContent:text})},$:id=>nodes[id]||null,modoMedida:'m3',destinoSelecionado:()=> 'carga',sessaoCargaAtual:'current',carregamentos:volume?[row]:[],lancamentos:volume?[{...row}]:[],orcamento:[],madeiras:[{id:'wood',nome:'Garapeira',bitolas:[{espessura:5,precoVarejo:2500,precoAtacado:wholesale}]}],normalizarBitolasCadastroV347:x=>x,moeda:n=>Number(n).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}),servicosM3:{endireitamento:0,aplainamento:0},COL:{cargas:'loads'},STORAGE:{lancamentos:'summary'},enfileirarOffline:(...args)=>writes.push(args),renderLancamentos(){},calcPreview(){},sincronizarOfflineOps:async()=>{}};
  vm.createContext(c);vm.runInContext(readFileSync(new URL('../ui/preview-pricing.js',import.meta.url),'utf8'),c);vm.runInContext('pricePolicyV710='+JSON.stringify({...policy,enabled}),c);
- return {c,nodes,writes,row};
+ return {c,nodes,writes,row,local};
 }
 test('29 m3 with a blank width updates the actual load and visible wholesale price without creating a panel',()=>{
  const s=setup();s.c.previewDocumentValueV710();assert.match(s.nodes.precoBitolaAoLado.textContent,/2\.200,00/);assert.equal(s.nodes.precoBitolaAoLado.title,'Preço de atacado');assert.match(s.nodes.previewValor.textContent,/0,00/);assert.equal(s.nodes.precoM3.value,'2500');assert.equal(s.c.carregamentos[0].preco,2200);assert.equal(s.c.carregamentos[0].valor,29.2285*2200);assert.equal(s.nodes.pricePreviewV710,undefined);assert.equal(s.nodes.previewValor.parentElement.children.length,0);assert(s.writes.length>0);
@@ -37,4 +37,14 @@ test('leaving sales restores the base rate, and green locked prices stay fixed o
 });
 test('automatic adoption retains processing surcharge and persists new policy metadata',()=>{
  const s=setup({volume:15,legacy:true});s.c.carregamentos[0]=priceLoadServices({...s.row,endireitamento:true,precoEndireitamento:10,servicePricingV727:true});s.c.repriceLoadsV710();const changed=s.c.carregamentos[0];assert.equal(changed.preco,2200);assert.equal(changed.valorMaterial,33000);assert.equal(changed.valorServicos,3300);assert.equal(changed.valor,36300);assert(s.writes.some(([,id,row])=>id==='row'&&row.autoPriceV1.policy.limits.m3===10));
+});
+
+test('offline linear type selection previews prices repeatedly without repricing drafts, queue writes or storage rewrites',()=>{
+ const s=setup(),rules=[{tipo:'Ripa',precoVarejo:12,precoAtacado:9},{tipo:'Rodapé',precoVarejo:20,precoAtacado:15}],linearPolicy={enabled:true,limits:{linear:10,m3:10},revision:1};
+ vm.runInContext('pricePolicyV710='+JSON.stringify(linearPolicy),s.c);s.c.carregamentos[0].grupoCargaId='other';s.c.navigator={onLine:false};s.c.modoMedida='linear';s.c.madeiras.push({id:'linear-wood',tipoCadastro:'linear',nome:'Pinus',regrasLinear:rules});s.nodes.calcMadeira.value='linear-wood';s.nodes.comprimento.value='2';s.nodes.quantidade.value='1';s.nodes.precoTipoLinear={textContent:''};let chosen=0;s.c.regraLinearSelecionadaV381=()=>rules[chosen];s.c.selecionarServicosLinear=()=>({});s.c.cobrarServicosLinear=i=>({...i,valor:i.volume*i.preco});
+ s.c.carregamentos.push({id:'linear-row',madeiraId:'linear-wood',tipoMedida:'linear',produto:'Ripa',comprimento:2,quantidade:6,volume:12,preco:12,valor:144,cargaStatus:'montagem',grupoCargaId:'current',autoPriceV1:{retail:12,wholesale:9,policy:linearPolicy}});
+ const before=JSON.stringify(s.c.carregamentos);for(let i=0;i<30;i++){chosen=i%2;s.c.previewDocumentValueV710();assert.match(s.nodes.precoTipoLinear.textContent,chosen?/15,00/:/9,00/);assert.match(s.nodes.previewValor.textContent,chosen?/30,00/:/18,00/);}
+ assert.equal(s.writes.length,0);assert.equal(s.local.size,0);assert.equal(JSON.stringify(s.c.carregamentos),before);
+ // The existing launch/render path still applies wholesale to real saved lines.
+ s.c.repriceLoadsV710();assert(s.writes.length>0);assert.equal(s.c.carregamentos.find(i=>i.id==='linear-row').preco,9);
 });
