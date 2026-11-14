@@ -393,3 +393,10 @@ Validação: build limpo confirmou ausência do script/botão/estiloV748,32scrip
 Pedido para diminuir Ligar/Desligar contador e Corrigir. CSS screen>=1100px deixa toggle na largura do texto/alinhado à direita, mínimo30px de altura e fonte12px. Corrigir fica30px de altura, mínimo84px de largura e fonte12px; seletor limitado a data-modo=corrigir preserva botão Madeira verde. Regras explícitas vencem os mínimos44px do estilo anterior. Nenhuma mudança em listeners, contador, lançamento ou celular.
 
 Validação: build limpo32scripts válidos, CSS incorporado e2suítes de regressão (calculadora desktop/teclado móvel) passaram. Sem teste visual real. Apenas prévia12; produção inalterada.
+
+
+## Ações de carga alinhadas no PC e celular V751 — 14/11
+
+Pedido para abreviar carregamento para carga nos botões e organizar no PC e celular. Labels Guardar carga/Fechar carga/Apagar carga (Nova carga se usada). Grade de2colunas só no destino carga: Limpar campos/Guardar carga, Fechar carga/Apagar carga; Apagar resumo abaixo em largura total, mantendo a distinção entre remover itens e limpar resumo. Botões40px mínimos, fonte14px e quebra para nomes longos. Hidden e permissões preservados; nenhuma mudança em handlers/confirmações/salvamento/baixa, outros destinos ou PDF.
+
+Validação: build limpo32scripts válidos; labels/grade confirmados no HTML gerado e3suítes pertinentes passaram (calculadora desktop, teclado móvel e baixa de cargas). Sem validação visual real. Apenas prévia12; produção inalterada.
