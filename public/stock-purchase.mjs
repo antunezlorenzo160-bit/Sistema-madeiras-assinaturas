@@ -1,3 +1,4 @@
+import {normalizePurchasePaymentV757} from './purchase-payments.mjs';
 // Purchase values are private financial data; public stock rows only carry physical references.
 const purchaseUuidV728=/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i;
 export function purchaseVolumeUnits(value){const n=Number(value),units=Math.round(n*1e9);if(!Number.isFinite(n)||n<0||!Number.isSafeInteger(units))throw Error('Volume de compra inválido.');return units;}
@@ -36,7 +37,7 @@ export function groupStockPurchaseLinesV754(lines){
  return [...groups.values()];
 }
 export function normalizeStockPurchase(input){
- const allowed=['companyId','id','date','supplier','reference','stock','freightCents','otherCents','freightIncluded','otherIncluded','lines'];
+ const allowed=['companyId','id','date','supplier','reference','stock','freightCents','otherCents','freightIncluded','otherIncluded','lines','payment'];
  if(!input||typeof input!=='object'||Array.isArray(input)||Object.keys(input).some(k=>!allowed.includes(k))||typeof input.companyId!=='string'||!/^[-\w]{1,120}$/.test(input.companyId)||!purchaseUuidV728.test(input.id||'')||!['estoque1','estoque2'].includes(input.stock))throw Error('Dados do descarregamento inválidos.');
  const date=String(input.date||''),d=new Date(date+'T12:00:00Z');if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!Number.isFinite(d.getTime())||d.toISOString().slice(0,10)!==date)throw Error('Informe uma data válida.');
  const text=(value,max)=>{if(typeof value!=='string'||value.length>max||/[\u0000-\u001f]/.test(value))throw Error('Confira fornecedor e documento da compra.');return value.trim();};
@@ -74,5 +75,5 @@ export function normalizeStockPurchase(input){
  const addedCents=(input.freightIncluded?0:freightCents)+(input.otherIncluded?0:otherCents),totalCents=goodsCents+addedCents;if(!Number.isSafeInteger(totalCents)||totalCents>100000000000)throw Error('Valor do descarregamento acima do limite.');
  // Cumulative allocation assigns every cent exactly once, including the last line.
  let accumulated=0,allocated=0;for(const line of lines){accumulated+=line.amountCents;const target=Number((BigInt(addedCents)*BigInt(accumulated)+BigInt(Math.floor(goodsCents/2)))/BigInt(goodsCents));line.acquisitionCents=line.amountCents+target-allocated;allocated=target;}
- return {companyId:input.companyId,id:input.id,date,supplier,reference,stock:input.stock,freightCents,otherCents,freightIncluded:input.freightIncluded,otherIncluded:input.otherIncluded,lines,goodsCents,addedCents,totalCents};
+ return {companyId:input.companyId,id:input.id,date,supplier,reference,stock:input.stock,freightCents,otherCents,freightIncluded:input.freightIncluded,otherIncluded:input.otherIncluded,lines,goodsCents,addedCents,totalCents,...(input.payment!==undefined?{payment:normalizePurchasePaymentV757(input.payment,totalCents,date)}:{})};
 }

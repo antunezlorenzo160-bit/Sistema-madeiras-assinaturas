@@ -14,6 +14,7 @@
   <label>Outros gastos da compra (R$)<input type="text" inputmode="decimal" id="purchaseOtherV728" placeholder="0,00"></label>
   <label><input type="checkbox" id="purchaseOtherIncludedV728"> Outros gastos já incluídos no preço informado</label>
   <p class="note">Gastos não incluídos são somados e rateados pelo valor dos itens. Entram no custo do estoque e na compra; não viram outra despesa automática. Não registre esses mesmos gastos novamente no financeiro.</p>
+  <fieldset class="purchase-payment-v757" data-payment-prefix="purchasePay"><legend>Pagamento da compra</legend><label>Condição<select id="purchasePayModeV757"><option value="">Selecione</option><option value="cash">À vista — pago integralmente</option><option value="credit">A prazo — ainda não pago</option><option value="partial">Pagamento parcial</option></select></label><label id="purchasePayDueLabelV757">Vencimento do restante<input type="date" id="purchasePayDueV757"></label><label id="purchasePayAmountLabelV757">Valor já pago (R$)<input inputmode="decimal" id="purchasePayAmountV757"></label><label id="purchasePayDateLabelV757">Data do pagamento<input type="date" id="purchasePayDateV757"></label></fieldset>
   <div id="purchaseLinesV728"></div>
   <p class="note" id="purchaseTotalV728"></p>
   <button type="button" class="btn btn-primary" id="purchaseConfirmV728">Confirmar descarregamento e compra</button>

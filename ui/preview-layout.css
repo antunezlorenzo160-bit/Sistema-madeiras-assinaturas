@@ -159,3 +159,12 @@
 #torasPurchasesV756 #lpTotalV756{font-weight:700;line-height:1.5}
 #torasPurchasesV756 #lpStatusV756{font-size:13px;line-height:1.4}
 @media(max-width:600px){#cubagemToras #torasPurchasesV756 .grid3{grid-template-columns:repeat(2,minmax(0,1fr))!important}#torasPurchasesV756 .lp-line-v756{display:block}#torasPurchasesV756 .lp-line-v756 :is(strong,span){display:block;margin-bottom:5px}}
+
+/* V757: settlement fields and account rows share the purchase layout on all units. */
+.purchase-payment-v757{border:1px solid var(--line,#638371);border-radius:8px;margin:12px 0;padding:10px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.purchase-payment-v757 label{min-width:0}.purchase-payment-v757 [hidden]{display:none!important}
+#finPurchaseAccountsV757 .fin-payment-row-v757{border-top:1px solid var(--line);padding:12px 0;margin-top:8px}
+#finPurchaseAccountsV757 :is(input,select){max-width:100%;min-width:0}
+#finPurchaseAccountsV757 label{margin:8px 0}
+#finPurchaseAccountsV757 button{margin:5px 4px 5px 0}
+@media(max-width:600px){.purchase-payment-v757{grid-template-columns:1fr}}

@@ -1,3 +1,5 @@
+import {purchaseSettlementV757} from '../../../public/purchase-payments.mjs';
+import {paymentNotFutureV757} from './purchase-payments.mjs';
 import {createHash} from 'node:crypto';
 import {financeCollectionPath,financeOwnerContext} from './finance-access.mjs';
 import {FINANCE_PREVIEW} from './finance-context.mjs';
@@ -8,6 +10,7 @@ export function purchaseRecordId(...parts){const chars=createHash('sha256').upda
 const hash=input=>createHash('sha256').update(JSON.stringify(input)).digest('hex');
 export async function confirmStockPurchase(db,identity,input,now=Date.now()){
  let config;try{config=normalizeStockPurchase(input);}catch(e){throw new PlatformError(400,e.message);}
+ paymentNotFutureV757(config.payment,now);
  const initial=await financeOwnerContext(db,identity,undefined,true,now),signature=hash(config);
  if(config.companyId!==initial.empresaId)throw new PlatformError(403,'A empresa da tela mudou. Reabra o sistema antes de confirmar esta compra.');
  return db.runTransaction(async tx=>{
@@ -32,7 +35,7 @@ export async function confirmStockPurchase(db,identity,input,now=Date.now()){
    return {stockRef,movementRef,stock,movement,privateLine:{...line,stockId,movementId,costKey:stockCostKey(physical)}};
   }));
   const receipt={...config,lines:rows.map(row=>row.privateLine),signature,entryId,revision:1,createdAt:now,createdBy:identity.uid};
-  const entry={id:entryId,revision:1,type:'purchase',date:config.date,description:'Compra — descarregamento no '+(config.stock==='estoque2'?'Estoque 2':'Estoque 1'),partner:config.supplier,reference:config.reference||'Compra '+config.id,category:'wood',amountCents:config.totalCents,costCents:null,status:'active',createdAt:now,createdBy:identity.uid,updatedAt:now,updatedBy:identity.uid,source:{type:'stock-purchase',receiptId:config.id,goodsCents:config.goodsCents,acquisitionExpensesCents:config.addedCents}};
+  const entry={id:entryId,revision:1,type:'purchase',date:config.date,description:'Compra — descarregamento no '+(config.stock==='estoque2'?'Estoque 2':'Estoque 1'),partner:config.supplier,reference:config.reference||'Compra '+config.id,category:'wood',amountCents:config.totalCents,costCents:null,...(config.payment?{settlement:purchaseSettlementV757(config,now,identity.uid)}:{}),status:'active',createdAt:now,createdBy:identity.uid,updatedAt:now,updatedBy:identity.uid,source:{type:'stock-purchase',receiptId:config.id,goodsCents:config.goodsCents,acquisitionExpensesCents:config.addedCents}};
   for(const row of rows){tx.create(row.stockRef,row.stock);tx.create(row.movementRef,row.movement);}
   tx.create(receiptRef,receipt);tx.create(entryRef,entry);tx.create(db.doc(entryRef.path+'/versoes/1'),{action:'stock-purchase.confirm',at:now,by:identity.uid,previous:null,next:entry});
   return {empresaId:context.empresaId,preview:FINANCE_PREVIEW,receipt,repeated:false};

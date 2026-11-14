@@ -27,6 +27,7 @@ export async function saveFinanceEntry(db,identity,input,now=Date.now()){
  return db.runTransaction(async tx=>{
   const context=await financeOwnerContext(db,identity,r=>tx.get(r),true,now);if(context.empresaId!==initial.empresaId)throw new PlatformError(409,'O vínculo da conta mudou. Entre novamente.');
   const ref=db.doc(financeCollectionPath(context.empresaId)+'/'+entry.id),snapshot=await tx.get(ref),previous=snapshot.exists?snapshot.data():null;
+  if(previous?.settlement)throw new PlatformError(409,'Esta compra tem pagamentos registrados. Confira em Pagamentos de compras antes de alterar seus valores.');
   if(previous?.source?.type==='shared-trip')throw new PlatformError(409,'Altere estes gastos na viagem compartilhada.');
   if(previous?.source?.type==='log-purchase')throw new PlatformError(409,'Altere ou cancele esta compra na aba Toras.');
   if(previous?.source?.type==='stock-purchase')throw new PlatformError(409,'Compra vinculada ao descarregamento. O registro é preservado para conferir estoque e custo.');

@@ -1,3 +1,4 @@
+import {normalizePurchasePaymentV757} from './purchase-payments.mjs';
 import {volumeToras,chaveEspecieToras} from './toras.mjs';
 const logPurchaseUuidV756=/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i;
 export function groupLogPurchaseLinesV756(lines){
@@ -11,7 +12,7 @@ export function groupLogPurchaseLinesV756(lines){
  return [...result.values()];
 }
 export function normalizeLogPurchaseV756(input){
- const fields=['companyId','id','date','supplier','reference','freightCents','otherCents','freightIncluded','otherIncluded','lines'];
+ const fields=['companyId','id','date','supplier','reference','freightCents','otherCents','freightIncluded','otherIncluded','lines','payment'];
  if(!input||typeof input!=='object'||Array.isArray(input)||Object.keys(input).some(k=>!fields.includes(k))||typeof input.companyId!=='string'||!/^[-\w]{1,120}$/.test(input.companyId)||!logPurchaseUuidV756.test(input.id||''))throw Error('Dados da compra de toras inválidos.');
  const date=String(input.date||''),parsed=new Date(date+'T12:00:00Z');if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!Number.isFinite(parsed.getTime())||parsed.toISOString().slice(0,10)!==date)throw Error('Informe uma data válida.');
  const text=(value,max,required=false)=>{if(typeof value!=='string'||value.length>max||/[\u0000-\u001f]/.test(value)||required&&!value.trim())throw Error('Confira fornecedor, espécie e documento.');return value.trim();};
@@ -32,5 +33,5 @@ export function normalizeLogPurchaseV756(input){
  const addedCents=(input.freightIncluded?0:freightCents)+(input.otherIncluded?0:otherCents),totalCents=goodsCents+addedCents;
  if(!Number.isSafeInteger(totalCents)||totalCents>100000000000||!Number.isSafeInteger(totalVolumeUnits)||!Number.isSafeInteger(totalQuantity))throw Error('Total da compra acima do limite.');
  let accumulated=0,allocated=0;for(const row of lines){accumulated+=row.amountCents;const target=Number((BigInt(addedCents)*BigInt(accumulated)+BigInt(Math.floor(goodsCents/2)))/BigInt(goodsCents));row.acquisitionCents=row.amountCents+target-allocated;allocated=target;}
- return {companyId:input.companyId,id:input.id,date,supplier,reference,freightCents,otherCents,freightIncluded:input.freightIncluded,otherIncluded:input.otherIncluded,lines,goodsCents,addedCents,totalCents,totalVolume:totalVolumeUnits/1e9,totalQuantity};
+ return {companyId:input.companyId,id:input.id,date,supplier,reference,freightCents,otherCents,freightIncluded:input.freightIncluded,otherIncluded:input.otherIncluded,lines,goodsCents,addedCents,totalCents,totalVolume:totalVolumeUnits/1e9,totalQuantity,...(input.payment!==undefined?{payment:normalizePurchasePaymentV757(input.payment,totalCents,date)}:{})};
 }

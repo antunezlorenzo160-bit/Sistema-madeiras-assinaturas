@@ -143,3 +143,7 @@ test('new purchase units reject inconsistent physical quantity, product, packet 
  for(const bad of [{...area,volume:7},{...area,purchasePacketsV755:2,purchasePiecesPerPacketV755:10},{...linear,volume:35},{...linear,produto:''},{...linear,quantidade:0},{...linear,linearTotalV744:true},{...area,estadoMadeira:'verde'}])assert.throws(()=>normalizeStockPurchase(purchase({lines:[bad]})));
  const s=purchaseTestDb();s.records.set('empresas/tenant/dados/sm2_madeiras/registros/wood',{nome:'Pinus',tipoCadastro:'linear',regrasLinear:[{tipo:'Rodapé'}]});await assert.rejects(()=>confirmStockPurchase(s.db,s.identity,purchase({lines:[linear]}),at),/tipo de produto/);assert.equal(s.writes.length,0);
 });
+test('stock purchase initializes payment without changing cost and confirmation retry never duplicates it',async()=>{
+ const s=purchaseTestDb(),raw=purchase({payment:{mode:'partial',paidCents:10000,paidDate:'2026-11-08',dueDate:'2026-12-08'}}),result=await confirmStockPurchase(s.db,s.identity,raw,at),receipt=result.receipt,entry=s.records.get(financeCollectionPath('tenant')+'/'+receipt.entryId);
+ assert.equal(entry.settlement.payments.length,1);assert.equal(entry.settlement.payments[0].amountCents,10000);assert.equal(entry.amountCents,230000);assert.equal(receipt.lines[0].acquisitionCents,230000);const writes=s.writes.length;await confirmStockPurchase(s.db,s.identity,raw,at+1);assert.equal(s.writes.length,writes);
+});

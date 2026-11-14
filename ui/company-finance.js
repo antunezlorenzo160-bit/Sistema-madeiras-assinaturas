@@ -15,7 +15,7 @@ async function financeRequestV722(input,range,endpoint='company-finance'){
  if(!navigator.onLine)throw Error('Conecte-se à internet. O formulário foi preservado.');
  const user=authV456.currentUser;if(!user)throw Error('Entre novamente com sua conta.');
  const response=await fetch('/.netlify/functions/'+endpoint+(range?'?'+new URLSearchParams(range):''),{method:input?'POST':'GET',headers:{Authorization:'Bearer '+await user.getIdToken(),'Content-Type':'application/json'},...(input?{body:JSON.stringify(input)}:{}),signal:AbortSignal.timeout(20000),cache:'no-store'});
- const data=await response.json();if(!response.ok)throw Error(data.error||'Não foi possível acessar o financeiro.');
+ const data=await response.json();if(!response.ok){const error=Error(data.error||'Não foi possível acessar o financeiro.');error.status=response.status;throw error;}
  if(authV456.currentUser?.uid!==user.uid||data.empresaId!==empresaV456||!finOwnerV722())throw Error('A sessão mudou. Entre novamente.');return data;
 }
 function financeRenderV722(){
@@ -46,7 +46,7 @@ async function financeLoadV722(){
  const from=finElV722('finFromV722').value,to=finElV722('finToV722').value;
  if(stockChartDate(from)!==from||stockChartDate(to)!==to||from>to){finStatusV722('Confira as datas da consulta.');return;}
  const sequence=++financeSequenceV722;financeBusyV722=true;finWriteStateV722();finStatusV722('Consultando lançamentos…');
- try{const result=await financeRequestV722(null,{from,to});if(sequence!==financeSequenceV722)return;financeRowsV722=result.entries;financeLoadedRangeV722={from,to};financeCanWriteV722=result.canWrite===true;financeProfitPolicyV726=normalizeMinimumProfitPolicy(result.profitPolicy||{});financeMinimumFillV726();financeOpeningPolicyV732=normalizeOpeningStockCost(result.openingPolicy||{});financeOpeningFillV732();finElV722('finPreviewV722').hidden=result.preview!==true;financeRenderV722();finStatusV722((result.canWrite?'':'Acesso somente para consulta. ')+stockChartLabelV720(from)+' a '+stockChartLabelV720(to)+' · '+result.entries.length+' registro(s).');}
+ try{const result=await financeRequestV722(null,{from,to});if(sequence!==financeSequenceV722)return;financeRowsV722=result.entries;financeLoadedRangeV722={from,to};financeCanWriteV722=result.canWrite===true;financeProfitPolicyV726=normalizeMinimumProfitPolicy(result.profitPolicy||{});financeMinimumFillV726();financeOpeningPolicyV732=normalizeOpeningStockCost(result.openingPolicy||{});financeOpeningFillV732();finElV722('finPreviewV722').hidden=result.preview!==true;financeRenderV722();finStatusV722((result.canWrite?'':'Acesso somente para consulta. ')+stockChartLabelV720(from)+' a '+stockChartLabelV720(to)+' · '+result.entries.length+' registro(s).');if(typeof purchaseAccountsLoadV757==='function')await purchaseAccountsLoadV757();}
  catch(e){finStatusV722(e.name==='TimeoutError'?'A consulta demorou. Tente novamente.':e.message);}
  finally{financeBusyV722=false;finWriteStateV722();}
 }

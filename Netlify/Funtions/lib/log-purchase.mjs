@@ -1,3 +1,5 @@
+import {purchaseSettlementV757} from '../../../public/purchase-payments.mjs';
+import {paymentNotFutureV757} from './purchase-payments.mjs';
 import {createHash} from 'node:crypto';
 import {financeCollectionPath,financeOwnerContext} from './finance-access.mjs';
 import {PlatformError} from './platform.mjs';
@@ -6,6 +8,7 @@ export const logPurchaseRecordsPath=id=>financeCollectionPath(id)+'ComprasToras'
 export function logPurchaseEntryId(id){const hex=createHash('sha256').update('log-purchase:'+id).digest('hex').slice(0,32).split('');hex[12]='4';hex[16]='8';const s=hex.join('');return s.slice(0,8)+'-'+s.slice(8,12)+'-'+s.slice(12,16)+'-'+s.slice(16,20)+'-'+s.slice(20);}
 export async function confirmLogPurchase(db,identity,input,now=Date.now()){
  let config;try{config=normalizeLogPurchaseV756(input);}catch(e){throw new PlatformError(400,e.message);}
+ paymentNotFutureV757(config.payment,now);
  const initial=await financeOwnerContext(db,identity,undefined,true,now);if(config.companyId!==initial.empresaId)throw new PlatformError(403,'A empresa mudou. Reabra a compra.');
  const signature=createHash('sha256').update(JSON.stringify(config)).digest('hex');
  return db.runTransaction(async tx=>{
@@ -14,7 +17,7 @@ export async function confirmLogPurchase(db,identity,input,now=Date.now()){
   if(previous){if(previous.signature!==signature)throw new PlatformError(409,'Esta compra de toras já foi confirmada com outros valores.');return {receipt:previous,repeated:true};}
   const entryId=logPurchaseEntryId(config.id),entryRef=db.doc(financeCollectionPath(context.empresaId)+'/'+entryId),entrySnap=await tx.get(entryRef);if(entrySnap.exists)throw new PlatformError(409,'A compra já tem um registro financeiro. Atualize o histórico.');
   const receipt={...config,signature,entryId,status:'active',revision:1,createdAt:now,createdBy:identity.uid,updatedAt:now,updatedBy:identity.uid};
-  const entry={id:entryId,revision:1,type:'purchase',date:config.date,description:'Compra de toras — '+config.totalQuantity+' tora(s)',partner:config.supplier,reference:config.reference||'Toras '+config.id,category:'wood',amountCents:config.totalCents,costCents:null,status:'active',createdAt:now,createdBy:identity.uid,updatedAt:now,updatedBy:identity.uid,source:{type:'log-purchase',receiptId:config.id,goodsCents:config.goodsCents,acquisitionExpensesCents:config.addedCents,totalVolume:config.totalVolume}};
+  const entry={id:entryId,revision:1,type:'purchase',date:config.date,description:'Compra de toras — '+config.totalQuantity+' tora(s)',partner:config.supplier,reference:config.reference||'Toras '+config.id,category:'wood',amountCents:config.totalCents,costCents:null,...(config.payment?{settlement:purchaseSettlementV757(config,now,identity.uid)}:{}),status:'active',createdAt:now,createdBy:identity.uid,updatedAt:now,updatedBy:identity.uid,source:{type:'log-purchase',receiptId:config.id,goodsCents:config.goodsCents,acquisitionExpensesCents:config.addedCents,totalVolume:config.totalVolume}};
   tx.create(receiptRef,receipt);tx.create(entryRef,entry);tx.create(db.doc(entryRef.path+'/versoes/1'),{action:'log-purchase.confirm',at:now,by:identity.uid,previous:null,next:entry});
   return {receipt,repeated:false};
  });

@@ -37,3 +37,6 @@ test('owner/company/verified email/billing checked again within transaction; mal
  const billing=setup();billing.records.set('empresas/tenant/acesso/plano',billingAccessWindow(now-6*BILLING_ACCESS_DAY));assert.equal((await listLogPurchases(billing.db,billing.identity,{from:'2026-11-01',to:'2026-11-30'},now)).canWrite,false);await assert.rejects(()=>confirmLogPurchase(billing.db,billing.identity,input(),now),e=>e.status===403);assert.equal(billing.writes.length,0);
  const invalid=setup();await assert.rejects(()=>confirmLogPurchase(invalid.db,invalid.identity,input({lines:[line({volume:99})]}),now));assert.equal(invalid.writes.length,0);
 });
+test('cash log purchase records one payment and cancellation preserves the payment evidence',async()=>{
+ const s=setup(),raw=input({payment:{mode:'cash',paidDate:'2026-11-14'}}),result=await confirmLogPurchase(s.db,s.identity,raw,now),path=financeCollectionPath('tenant')+'/'+result.receipt.entryId;assert.equal(s.records.get(path).settlement.payments[0].amountCents,result.receipt.totalCents);await cancelLogPurchase(s.db,s.identity,{companyId:'tenant',id,revision:1},now+1);assert.equal(s.records.get(path).settlement.payments[0].amountCents,result.receipt.totalCents);
+});
