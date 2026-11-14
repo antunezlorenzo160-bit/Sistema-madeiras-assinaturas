@@ -17,7 +17,12 @@ function stockPurchaseVisibilityV728(){
 function purchaseRenderV728(){
  const draft=stockPurchaseDraftV728;if(!draft)return;
  purchaseElV728('purchaseFieldsV728').hidden=!draft.enabled;
- purchaseElV728('purchaseLinesV728').innerHTML=draft.lines.map((line,index)=>'<div class="purchase-line-v728"><strong>'+esc(line.madeira)+'</strong><span>'+esc(line.tipoMedida==='granel'?'A granel':line.espessura+' × '+line.largura+' cm · '+line.comprimento+' m · '+line.quantidade+' peças')+' · '+num4(line.volume)+' m³ · '+finMoneyV722(line.unitCents)+'/m³</span><button type="button" class="btn btn-secondary" data-purchase-remove="'+index+'">Retirar da lista</button></div>').join('')||'<p class="note">Preencha a medida na calculadora e toque em Lançar peça para adicionar.</p>';
+ const linesHost=purchaseElV728('purchaseLinesV728'),linesSignature=JSON.stringify(draft.lines);
+ // Keep remove buttons mounted across input blur/change so their click is not lost.
+ if(linesHost.dataset.linesSignatureV753!==linesSignature){
+ linesHost.innerHTML=draft.lines.map((line,index)=>'<div class="purchase-line-v728"><strong>'+esc(line.madeira)+'</strong><span>'+esc(line.tipoMedida==='granel'?'A granel':line.espessura+' × '+line.largura+' cm · '+line.comprimento+' m · '+line.quantidade+' peças')+' · '+num4(line.volume)+' m³ · '+finMoneyV722(line.unitCents)+'/m³</span><button type="button" class="btn btn-secondary" data-purchase-remove="'+index+'">Retirar da lista</button></div>').join('')||'<p class="note">Preencha a medida na calculadora e toque em Lançar peça para adicionar.</p>';
+ linesHost.dataset.linesSignatureV753=linesSignature;
+ }
  try{const totals=purchasePayloadV728(draft);purchaseElV728('purchaseTotalV728').textContent=(draft.stock==='estoque2'?'Estoque 2':'Estoque 1')+' · Madeira: '+finMoneyV722(totals.goodsCents)+' · Gastos acrescentados: '+finMoneyV722(totals.addedCents)+' · Compra: '+finMoneyV722(totals.totalCents);}catch{purchaseElV728('purchaseTotalV728').textContent=draft.lines.length+' item(ns) na lista. Preencha fornecedor, data e gastos para conferir o total.';}
  const locked=stockPurchaseBusyV728||!!draft.pending||draft.confirmed;
  for(const node of purchaseElV728('stockPurchaseV728').querySelectorAll('input,[data-purchase-remove]'))node.disabled=locked;
@@ -88,7 +93,7 @@ function purchaseMountV728(){
  try{const saved=JSON.parse(window.__v456Local.getItem(purchaseStorageV728())||'null');stockPurchaseDraftV728=saved&&typeof saved==='object'&&Array.isArray(saved.lines)&&saved.id?saved:purchaseFreshV728();}catch{stockPurchaseDraftV728=purchaseFreshV728();}
  purchaseFillV728();stockPurchaseVisibilityV728();
  for(const input of node.querySelectorAll('input'))input.addEventListener('change',purchaseInputV728);
- purchaseElV728('purchaseLinesV728').addEventListener('click',event=>{const button=event.target.closest('[data-purchase-remove]');if(!button||stockPurchaseBusyV728||stockPurchaseDraftV728.pending||stockPurchaseDraftV728.confirmed)return;try{purchaseStoreV728({...purchaseReadFieldsV728(),lines:stockPurchaseDraftV728.lines.filter((_,n)=>n!==Number(button.dataset.purchaseRemove))});purchaseRenderV728();}catch(e){purchaseElV728('purchaseStatusV728').textContent=e.message;}});
+ purchaseElV728('purchaseLinesV728').addEventListener('click',event=>{const button=event.target.closest('[data-purchase-remove]');if(!button||stockPurchaseBusyV728||stockPurchaseDraftV728.pending||stockPurchaseDraftV728.confirmed)return;try{purchaseStoreV728({...purchaseReadFieldsV728(),lines:stockPurchaseDraftV728.lines.filter((_,n)=>n!==Number(button.dataset.purchaseRemove))});purchaseRenderV728();purchaseElV728('purchaseStatusV728').textContent='Item retirado da lista. O estoque não foi alterado.';}catch(e){purchaseElV728('purchaseStatusV728').textContent=e.message;}});
  purchaseElV728('purchaseConfirmV728').onclick=purchaseConfirmV728;
  purchaseElV728('purchaseNewV728').onclick=()=>{if(stockPurchaseBusyV728||stockPurchaseDraftV728.pending)return;if(stockPurchaseDraftV728.lines.length&&!stockPurchaseDraftV728.confirmed&&!confirm('Descartar a lista ainda não confirmada?'))return;try{purchaseStoreV728(purchaseFreshV728());purchaseFillV728();purchaseElV728('purchaseStatusV728').textContent='Novo descarregamento. Nenhum item adicionado ainda.';}catch(e){purchaseElV728('purchaseStatusV728').textContent=e.message;}};
  document.addEventListener('change',stockPurchaseVisibilityV728);

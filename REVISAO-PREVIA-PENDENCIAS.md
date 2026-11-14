@@ -407,3 +407,12 @@ Validação: build limpo32scripts válidos; labels/grade confirmados no HTML ger
 Removido o small ajudaIdentificacaoMovimento abaixo do nome de comprador/destino (também usado por vendedor/origem), conforme pedido. PC e celular. Campo, placeholder opcional e lógica de histórico preservados. Não havia referências JavaScript ao elemento.
 
 Validação: build limpo32scripts válidos, frase/elemento ausentes e campo preservado no HTML gerado. Apenas prévia12; produção inalterada.
+
+
+## Retirar da lista da compra V753 — 14/11
+
+Usuário confirmou botões da compra. Encontrada recriação incondicional de purchaseLinesV728 em purchaseInputV728/change: ao sair de um campo para clicar em Retirar da lista, alvo podia ser substituído antes do clique. Renderização agora compara assinatura das linhas e preserva os botões quando apenas fornecedor/data/preço/gastos mudam; totais/campos disabled continuam atualizados. Alterar linhas redesenha normalmente. Remoção bem-sucedida informa Item retirado da lista.O estoque não foi alterado.
+
+Regressão reproduzida antes: change substituíaDOM1vez antes do clique; depois0, clique remove só a linha escolhida e preserva campos/estoque. Testes adicionais: confirmação incerta/compra confirmada bloqueiam remoção; falha de armazenamento preserva linha e mostra erro. Sem mudança em transação do servidor, estoque, financeiro ou duplicidade/retry.
+
+Validação:2suítes compra/UI passaram, build limpo32scripts válidos. Sem teste nativo no celular ou registros privados reais. Apenas prévia12; produção inalterada.

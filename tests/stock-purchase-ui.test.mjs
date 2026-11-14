@@ -1,7 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';import vm from 'node:vm';import {readFileSync} from 'node:fs';import {randomUUID} from 'node:crypto';
 import {normalizeStockPurchase} from '../public/stock-purchase.mjs';import {financeCents} from '../public/company-finance.mjs';
 function setup(storage=new Map()){
- const nodes={},inputs=[];for(const [,id] of readFileSync(new URL('../ui/stock-purchase.html',import.meta.url),'utf8').matchAll(/id="([^"]+)"/g))nodes[id]={id,value:'',checked:false,hidden:false,disabled:false,textContent:'',innerHTML:'',handlers:{},addEventListener(k,fn){this.handlers[k]=fn;},querySelectorAll:()=>inputs};
+ const nodes={},inputs=[];for(const [,id] of readFileSync(new URL('../ui/stock-purchase.html',import.meta.url),'utf8').matchAll(/id="([^"]+)"/g))nodes[id]={id,dataset:{},value:'',checked:false,hidden:false,disabled:false,textContent:'',innerHTML:'',handlers:{},addEventListener(k,fn){this.handlers[k]=fn;},querySelectorAll:()=>inputs};
  const inputIds=['purchaseEnabledV728','purchaseSupplierV728','purchaseDateV728','purchaseReferenceV728','purchaseUnitV728','purchaseFreightV728','purchaseOtherV728','purchaseFreightIncludedV728','purchaseOtherIncludedV728'];inputs.push(...inputIds.map(id=>nodes[id]));
  const calls=[],timers=[],member={papel:'admin'};let send=async()=>{throw Error('Sem resposta');};
  const c={console,Date,AbortSignal,normalizeStockPurchase,financeCents,finMoneyV722:cents=>(cents/100).toFixed(2),num4:n=>Number(n).toFixed(4),esc:String,crypto:{randomUUID},empresaV456:'tenant',parent:{__smEmployeeMember:()=>member},navigator:{onLine:true},authV456:{currentUser:{getIdToken:async()=> 'token'}},window:{__v456Local:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)}},document:{getElementById:id=>nodes[id],addEventListener(){}},destinoSelecionado:()=> 'estoque1',modoMedida:'m3',$:()=>({checked:false}),prepararProximoLancamentoM3(){},calcPreview(){},setTimeout:fn=>timers.push(fn),confirm:()=>true,fetch:async(url,options)=>{calls.push({url,options});return send(url,options);},sincronizarOfflineOps:async()=>{},waitForPendingWrites:async()=>{},temOperacoesPendentesV428:()=>false,COL:{estoque1:'stock1',estoque2:'stock2',movimentos:'moves'},db:{},doc:()=>{},getDocFromServer:async()=>({exists:()=>false}),estoque1Lancamentos:[],estoque2Lancamentos:[],lancamentos:[],movimentos:[],save(){},renderEstoque(){},renderLancamentos(){},renderPlanilhasM3Especies(){}};
@@ -28,4 +28,21 @@ test('invalid price or changed stock cannot silently enter the old stock flow; u
 });
 test('a browser using temporary memory cannot submit a purchase that may lose its retry identity',async()=>{
  const s=setup();s.c.stockPurchaseCaptureV728(item(),'estoque1');s.c.window.__v456Local.durable=false;await s.c.purchaseConfirmV728();assert.equal(s.calls.length,0);assert.match(s.nodes.purchaseStatusV728.textContent,/não está preservando/);
+});
+
+test('editing purchase fields preserves remove-button DOM until the click removes only the selected draft line',()=>{
+ const s=setup();s.c.stockPurchaseCaptureV728(item(),'estoque1');s.c.stockPurchaseCaptureV728(item(),'estoque1');
+ const lines=s.nodes.purchaseLinesV728;let html=lines.innerHTML,replacements=0;
+ Object.defineProperty(lines,'innerHTML',{get:()=>html,set:value=>{html=value;replacements++;}});
+ s.nodes.purchaseSupplierV728.value='Fornecedor corrigido';s.c.purchaseInputV728();
+ assert.equal(replacements,0,'blur/change must not replace the button before its click');
+ s.nodes.purchaseLinesV728.handlers.click({target:{closest:()=>({dataset:{purchaseRemove:'0'}})}});
+ const draft=JSON.parse(s.storage.get('stock_purchase_v728:tenant'));assert.equal(draft.lines.length,1);assert.equal(draft.supplier,'Fornecedor corrigido');assert.equal(s.calls.length,0);assert.equal(s.c.estoque1Lancamentos.length,0);assert.equal(replacements,1);
+});
+
+test('remove stays blocked for uncertain or confirmed purchases and storage failure preserves draft',async()=>{
+ const s=setup();s.c.stockPurchaseCaptureV728(item(),'estoque1');const click=()=>s.nodes.purchaseLinesV728.handlers.click({target:{closest:()=>({dataset:{purchaseRemove:'0'}})}});
+ await s.c.purchaseConfirmV728();assert(JSON.parse(s.storage.get('stock_purchase_v728:tenant')).pending);click();assert.equal(JSON.parse(s.storage.get('stock_purchase_v728:tenant')).lines.length,1);
+ const fresh=setup();fresh.c.stockPurchaseCaptureV728(item(),'estoque1');fresh.c.window.__v456Local.setItem=()=>{throw Error('Sem espaço');};fresh.nodes.purchaseLinesV728.handlers.click({target:{closest:()=>({dataset:{purchaseRemove:'0'}})}});assert.equal(JSON.parse(fresh.storage.get('stock_purchase_v728:tenant')).lines.length,1);assert.match(fresh.nodes.purchaseStatusV728.textContent,/Sem espaço/);
+ const confirmed=setup();confirmed.c.stockPurchaseCaptureV728(item(),'estoque1');confirmed.setSend(async()=>response({totalCents:100000,stock:'estoque1',lines:[]}));await confirmed.c.purchaseConfirmV728();confirmed.nodes.purchaseLinesV728.handlers.click({target:{closest:()=>({dataset:{purchaseRemove:'0'}})}});assert.equal(JSON.parse(confirmed.storage.get('stock_purchase_v728:tenant')).lines.length,1);
 });
