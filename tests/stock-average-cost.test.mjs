@@ -129,3 +129,13 @@ test('a historical known species reference remains available after its physical 
  const a=buy('depleted-ref',10,1300000,8,{largura:10}),empty=move('deplete-ref','saida',10,9,{grupoCargaId:'old',largura:10}),adjust=move('later-measure','ajuste',2,10,{grupoCargaId:'new',ajusteConferenciaV391:true,largura:20}),out=move('later-out','saida',2,11,{grupoCargaId:'new',largura:20});
  const checked=cost(projectWeightedStockCosts({purchases:[a.receipt],movements:[a.row,empty,adjust,out],stock:[]}),'new',2,{largura:20});assert.equal(checked.costCents,260000);assert.equal(checked.usesSpeciesReference,true);
 });
+
+test('m² and linear costs follow physical units and keep products and units separate',()=>{
+ const area={tipoMedida:'m2',largura:20,espessura:0,comprimento:3},metre={tipoMedida:'linear',largura:0,espessura:0,comprimento:0,produto:'Ripa',linearTotalV744:true},other={...metre,produto:'Rodapé'};
+ const a=buy('area',12,30000,8,area),b=buy('metre',70,56000,8,metre),c=buy('other',70,140000,8,other);
+ const projection=projectWeightedStockCosts({purchases:[a.receipt,b.receipt,c.receipt],movements:[a.row,b.row,c.row,move('out-area','saida',6,9,{...area,grupoCargaId:'area-sale'}),move('out-metre','saida',20,9,{...metre,grupoCargaId:'metre-sale'}),move('out-other','saida',10,9,{...other,grupoCargaId:'other-sale'})],stock:[{...physical(area),volume:6},{...physical(metre),volume:50},{...physical(other),volume:60}]});
+ assert.equal(weightedCostForLoad([{...physical(area),quantidade:10,volume:6,grupoCargaId:'area-sale'}],projection).costCents,15000);
+ assert.equal(weightedCostForLoad([{...physical(metre),quantidade:0,volume:20,volumeReal:20,metrosCobrados:25,grupoCargaId:'metre-sale'}],projection).costCents,16000);
+ assert.equal(weightedCostForLoad([{...physical(other),quantidade:0,volume:10,grupoCargaId:'other-sale'}],projection).costCents,20000);
+ assert.notEqual(stockCostKey(physical(metre)),stockCostKey(physical(other)));assert.notEqual(stockCostKey(physical(area)),stockCostKey(physical()));
+});

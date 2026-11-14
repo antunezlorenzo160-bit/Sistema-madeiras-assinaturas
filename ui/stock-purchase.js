@@ -1,18 +1,34 @@
 // Opt-in purchase cart. Physical stock is only created by the atomic server confirmation.
-let stockPurchaseDraftV728=null,stockPurchaseBusyV728=false;
+let stockPurchaseDraftV728=null,stockPurchaseBusyV728=false,stockPurchaseUnitV755=null;
 const purchaseElV728=id=>document.getElementById(id),purchaseStorageV728=()=>'stock_purchase_v728:'+empresaV456;
 const purchaseOwnerV728=()=>parent.__smEmployeeMember?.()?.papel==='admin';
 function purchaseFreshV728(){const d=new Date();return {id:crypto.randomUUID(),enabled:false,confirmed:false,pending:null,lines:[],stock:null,supplier:'',date:d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'),reference:'',unit:'',freight:'',other:'',freightIncluded:false,otherIncluded:false};}
 function purchaseStoreV728(next){const raw=JSON.stringify(next);window.__v456Local.setItem(purchaseStorageV728(),raw);if(window.__v456Local.getItem(purchaseStorageV728())!==raw)throw Error('Não foi possível preservar o rascunho neste aparelho.');stockPurchaseDraftV728=next;}
-function purchaseReadFieldsV728(){return {...stockPurchaseDraftV728,enabled:purchaseElV728('purchaseEnabledV728').checked,supplier:purchaseElV728('purchaseSupplierV728').value.trim(),date:purchaseElV728('purchaseDateV728').value,reference:purchaseElV728('purchaseReferenceV728').value.trim(),unit:purchaseElV728('purchaseUnitV728').value,freight:purchaseElV728('purchaseFreightV728').value,other:purchaseElV728('purchaseOtherV728').value,freightIncluded:purchaseElV728('purchaseFreightIncludedV728').checked,otherIncluded:purchaseElV728('purchaseOtherIncludedV728').checked};}
+function purchaseReadFieldsV728(){return {...stockPurchaseDraftV728,enabled:purchaseElV728('purchaseEnabledV728').checked,unitKindV755:purchaseUnitSymbolV755(modoMedida),supplier:purchaseElV728('purchaseSupplierV728').value.trim(),date:purchaseElV728('purchaseDateV728').value,reference:purchaseElV728('purchaseReferenceV728').value.trim(),unit:purchaseElV728('purchaseUnitV728').value,freight:purchaseElV728('purchaseFreightV728').value,other:purchaseElV728('purchaseOtherV728').value,freightIncluded:purchaseElV728('purchaseFreightIncludedV728').checked,otherIncluded:purchaseElV728('purchaseOtherIncludedV728').checked};}
 function purchaseInputV728(){if(stockPurchaseBusyV728||stockPurchaseDraftV728?.pending||stockPurchaseDraftV728?.confirmed)return;try{purchaseStoreV728(purchaseReadFieldsV728());purchaseRenderV728();}catch(e){purchaseElV728('purchaseStatusV728').textContent=e.message;}}
 function purchasePayloadV728(draft){return normalizeStockPurchase({companyId:empresaV456,id:draft.id,date:draft.date,supplier:draft.supplier,reference:draft.reference,stock:draft.stock,freightCents:financeCents(draft.freight.trim()||'0'),otherCents:financeCents(draft.other.trim()||'0'),freightIncluded:draft.freightIncluded,otherIncluded:draft.otherIncluded,lines:draft.lines.map(({madeira,...line})=>line)});}
 function purchaseRawPayloadV728(draft){const parsed=purchasePayloadV728(draft);return {companyId:parsed.companyId,id:parsed.id,date:parsed.date,supplier:parsed.supplier,reference:parsed.reference,stock:parsed.stock,freightCents:parsed.freightCents,otherCents:parsed.otherCents,freightIncluded:parsed.freightIncluded,otherIncluded:parsed.otherIncluded,lines:parsed.lines.map(({amountCents,acquisitionCents,...line})=>line)};}
+const purchaseUnitSymbolV755=kind=>kind==='linear'?'m':kind==='m2'?'m²':'m³';
+function purchaseUnitLabelV755(){
+ const unit=purchaseUnitSymbolV755(modoMedida);
+ if(stockPurchaseDraftV728&&!stockPurchaseBusyV728&&!stockPurchaseDraftV728.pending&&!stockPurchaseDraftV728.confirmed){
+  const previous=stockPurchaseUnitV755??stockPurchaseDraftV728.unitKindV755??'m³';
+  if(previous!==unit)purchaseElV728('purchaseUnitV728').value='';
+  stockPurchaseUnitV755=unit;
+ }
+ const label=purchaseElV728('purchaseUnitLabelV755');if(label)label.textContent='Preço de compra por '+purchaseUnitSymbolV755(modoMedida)+' (R$)';
+}
+function purchaseLineTextV755(line){
+ const kind=line.tipoMedida,unit=purchaseUnitSymbolV755(kind);
+ const detail=kind==='granel'?'A granel':kind==='linear'?(line.produto+' · '+(line.linearTotalV744===true?'Metragem total':line.comprimento+' m · '+line.quantidade+' peças')):kind==='m2'?(line.largura+' cm · '+line.comprimento+' m · '+line.quantidade+' peças'+(line.purchasePacketsV755?' · '+line.purchasePacketsV755+' pacote(s)':'')):line.espessura+' × '+line.largura+' cm · '+line.comprimento+' m · '+line.quantidade+' peças';
+ return detail+' · '+num4(line.volume)+' '+unit+' · '+finMoneyV722(line.unitCents)+'/'+unit;
+}
 function stockPurchaseVisibilityV728(){
  const node=purchaseElV728('stockPurchaseV728');if(!node)return;
- const stock=['estoque1','estoque2'].includes(destinoSelecionado()),supported=['m3','granel'].includes(modoMedida);node.hidden=!purchaseOwnerV728()||!stock||!supported;
+ const stock=['estoque1','estoque2'].includes(destinoSelecionado()),supported=['m3','granel','m2','linear'].includes(modoMedida);node.hidden=!purchaseOwnerV728()||!stock||!supported;
  if(!node.hidden&&!stockPurchaseDraftV728){purchaseMountV728();return;}
  if(!node.hidden&&stockPurchaseDraftV728?.pending)node.open=true;
+ purchaseUnitLabelV755();
 }
 function purchaseRenderV728(){
  const draft=stockPurchaseDraftV728;if(!draft)return;
@@ -20,7 +36,7 @@ function purchaseRenderV728(){
  const linesHost=purchaseElV728('purchaseLinesV728'),linesSignature=JSON.stringify(draft.lines);
  // Keep remove buttons mounted across input blur/change so their click is not lost.
  if(linesHost.dataset.linesSignatureV753!==linesSignature){
- linesHost.innerHTML=draft.lines.map((line,index)=>'<div class="purchase-line-v728"><strong>'+esc(line.madeira)+'</strong><span>'+esc(line.tipoMedida==='granel'?'A granel':line.espessura+' × '+line.largura+' cm · '+line.comprimento+' m · '+line.quantidade+' peças')+' · '+num4(line.volume)+' m³ · '+finMoneyV722(line.unitCents)+'/m³</span><button type="button" class="btn btn-secondary" data-purchase-remove="'+index+'">Retirar da lista</button></div>').join('')||'<p class="note">Preencha a medida na calculadora e toque em Lançar peça para adicionar.</p>';
+ linesHost.innerHTML=draft.lines.map((line,index)=>'<div class="purchase-line-v728"><strong>'+esc(line.madeira)+'</strong><span>'+esc(purchaseLineTextV755(line))+'</span><button type="button" class="btn btn-secondary" data-purchase-remove="'+index+'">Retirar da lista</button></div>').join('')||'<p class="note">Preencha a medida na calculadora e toque em Lançar para adicionar.</p>';
  linesHost.dataset.linesSignatureV753=linesSignature;
  }
  try{const totals=purchasePayloadV728(draft);purchaseElV728('purchaseTotalV728').textContent=(draft.stock==='estoque2'?'Estoque 2':'Estoque 1')+' · Madeira: '+finMoneyV722(totals.goodsCents)+' · Gastos acrescentados: '+finMoneyV722(totals.addedCents)+' · Compra: '+finMoneyV722(totals.totalCents);}catch{purchaseElV728('purchaseTotalV728').textContent=draft.lines.length+' item(ns) na lista. Preencha fornecedor, data e gastos para conferir o total.';}
@@ -32,22 +48,24 @@ function purchaseRenderV728(){
 }
 function purchaseFillV728(){const d=stockPurchaseDraftV728;for(const [id,key] of [['purchaseSupplierV728','supplier'],['purchaseDateV728','date'],['purchaseReferenceV728','reference'],['purchaseUnitV728','unit'],['purchaseFreightV728','freight'],['purchaseOtherV728','other']])purchaseElV728(id).value=d[key]||'';for(const [id,key] of [['purchaseEnabledV728','enabled'],['purchaseFreightIncludedV728','freightIncluded'],['purchaseOtherIncludedV728','otherIncluded']])purchaseElV728(id).checked=d[key]===true;purchaseRenderV728();}
 function stockPurchaseCaptureV728(item,destination){
- if(!['m3','granel'].includes(item.tipoMedida)||!purchaseOwnerV728()||!stockPurchaseDraftV728||!purchaseElV728('purchaseEnabledV728').checked)return false;
+ if(!['m3','granel','m2','linear'].includes(item.tipoMedida)||!purchaseOwnerV728()||!stockPurchaseDraftV728||!purchaseElV728('purchaseEnabledV728').checked)return false;
  const status=purchaseElV728('purchaseStatusV728');purchaseElV728('stockPurchaseV728').open=true;
  try{
   if(stockPurchaseBusyV728||stockPurchaseDraftV728.pending)throw Error('Confira a confirmação pendente antes de adicionar outra entrada.');
   if(stockPurchaseDraftV728.confirmed)throw Error('Esta compra já foi confirmada. Toque em Novo descarregamento.');
-  if(!['m3','granel'].includes(item.tipoMedida))throw Error('A compra está disponível para madeira em m³ e a granel.');
+  if(!['m3','granel','m2','linear'].includes(item.tipoMedida))throw Error('Selecione uma unidade de compra válida.');
   const draft=purchaseReadFieldsV728();if(draft.stock&&draft.stock!==destination)throw Error('Confirme esta lista no estoque escolhido antes de trocar de estoque.');
   const unitCents=financeCents(draft.unit.trim());
-  const line={id:item.id,madeiraId:item.madeiraId,madeira:item.madeira,tipoMedida:item.tipoMedida,largura:Number(item.largura||0),espessura:Number(item.espessura||0),comprimento:Number(item.comprimento||0),quantidade:Number(item.quantidade||0),volume:Number(item.volume||0),estadoMadeira:item.tipoMedida==='m3'&&$('chkMadeiraVerde')?.checked?'verde':'seca',unitCents};
-  const next={...draft,stock:destination,supplier:draft.supplier||String(item.fornecedorOrigem||''),lines:groupStockPurchaseLinesV754([...draft.lines,line])};
+  const line={id:item.id,madeiraId:item.madeiraId,madeira:item.madeira,tipoMedida:item.tipoMedida,largura:Number(item.largura||0),espessura:Number(item.espessura||0),comprimento:Number(item.comprimento||0),quantidade:Number(item.quantidade||0),volume:purchasePhysicalQuantityV755(item),estadoMadeira:item.tipoMedida==='m3'&&$('chkMadeiraVerde')?.checked?'verde':'seca',unitCents};
   // Validate physical quantity and price now; supplier may be completed before confirmation.
   if(line.estadoMadeira==='verde')line.secagemDias=Number($('diasSecagemVerde')?.value||0);
+  if(item.tipoMedida==='linear')Object.assign(line,{produto:String(item.produto||''),codigoProduto:String(item.codigoProduto||''),...(item.linearTotalV744===true?{linearTotalV744:true}:{})});
+  if(item.tipoMedida==='m2'&&item.contadoComoPacote===true)Object.assign(line,{purchasePacketsV755:1,purchasePiecesPerPacketV755:Number(item.quantidade)});
+  const next={...draft,stock:destination,supplier:draft.supplier||String(item.fornecedorOrigem||''),lines:groupStockPurchaseLinesV754([...draft.lines,line])};
   purchasePayloadV728({...next,supplier:next.supplier||'Fornecedor a preencher'});
   purchaseStoreV728(next);purchaseFillV728();status.textContent=next.lines.length<draft.lines.length+1?'Medida agrupada na lista: peças e volume somados. O estoque ainda não foi alterado.':'Item adicionado à lista. O estoque ainda não foi alterado.';
-  if(item.tipoMedida==='m3')prepararProximoLancamentoM3();else{$('volumeGranelV384').value='';calcPreview();}
- }catch(e){status.textContent=e.message;}
+  if(item.tipoMedida==='m3')prepararProximoLancamentoM3();else if(item.tipoMedida==='granel'){$('volumeGranelV384').value='';calcPreview();}else{if(item.tipoMedida==='linear'&&window.__smCalcKeyboardV733?.canResetAfterLaunch()!==false)$('comprimento').value='';calcPreview();if(typeof atualizarPainelPacotes==='function')atualizarPainelPacotes();}
+ }catch(e){if(item.contadoComoPacote===true&&typeof contadorPacotes!=='undefined'){contadorPacotes--;salvarContador();if(typeof atualizarPainelPacotes==='function')atualizarPainelPacotes();}status.textContent=e.message;}
  return true;
 }
 async function purchaseRequestV728(payload){

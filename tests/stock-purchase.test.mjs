@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {normalizeStockPurchase,stockCostKey,groupStockPurchaseLinesV754} from '../public/stock-purchase.mjs';
+import {normalizeStockPurchase,stockCostKey,groupStockPurchaseLinesV754,purchasePacketCountV755} from '../public/stock-purchase.mjs';
 import {confirmStockPurchase,purchaseRecordsPath,purchaseRecordId} from '../Netlify/Funtions/lib/stock-purchase.mjs';
 import {financeCollectionPath,saveFinanceEntry,cancelFinanceEntry} from '../Netlify/Funtions/lib/company-finance.mjs';
 import {projectLoadSales,saveLoadSaleConfig} from '../Netlify/Funtions/lib/load-sales.mjs';
@@ -123,4 +123,23 @@ test('grouping fractional dimensions recomputes physical volume without accumula
  const original=line({largura:1.234,espessura:2.345,comprimento:3.456,quantidade:1,volume:1.234/100*2.345/100*3.456});
  const rows=Array.from({length:201},(_,n)=>({...original,id:'line-'+n}));const grouped=groupStockPurchaseLinesV754(rows);assert.equal(grouped[0].volume,original.largura/100*original.espessura/100*original.comprimento*201);
  grouped[0].id=lineId;assert.doesNotThrow(()=>normalizeStockPurchase(purchase({lines:grouped})));
+});
+
+test('mixed m² and linear purchases create atomic physical entries with private costs and retry safely',async()=>{
+ const s=purchaseTestDb();s.records.set('empresas/tenant/dados/sm2_madeiras/registros/area',{nome:'Forro',tipoCadastro:'m2'});s.records.set('empresas/tenant/dados/sm2_madeiras/registros/metre',{nome:'Pinus',tipoCadastro:'linear',regrasLinear:[{tipo:'Ripa',codigo:'R1'},{tipo:'Rodapé',codigo:'RD'}]});
+ const area=line({madeiraId:'area',tipoMedida:'m2',largura:20,espessura:0,comprimento:3,quantidade:20,volume:12,unitCents:2500,purchasePacketsV755:2,purchasePiecesPerPacketV755:10});
+ const linear=line({id:'a2d00244-a75c-44a4-aa30-bd78176a744d',madeiraId:'metre',tipoMedida:'linear',produto:'Ripa',codigoProduto:'R1',largura:0,espessura:0,comprimento:0,quantidade:0,volume:70,unitCents:800,linearTotalV744:true});
+ const raw=purchase({lines:[area,linear],freightCents:1000,otherCents:0}),result=await confirmStockPurchase(s.db,s.identity,raw,at),receipt=result.receipt;
+ assert.equal(receipt.goodsCents,86000);assert.equal(receipt.totalCents,87000);assert.equal(receipt.lines.reduce((sum,l)=>sum+l.acquisitionCents,0),87000);
+ const areaRow=s.records.get('empresas/tenant/dados/sm2_estoque1/registros/'+receipt.lines[0].stockId),metreRow=s.records.get('empresas/tenant/dados/sm2_estoque1/registros/'+receipt.lines[1].stockId);
+ assert.equal(purchasePacketCountV755(areaRow),2);assert.equal(areaRow.quantidade,20);assert.equal(metreRow.produto,'Ripa');assert.equal(metreRow.codigoProduto,'R1');assert.equal(metreRow.linearTotalV744,true);assert.equal(metreRow.volumeReal,70);assert.equal(metreRow.quantidade,0);
+ for(const row of [areaRow,metreRow]){assert.equal(row.preco,0);assert.equal(row.valor,0);assert.equal(row.unitCents,undefined);assert.equal(row.acquisitionCents,undefined);}
+ assert((await confirmStockPurchase(s.db,s.identity,raw,at+1000)).repeated);
+});
+test('new purchase units reject inconsistent physical quantity, product, packet count and catalog changes',async()=>{
+ const area=line({tipoMedida:'m2',largura:20,espessura:0,comprimento:3,quantidade:10,volume:6});
+ const linear=line({tipoMedida:'linear',produto:'Ripa',largura:0,espessura:0,comprimento:3,quantidade:10,volume:30});
+ assert.equal(normalizeStockPurchase(purchase({lines:[linear]})).goodsCents,3000000);
+ for(const bad of [{...area,volume:7},{...area,purchasePacketsV755:2,purchasePiecesPerPacketV755:10},{...linear,volume:35},{...linear,produto:''},{...linear,quantidade:0},{...linear,linearTotalV744:true},{...area,estadoMadeira:'verde'}])assert.throws(()=>normalizeStockPurchase(purchase({lines:[bad]})));
+ const s=purchaseTestDb();s.records.set('empresas/tenant/dados/sm2_madeiras/registros/wood',{nome:'Pinus',tipoCadastro:'linear',regrasLinear:[{tipo:'Rodapé'}]});await assert.rejects(()=>confirmStockPurchase(s.db,s.identity,purchase({lines:[linear]}),at),/tipo de produto/);assert.equal(s.writes.length,0);
 });

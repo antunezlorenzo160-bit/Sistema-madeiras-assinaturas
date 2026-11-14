@@ -1,5 +1,5 @@
 import {normalizeOpeningStockCost} from './opening-stock-cost.mjs';
-import {stockCostKey,purchaseVolumeUnits} from './stock-purchase.mjs';
+import {stockCostKey,purchaseVolumeUnits,purchasePhysicalQuantityV755} from './stock-purchase.mjs';
 const costPrecisionV728=1000000n;
 const costRoundV728=(n,d)=>(n+d/2n)/d;
 function movementTimeV728(row){
@@ -52,7 +52,7 @@ export function projectWeightedStockCosts({purchases,movements,stock,openingPoli
   p.events.push({id:row.id,type,quantity,at:at||0,value,missingReason,conference:row.tipo==='ajuste'&&(row.ajusteConferenciaV391===true||row.ajusteConferenciaV390===true),loadId:type==='saida'?row.grupoCargaId:null});
  }
  for(const [id,line] of byMovement)if(!seen.has(id))invalidate(pool(line.costKey),'Falta o movimento de entrada de uma compra registrada. Aguarde a sincronização ou confira essa entrada.');
- const familyKey=key=>JSON.stringify(JSON.parse(key).slice(0,3)),families=new Map();
+ const familyKey=key=>{const parts=JSON.parse(key);return JSON.stringify(parts.slice(0,parts[1]==='linear'?4:3));},families=new Map();
  const known=p=>!p.invalid&&!p.unknown&&p.qty>0;
  const contribution=p=>known(p)?{qty:BigInt(p.qty),value:p.value}:{qty:0n,value:0n};
  const updateFamily=(p,previous)=>{
@@ -114,7 +114,7 @@ export function projectWeightedStockCosts({purchases,movements,stock,openingPoli
 }
 export function weightedCostForLoad(items,projection){
  const id=String(items[0]?.grupoCargaId||''),found=projection?.get(id);if(!found||found.pending)return {costCents:null,reason:projection?.unavailableReason||found?.reason||'Falta o movimento de saída vinculado a esta carga. Aguarde a sincronização ou confira a baixa.'};
- const expected=new Map();for(const item of items){const key=stockCostKey(item);if(!key)return {costCents:null,reason:'Custo automático disponível para madeira em m³ e a granel.'};let quantity;try{const physical=(item.tipoMedida||item.tipoCadastro||'m3')==='granel'?Number(item.volume):Number(item.largura)/100*Number(item.espessura)/100*Number(item.comprimento)*Number(item.quantidade);quantity=purchaseVolumeUnits(physical);}catch{return {costCents:null,reason:'Volume da carga inválido.'};}expected.set(key,(expected.get(key)||0)+quantity);}
+ const expected=new Map();for(const item of items){const key=stockCostKey(item);if(!key)return {costCents:null,reason:'Falta a identificação da unidade ou do produto para calcular o custo.'};let quantity;try{const physical=purchasePhysicalQuantityV755(item);quantity=purchaseVolumeUnits(physical);}catch{return {costCents:null,reason:'Volume da carga inválido.'};}expected.set(key,(expected.get(key)||0)+quantity);}
  if(expected.size!==found.volumes.size||[...expected].some(([key,qty])=>Math.abs(qty-(found.volumes.get(key)||0))>Math.min(1000,Math.max(10,items.length+(found.tolerances?.get(key)||0)))))return {costCents:null,reason:'As medidas ou volumes da carga não coincidem com a baixa registrada.'};
  const costCents=Number(costRoundV728(found.value,costPrecisionV728));if(!Number.isSafeInteger(costCents)||costCents<0)return {costCents:null,reason:'Custo acima do limite de cálculo.'};return {costCents,reason:null,usesConferenceAverage:found.usesConferenceAverage===true,usesSpeciesReference:found.usesSpeciesReference===true};
 }

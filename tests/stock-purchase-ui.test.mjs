@@ -1,10 +1,10 @@
 import test from 'node:test';import assert from 'node:assert/strict';import vm from 'node:vm';import {readFileSync} from 'node:fs';import {randomUUID} from 'node:crypto';
-import {normalizeStockPurchase,groupStockPurchaseLinesV754} from '../public/stock-purchase.mjs';import {financeCents} from '../public/company-finance.mjs';
+import {normalizeStockPurchase,groupStockPurchaseLinesV754,purchasePhysicalQuantityV755,purchasePacketCountV755} from '../public/stock-purchase.mjs';import {financeCents} from '../public/company-finance.mjs';
 function setup(storage=new Map()){
  const nodes={},inputs=[];for(const [,id] of readFileSync(new URL('../ui/stock-purchase.html',import.meta.url),'utf8').matchAll(/id="([^"]+)"/g))nodes[id]={id,dataset:{},value:'',checked:false,hidden:false,disabled:false,textContent:'',innerHTML:'',handlers:{},addEventListener(k,fn){this.handlers[k]=fn;},querySelectorAll:()=>inputs};
  const inputIds=['purchaseEnabledV728','purchaseSupplierV728','purchaseDateV728','purchaseReferenceV728','purchaseUnitV728','purchaseFreightV728','purchaseOtherV728','purchaseFreightIncludedV728','purchaseOtherIncludedV728'];inputs.push(...inputIds.map(id=>nodes[id]));
  const calls=[],timers=[],member={papel:'admin'};let send=async()=>{throw Error('Sem resposta');};
- const c={console,Date,AbortSignal,normalizeStockPurchase,groupStockPurchaseLinesV754,financeCents,finMoneyV722:cents=>(cents/100).toFixed(2),num4:n=>Number(n).toFixed(4),esc:String,crypto:{randomUUID},empresaV456:'tenant',parent:{__smEmployeeMember:()=>member},navigator:{onLine:true},authV456:{currentUser:{getIdToken:async()=> 'token'}},window:{__v456Local:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)}},document:{getElementById:id=>nodes[id],addEventListener(){}},destinoSelecionado:()=> 'estoque1',modoMedida:'m3',$:()=>({checked:false}),prepararProximoLancamentoM3(){},calcPreview(){},setTimeout:fn=>timers.push(fn),confirm:()=>true,fetch:async(url,options)=>{calls.push({url,options});return send(url,options);},sincronizarOfflineOps:async()=>{},waitForPendingWrites:async()=>{},temOperacoesPendentesV428:()=>false,COL:{estoque1:'stock1',estoque2:'stock2',movimentos:'moves'},db:{},doc:()=>{},getDocFromServer:async()=>({exists:()=>false}),estoque1Lancamentos:[],estoque2Lancamentos:[],lancamentos:[],movimentos:[],save(){},renderEstoque(){},renderLancamentos(){},renderPlanilhasM3Especies(){}};
+ const c={console,Date,AbortSignal,normalizeStockPurchase,groupStockPurchaseLinesV754,purchasePhysicalQuantityV755,financeCents,finMoneyV722:cents=>(cents/100).toFixed(2),num4:n=>Number(n).toFixed(4),esc:String,crypto:{randomUUID},empresaV456:'tenant',parent:{__smEmployeeMember:()=>member},navigator:{onLine:true},authV456:{currentUser:{getIdToken:async()=> 'token'}},window:{__v456Local:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)}},document:{getElementById:id=>nodes[id],addEventListener(){}},destinoSelecionado:()=> 'estoque1',modoMedida:'m3',$:()=>({checked:false}),prepararProximoLancamentoM3(){},calcPreview(){},setTimeout:fn=>timers.push(fn),confirm:()=>true,fetch:async(url,options)=>{calls.push({url,options});return send(url,options);},sincronizarOfflineOps:async()=>{},waitForPendingWrites:async()=>{},temOperacoesPendentesV428:()=>false,COL:{estoque1:'stock1',estoque2:'stock2',movimentos:'moves'},db:{},doc:()=>{},getDocFromServer:async()=>({exists:()=>false}),estoque1Lancamentos:[],estoque2Lancamentos:[],lancamentos:[],movimentos:[],save(){},renderEstoque(){},renderLancamentos(){},renderPlanilhasM3Especies(){}};
  vm.createContext(c);vm.runInContext(readFileSync(new URL('../ui/stock-purchase.js',import.meta.url),'utf8'),c);timers.forEach(fn=>fn());nodes.purchaseEnabledV728.checked=true;nodes.purchaseSupplierV728.value='Fornecedor';nodes.purchaseUnitV728.value='1000,00';
  return {c,nodes,calls,member,storage,setSend:fn=>send=fn};
 }
@@ -24,7 +24,7 @@ test('offline confirmation preserves draft; employee cannot capture or confirm f
 });
 test('invalid price or changed stock cannot silently enter the old stock flow; unsupported unit keeps old flow',()=>{
  const s=setup();s.nodes.purchaseUnitV728.value='';assert(s.c.stockPurchaseCaptureV728(item(),'estoque1'));assert.equal(s.c.estoque1Lancamentos.length,0);assert(!s.storage.has('stock_purchase_v728:tenant'));
- s.nodes.purchaseUnitV728.value='1000';s.c.stockPurchaseCaptureV728(item(),'estoque1');assert(s.c.stockPurchaseCaptureV728(item(),'estoque2'));assert.equal(JSON.parse(s.storage.get('stock_purchase_v728:tenant')).lines.length,1);assert.match(s.nodes.purchaseStatusV728.textContent,/estoque escolhido/);assert.equal(s.c.stockPurchaseCaptureV728({...item(),tipoMedida:'m2'},'estoque1'),false);
+ s.nodes.purchaseUnitV728.value='1000';s.c.stockPurchaseCaptureV728(item(),'estoque1');assert(s.c.stockPurchaseCaptureV728(item(),'estoque2'));assert.equal(JSON.parse(s.storage.get('stock_purchase_v728:tenant')).lines.length,1);assert.match(s.nodes.purchaseStatusV728.textContent,/estoque escolhido/);assert.equal(s.c.stockPurchaseCaptureV728({...item(),tipoMedida:'invalid'},'estoque1'),false);
 });
 test('a browser using temporary memory cannot submit a purchase that may lose its retry identity',async()=>{
  const s=setup();s.c.stockPurchaseCaptureV728(item(),'estoque1');s.c.window.__v456Local.durable=false;await s.c.purchaseConfirmV728();assert.equal(s.calls.length,0);assert.match(s.nodes.purchaseStatusV728.textContent,/não está preservando/);
@@ -58,4 +58,23 @@ test('existing unconfirmed draft groups on opening, while pending and confirmed 
  for(const locked of [{pending:{original:'immutable'}},{confirmed:true}]){
   const original={...draft,...locked},raw=JSON.stringify(original);s.storage.set(key,raw);setup(s.storage);assert.equal(s.storage.get(key),raw);
  }
+});
+
+test('purchase captures m² packets and linear total with unit labels and no physical write',()=>{
+ const s=setup();s.c.modoMedida='m2';s.c.stockPurchaseVisibilityV728();assert.equal(s.nodes.stockPurchaseV728.hidden,false);assert.match(s.nodes.purchaseUnitLabelV755.textContent,/m²/);assert.equal(s.nodes.purchaseUnitV728.value,'');s.nodes.purchaseUnitV728.value='25';
+ const area={...item(),tipoMedida:'m2',largura:20,espessura:0,comprimento:3,quantidade:10,volume:6,contadoComoPacote:true};
+ s.c.stockPurchaseCaptureV728(area,'estoque1');s.c.stockPurchaseCaptureV728({...area,id:randomUUID()},'estoque1');
+ let draft=JSON.parse(s.storage.get('stock_purchase_v728:tenant'));assert(Math.abs(draft.lines[0].volume-12)<1e-8);assert.equal(draft.lines[0].quantidade,20);assert.equal(draft.lines[0].purchasePacketsV755,2);assert.match(s.nodes.purchaseLinesV728.innerHTML,/m²/);
+ s.c.modoMedida='linear';s.c.stockPurchaseVisibilityV728();assert.equal(s.nodes.purchaseUnitV728.value,'');s.nodes.purchaseUnitV728.value='8';
+ const total={...item(),tipoMedida:'linear',produto:'Ripa',codigoProduto:'R1',largura:0,espessura:0,comprimento:0,quantidade:0,volume:70,volumeReal:70,linearTotalV744:true};s.c.stockPurchaseCaptureV728(total,'estoque1');
+ draft=JSON.parse(s.storage.get('stock_purchase_v728:tenant'));assert.equal(draft.lines.length,2);assert.equal(draft.lines[1].volume,70);assert.equal(draft.lines[1].quantidade,0);assert.match(s.nodes.purchaseLinesV728.innerHTML,/Metragem total/);assert.equal(s.c.estoque1Lancamentos.length,0);
+});
+
+test('generated summary and stock sheet show grouped purchase packet counts and total pieces accurately',()=>{
+ const raw=readFileSync(new URL('../public/index.html',import.meta.url),'utf8'),app=JSON.parse(raw.match(/const TEMPLATE\s*=\s*("(?:\\.|[^"\\])*")/)[1]);
+ const row={tipoMedida:'m2',madeiraId:'wood',largura:20,comprimento:3,quantidade:20,volume:12,contadoComoPacote:true,purchasePacketsV755:2,purchasePiecesPerPacketV755:10};
+ const c={purchasePacketCountV755,chaveAgrupamentoItem:()=> 'same',filtrados:[row]};vm.createContext(c);
+ const start=app.indexOf('function agruparItensResumoCalculadora('),end=app.indexOf('function fonteResumoAtual()',start);vm.runInContext(app.slice(start,end),c);
+ const group=c.agruparItensResumoCalculadora([row])[0];assert.equal(group.pacotes,2);assert.equal(group.pecasPacote,10);assert.equal(group.quantidade,20);
+ const pos=app.indexOf('g.pecasTotal+=Number(x.quantidade||0);'),a=app.lastIndexOf('const grupos=new Map();',pos),b=app.indexOf('const linhas=[...grupos.values()];',pos);assert(a>=0&&b>a);vm.runInContext(app.slice(a,b)+';globalThis.stockRows=[...grupos.values()];',c);assert.equal(c.stockRows[0].pecasPacote,10);assert.equal(c.stockRows[0].pacotes,2);assert.equal(c.stockRows[0].pecasTotal,20);
 });

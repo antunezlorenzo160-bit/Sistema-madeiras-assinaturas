@@ -20,6 +20,13 @@ export function applyPendingPreview(html){
  replace('    carregamentos.push({...salvo});\n    lancamentos.push({...salvo});','    const priced=attachPriceV710(salvo,carregamentos.filter(i=>i.grupoCargaId===salvo.grupoCargaId));\n    Object.assign(salvo,priceLoadServices(priced));\n    carregamentos.push({...salvo});\n    lancamentos.push({...salvo});\n    repriceLoadsV710();\n    Object.assign(salvo,carregamentos.find(i=>i.id===salvo.id)||salvo);');
  // The reusable-client listener lives outside V407's closure; use its own field schema.
  replace('for(const[k]of camposClienteV407){const campo=form.querySelector(', 'for(const[k]of camposClientesV492){const campo=form.querySelector(');
+ // V755: purchase packets carry their true count even when measures were grouped.
+ app=app.replaceAll('g.pacotes+=1','g.pacotes+=purchasePacketCountV755(x)');
+ app=app.replaceAll('if(x.contadoComoPacote===true)g.pacotes', 'if(x.contadoComoPacote===true&&purchasePacketCountV755(x)>0)g.pacotes');
+ replace('const pecasPacote=Number(x.quantidade||0);', 'const pecasPacote=Number(x.purchasePiecesPerPacketV755||x.quantidade||0);');
+ replace('g.pecasTotal+=pecasPacote;', 'g.pecasTotal+=Number(x.quantidade||0);');
+ replace("const k=chaveAgrupamentoItem(x)+(t==='m2'?`|Q${Number(x.quantidade||0).toFixed(6)}`:'');", "const k=chaveAgrupamentoItem(x)+(t==='m2'?`|Q${Number(x.purchasePiecesPerPacketV755||x.quantidade||0).toFixed(6)}`:'');");
+ replace('pecasPacote:Number(x.quantidade||0)', 'pecasPacote:Number(x.purchasePiecesPerPacketV755||x.quantidade||0)');
  // V752: remove the optional identification helper requested by the user.
  replace('<small id="ajudaIdentificacaoMovimento" class="muted">Opcional. Se não preencher, o histórico mostrará —.</small>', '');
  // V751: short labels for the calculator load actions; handlers stay untouched.
