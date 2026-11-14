@@ -1,4 +1,11 @@
+import {financeCents} from './company-finance.mjs';
 const paymentUuidV757=/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i;
+// Accept normal Brazilian currency grouping, but never guess malformed mixed separators.
+export function purchasePaymentCentsV758(value){
+ const text=String(value??'').trim();
+ if(/^\d{1,3}(?:\.\d{3})+,\d{1,2}$/.test(text))return financeCents(text.replaceAll('.',''));
+ try{return financeCents(text);}catch{throw Error('Confira o valor. Exemplo: 1575,57 ou 1.575,57. Para quitar, toque em Usar saldo restante.');}
+}
 export function paymentDateV757(value){return typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&Number.isFinite(Date.parse(value+'T12:00:00Z'))&&new Date(value+'T12:00:00Z').toISOString().slice(0,10)===value;}
 export function normalizePurchasePaymentV757(input,totalCents,purchaseDate){
  if(!input||typeof input!=='object'||Array.isArray(input)||Object.keys(input).some(k=>!['mode','dueDate','paidDate','paidCents'].includes(k))||!['cash','credit','partial'].includes(input.mode))throw Error('Selecione à vista, a prazo ou pagamento parcial.');

@@ -47,3 +47,10 @@ test('all units and logs normalize terms without changing physical quantities or
  }
  const logs=normalizeLogPurchaseV756({...base,lines:[{id:uuid2,especie:'Pinus',diametro:30,comprimento:5,quantidade:21,unitCents:5000}],payment:payment({mode:'credit'})});assert.equal(logs.payment.paidCents,0);assert.equal(logs.totalQuantity,21);
 });
+test('third payment closes the exact reported balance and retry never records a fourth payment',async()=>{
+ const s=setup(entry({date:'2026-11-14',amountCents:467557})),start=request({payment:payment({paidCents:10000,paidDate:'2026-11-14',dueDate:'2026-11-14'})});await savePurchasePayment(s.db,s.identity,start,now);
+ const second={companyId:'tenant',entryId:id,revision:2,operationId:op2,action:'pay',date:'2026-11-14',amountCents:300000};await savePurchasePayment(s.db,s.identity,second,now);
+ const third={...second,revision:3,operationId:'931b625b-64d5-43bf-865e-d1bdf159f021',amountCents:157557},result=await savePurchasePayment(s.db,s.identity,third,now),report=purchaseAccountsV757([result.entry],{from:'2026-11-14',to:'2026-11-14'});
+ assert.equal(result.entry.settlement.payments.length,3);assert.equal(report.paidInPeriodCents,467557);assert.equal(report.payableCents,0);assert.equal(report.rows[0].paidCents,467557);const writes=s.writes.length;await savePurchasePayment(s.db,s.identity,third,now);assert.equal(s.writes.length,writes);
+ await assert.rejects(()=>savePurchasePayment(s.db,s.identity,{...third,revision:4,operationId:'a3b1ea61-b24a-4594-8892-05db7b0178e7',amountCents:1},now),/restante/);
+});
