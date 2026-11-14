@@ -1,3 +1,4 @@
+import {applyLinearTotalV744} from './linear-total-build.mjs';
 import {readFileSync,writeFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
@@ -9,7 +10,7 @@ export function applyPendingPreview(html){
  let app=JSON.parse(html.slice(start,end));if(app.includes('// PENDING_PREVIEW_V710'))return html;
  const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
  const replace=(a,b)=>{if(!app.includes(a)||app.indexOf(a)!==app.lastIndexOf(a))throw Error('Trecho da prévia mudou: '+a.slice(0,80));app=app.replace(a,()=>b);};
- const pure=['public/document-pricing.mjs','public/compact-load-tables.mjs','public/compact-documents.mjs','public/sheet-item-totals.mjs','public/stock-charts.mjs','public/company-finance.mjs','public/load-transport.mjs','public/load-sales.mjs','public/minimum-profit.mjs','public/stock-purchase.mjs','public/opening-stock-cost.mjs','public/finance-reconciliation.mjs','public/shared-trips.mjs'].map(p=>read(p).replace(/^import .*;\n/gm,'').replaceAll('export ','')).join('\n');
+ const pure=['public/document-pricing.mjs','public/compact-load-tables.mjs','public/compact-documents.mjs','public/sheet-item-totals.mjs','public/stock-charts.mjs','public/company-finance.mjs','public/load-transport.mjs','public/load-sales.mjs','public/minimum-profit.mjs','public/stock-purchase.mjs','public/opening-stock-cost.mjs','public/finance-reconciliation.mjs','public/shared-trips.mjs','public/linear-total.mjs'].map(p=>read(p).replace(/^import .*;\n/gm,'').replaceAll('export ','')).join('\n');
  const helpers=read('ui/preview-pricing.js')+'\n'+read('ui/compact-print-settings.js')+'\n'+read('ui/sheet-totals.js')+'\n'+read('ui/stock-charts.js')+'\n'+read('ui/company-finance.js')+'\n'+read('ui/reports.js')+'\n'+read('ui/load-transport.js')+'\n'+read('ui/stock-purchase.js')+'\n'+read('ui/shared-trips.js');
  replace('function calcPreview(){','// PENDING_PREVIEW_V710\n'+pure+'\n'+helpers+'\nfunction calcPreview(){');
  app=app.replace('function calcPreview(){', 'function calcPreview(){calcPreviewBaseV710();stockPurchaseVisibilityV728();document.getElementById("pricePreviewV710")?.remove();previewDocumentValueV710();}\nfunction calcPreviewBaseV710(){');
@@ -53,6 +54,7 @@ export function applyPendingPreview(html){
  replace('<section id="estoque" class="tab">',reports+'<section id="estoque" class="tab">');
  const loadMenu='<button type="button" class="inicio-atalho-v464" data-inicio-destino="carregamentos">';
  replace(loadMenu,'<button type="button" class="inicio-atalho-v464" data-inicio-destino="relatorios"><strong>Gráficos e relatórios</strong><span>Indicadores e acompanhamento</span></button>'+loadMenu);
+ app=applyLinearTotalV744(app);
  // Menu action icons are cloned into the sidebar along with their existing controls.
  const menuIconsV731={'Sair da conta':['🚪','Sair da conta'],'⚙ Configurações':['⚙','Configurações'],'Clientes':['👥','Clientes'],'Empresa':['🏢','Empresa'],'Madeiras':['🌳','Madeiras'],'Calculadora':['🧮','Calculadora'],'Orçamentos':['📝','Orçamentos'],'Pedidos':['📋','Pedidos'],'Estoque':['📦','Estoque'],'Movimentações':['🔄','Movimentações'],'Gráficos e relatórios':['📊','Gráficos e relatórios'],'Carregamentos':['🚚','Carregamentos']};
  const menuIconV731=icon=>'<i class="menu-acao-v731" aria-hidden="true">'+icon+'</i> ';

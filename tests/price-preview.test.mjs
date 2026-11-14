@@ -48,3 +48,7 @@ test('offline linear type selection previews prices repeatedly without repricing
  // The existing launch/render path still applies wholesale to real saved lines.
  s.c.repriceLoadsV710();assert(s.writes.length>0);assert.equal(s.c.carregamentos.find(i=>i.id==='linear-row').preco,9);
 });
+
+test('an empty linear quantity previews the entered total metres instead of zero',()=>{
+ const s=setup({volume:0});s.c.modoMedida='linear';s.nodes.quantidade.value='';s.nodes.comprimento.value='70';s.nodes.precoTipoLinear={textContent:''};s.c.madeiras[0]={id:'wood',tipoCadastro:'linear',regrasLinear:[{tipo:'Cemalha',precoVarejo:10.4,precoAtacado:10}]};s.c.regraLinearSelecionadaV381=()=>s.c.madeiras[0].regrasLinear[0];s.c.selecionarServicosLinear=()=>({});s.c.cobrarServicosLinear=i=>({...i,valor:i.volume*i.preco});s.c.previewDocumentValueV710();assert.match(s.nodes.previewValor.textContent,/728,00/);assert.equal(s.writes.length,0);
+});

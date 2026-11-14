@@ -91,10 +91,11 @@ function previewDocumentValueV710(){
  if(destination==='carga'&&modoMedida!=='linear')repriceLoadsV710();
  const wood=madeiras.find(m=>String(m.id)===String($('calcMadeira')?.value||''));if(!wood)return;
  const kind=modoMedida==='m3fechado'?'m3':modoMedida;
- const width=Number($('largura')?.value||0),thickness=Number($('espessura')?.value||0),length=Number($('comprimento')?.value||0),quantity=Number($('quantidade')?.value||0);
+ const width=Number($('largura')?.value||0),thickness=Number($('espessura')?.value||0),length=Number($('comprimento')?.value||0),quantity=kind==='linear'&&String($('quantidade')?.value??'').trim()===''?1:Number($('quantidade')?.value||0);
  const v=kind==='m2'?width/100*length*quantity*(quantidadePacotesPrevia()||1):kind==='linear'?length*quantity:kind==='granel'?Number($('volumeGranelV384')?.value||0):modoMedida==='m3fechado'?Number($('volumeFechadoV387')?.value||0):width/100*thickness/100*length*quantity;
  const others=destination==='orcamento'?orcamento:carregamentos.filter(i=>i.grupoCargaId===sessaoCargaAtual&&i.cargaStatus==='montagem');
  const candidate={id:'price-preview-only',madeiraId:wood.id,tipoMedida:kind,largura:width,espessura:thickness,comprimento:length,quantidade:quantity,volume:v>0?v:0,volumeReal:v>0?v:0,preco:Number($('precoM3')?.value||0),produto:kind==='linear'?regraLinearSelecionadaV381()?.tipo||'':wood.produto||'',estadoMadeira:modoMedida==='m3fechado'&&$('chkVerdeFechado')?.checked?'verde':'seca'};
+ if(kind==='linear'&&String($('quantidade')?.value??'').trim()===''){candidate.comprimento=0;candidate.quantidade=0;candidate.linearTotalV744=true;}
  const attached=attachPriceV710(candidate,others);if(!attached.autoPriceV1)return;
  const price=applyDocumentPrices([...others,attached]).at(-1);
  if(kind==='m3'){
