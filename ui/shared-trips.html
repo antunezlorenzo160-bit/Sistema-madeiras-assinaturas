@@ -1,0 +1,35 @@
+<details class="card no-print" id="sharedTripsV741">
+ <summary>🚚 Viagens com vários clientes</summary>
+ <button type="button" class="btn btn-secondary" data-trip-back-list>← Voltar à lista de carregamentos</button>
+ <p class="note">Reúna os carregamentos individuais em uma viagem para o mesmo destino. Cada cliente mantém seu documento e sua baixa. Os gastos compartilhados são registrados uma vez e divididos pelo volume físico em m³.</p>
+ <div class="fin-form-grid"><label>Cargas e viagens de<input type="date" id="tripFromV741"></label><label>Até<input type="date" id="tripToV741"></label></div>
+ <button type="button" class="btn btn-secondary" id="tripListV741">Consultar cargas e viagens</button>
+ <div id="tripSavedV741"></div>
+ <form id="tripFormV741">
+  <h4 id="tripTitleV741">Nova viagem compartilhada</h4>
+  <div class="fin-form-grid">
+   <label>Data dos gastos<input type="date" id="tripDateV741" required></label>
+   <label>Destino comum<input id="tripDestinationV741" maxlength="180" required placeholder="Cidade / local de entrega"></label>
+   <label>Placa / caminhão<input id="tripTruckV741" maxlength="30"></label>
+   <label>Motorista<input id="tripDriverV741" maxlength="120"></label>
+  </div>
+  <h4>Carregamentos dos clientes</h4><p class="note">Selecione de 2 a 20 carregamentos fechados, em m³. Todos os tipos de madeira do pedido entram no volume. Documentos de cliente continuam sendo emitidos pelo carregamento original.</p>
+  <div id="tripCandidatesV741"><p class="note">Toque em Consultar cargas e viagens.</p></div>
+  <h4>Gastos comuns da viagem</h4><p class="note">Informe os gastos reais uma única vez. Não repita aqui despesas já lançadas nas cargas. Se houver transportador contratado, evite repetir os mesmos custos como transporte próprio.</p>
+  <div class="fin-form-grid">
+   <label>Transportador contratado (R$)<input inputmode="decimal" id="tripCost_carrierV741" value="0,00"></label>
+   <label>Combustível (R$)<input inputmode="decimal" id="tripCost_fuelV741" value="0,00"></label>
+   <label>Pedágios (R$)<input inputmode="decimal" id="tripCost_tollsV741" value="0,00"></label>
+   <label>Motorista (R$)<input inputmode="decimal" id="tripCost_driverV741" value="0,00"></label>
+   <label>Manutenção / pneus (R$)<input inputmode="decimal" id="tripCost_maintenanceV741" value="0,00"></label>
+   <label>Manuseio / funcionários (R$)<input inputmode="decimal" id="tripCost_handlingV741" value="0,00"></label>
+   <label>Outros gastos (R$)<input inputmode="decimal" id="tripCost_otherV741" value="0,00"></label>
+  </div>
+  <label class="trip-check-v741"><input type="checkbox" id="tripAckV741"> Conferi: os gastos já registrados nas cargas são exclusivos desses clientes e não estão repetidos nos gastos comuns acima.</label>
+  <p class="note" id="tripPreviewV741"></p>
+  <div class="fin-actions"><button type="submit" class="btn btn-primary" id="tripSaveV741" disabled>Salvar viagem e rateio</button><button type="button" class="btn btn-secondary" id="tripNewV741">Nova viagem</button><button type="button" class="btn btn-danger" id="tripCancelV741" hidden>Cancelar esta viagem</button></div>
+ </form>
+ <p class="note" role="status" id="tripStatusV741"></p>
+ <div id="tripReportV741"></div>
+ <button type="button" class="btn btn-secondary" id="tripPrintV741" hidden>Romaneio geral / PDF da viagem</button>
+</details>

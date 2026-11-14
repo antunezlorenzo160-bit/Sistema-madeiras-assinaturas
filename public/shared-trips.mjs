@@ -1,0 +1,25 @@
+import {stockChartDate} from './stock-charts.mjs';
+export const TRIP_COSTS=Object.freeze({carrier:'Transportador contratado',fuel:'Combustível',tolls:'Pedágios',driver:'Motorista',maintenance:'Manutenção / pneus',handling:'Manuseio / funcionários',other:'Outros gastos'});
+export function normalizeSharedTrip(input){
+ const keys=['companyId','id','revision','date','destination','truck','driver','loadIds','costs','status','acknowledgeExistingExpenses'];
+ if(!input||typeof input!=='object'||Array.isArray(input)||Object.keys(input).some(k=>!keys.includes(k)))throw Error('Dados da viagem inválidos.');
+ if(!/^[-\w]{1,120}$/.test(input.companyId||'')||!(/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i).test(input.id||'')||!Number.isSafeInteger(input.revision)||input.revision<0)throw Error('Empresa ou versão da viagem inválida.');
+ if(typeof input.date!=='string'||stockChartDate(input.date)!==input.date||!['active','cancelled'].includes(input.status)||typeof input.acknowledgeExistingExpenses!=='boolean')throw Error('Confira a data e o estado da viagem.');
+ const text=(v,max)=>{if(typeof v!=='string'||v.length>max||/[\u0000-\u001f]/.test(v))throw Error('Confira destino, placa e motorista.');return v.trim();};
+ const destination=text(input.destination,180),truck=text(input.truck,30),driver=text(input.driver,120);if(!destination)throw Error('Informe o destino comum da viagem.');
+ if(!Array.isArray(input.loadIds)||input.loadIds.length<2||input.loadIds.length>20||input.loadIds.some(id=>typeof id!=='string'||!id||id.length>180||/[\u0000-\u001f]/.test(id))||new Set(input.loadIds).size!==input.loadIds.length)throw Error('Selecione de 2 a 20 carregamentos diferentes.');
+ if(!input.costs||typeof input.costs!=='object'||Array.isArray(input.costs)||Object.keys(input.costs).some(k=>!Object.hasOwn(TRIP_COSTS,k)))throw Error('Gastos da viagem inválidos.');
+ const costs={};let totalCents=0;for(const key of Object.keys(TRIP_COSTS)){const n=input.costs[key];if(!Number.isSafeInteger(n)||n<0||n>100000000000)throw Error('Informe gastos válidos em reais.');costs[key]=n;totalCents+=n;}
+ if(totalCents>100000000000)throw Error('Gastos da viagem acima do limite.');
+ return {companyId:input.companyId,id:input.id,revision:input.revision,date:input.date,destination,truck,driver,loadIds:[...input.loadIds].sort(),costs,totalCents,status:input.status,acknowledgeExistingExpenses:input.acknowledgeExistingExpenses};
+}
+export function allocateTripCosts(totalCents,loads){
+ if(!Number.isSafeInteger(totalCents)||totalCents<0||totalCents>100000000000||!Array.isArray(loads)||loads.length<2||loads.length>20)throw Error('Não foi possível conferir o rateio.');
+ const sorted=[...loads].sort((a,b)=>a.loadId.localeCompare(b.loadId)),ids=new Set();let sum=0n;
+ const weighted=sorted.map(load=>{const units=Math.round(load.physicalM3*1e9);if(typeof load.loadId!=='string'||!load.loadId||ids.has(load.loadId)||!Number.isFinite(load.physicalM3)||load.physicalM3<=0||!Number.isSafeInteger(units)||units<=0)throw Error('O rateio exige volume físico em m³ em todos os carregamentos.');ids.add(load.loadId);sum+=BigInt(units);return {...load,units:BigInt(units)};});
+ let accumulated=0n,assigned=0;return weighted.map(({units,...load})=>{accumulated+=units;const target=Number((BigInt(totalCents)*accumulated+sum/2n)/sum),amountCents=target-assigned;assigned=target;return {...load,amountCents};});
+}
+export function sharedTripDocument(report){
+ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),num=n=>Number(n||0).toLocaleString('pt-BR',{maximumFractionDigits:4});
+ return '<!doctype html><html lang="pt-BR"><meta charset="utf-8"><title>Romaneio da viagem</title><style>@page{size:A4;margin:12mm}body{font:12px Arial;color:#172e23}h1{font-size:22px}h2{font-size:15px;margin-top:24px}table{border-collapse:collapse;width:100%}th,td{text-align:left;padding:5px;border-bottom:1px solid #bbb}thead{display:table-header-group}tr{break-inside:avoid}.note{font-size:11px;color:#555}</style><h1>Romaneio geral da viagem</h1><p class="note">Prévia — documento de teste. Documentos individuais permanecem separados por cliente.</p><p>Data: '+esc(report.trip.date)+' · Destino: '+esc(report.trip.destination)+'</p><p>Caminhão: '+esc(report.trip.truck||'Não informado')+' · Motorista: '+esc(report.trip.driver||'Não informado')+'</p>'+report.loads.map(load=>'<section><h2>'+esc(load.customer||'Cliente não informado')+' · '+num(load.physicalM3)+' m³</h2><table><thead><tr><th>Espécie / produto</th><th>Peças</th><th>Esp. cm</th><th>Larg. cm</th><th>Comp. m</th><th>m³</th></tr></thead><tbody>'+load.items.map(i=>'<tr><td>'+esc(i.madeira||i.especie||i.produto||'Madeira')+'</td><td>'+num(i.quantidade)+'</td><td>'+num(i.espessura)+'</td><td>'+num(i.largura)+'</td><td>'+num(i.comprimento)+'</td><td>'+num(i.physicalM3)+'</td></tr>').join('')+'</tbody></table></section>').join('')+'<p><strong>Volume total: '+num(report.loads.reduce((n,l)=>n+l.physicalM3,0))+' m³</strong></p></html>';
+}

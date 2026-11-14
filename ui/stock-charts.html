@@ -1,0 +1,32 @@
+<details id="stockChartsV720" class="card stock-charts-v720 no-print">
+ <summary><span aria-hidden="true">▥</span> Estoque e movimentação</summary>
+ <div class="sc-intro"><p>Compare entradas e saídas e acompanhe o estoque por espécie.</p><button type="button" id="scRefreshV720" class="btn btn-secondary">Atualizar gráficos</button></div>
+ <div class="sc-filters">
+  <label for="scStockV720">Estoque<select id="scStockV720"><option value="estoque1">Estoque 1</option><option value="estoque2">Estoque 2</option></select></label>
+  <label for="scKindV720">Unidade<select id="scKindV720"><option value="m3">m³ — Madeira</option><option value="m2">m² — Beneficiados</option><option value="linear">m — Metro linear</option><option value="granel">m³ — A granel</option></select></label>
+  <label for="scSpeciesV720">Espécie / produto<select id="scSpeciesV720"><option value="">Todas as espécies / produtos</option></select></label>
+  <label for="scFromV720">De<input id="scFromV720" type="date" required></label>
+  <label for="scToV720">Até<input id="scToV720" type="date" required></label>
+  <label for="scGroupV720">Agrupar por<select id="scGroupV720"><option value="day">Dia</option><option value="month">Mês</option></select></label>
+ </div>
+ <p id="scSyncV720" class="note" role="status"></p>
+ <p id="scErrorV720" class="sc-error" role="alert" hidden></p>
+ <div id="scResultsV720">
+  <div id="scStatsV720" class="sc-stats"></div>
+  <section class="sc-section" aria-labelledby="scMovementHeadingV720">
+   <h3 id="scMovementHeadingV720">Entradas e saídas no período</h3>
+   <p class="sc-legend"><span><i class="sc-in"></i> Entradas</span><span><i class="sc-out"></i> Saídas</span></p>
+   <p id="scMovementNoteV720" class="note"></p>
+   <div id="scMovementV720" class="sc-chart-scroll" tabindex="0" role="group" aria-label="Gráfico de entradas e saídas. Deslize para ver o período completo."></div>
+   <p id="scSelectedV720" class="note" role="status">Toque em um período do gráfico para conferir os números.</p>
+   <details id="scMovementDetailsV720" class="sc-number-details"><summary>Conferir números das movimentações</summary><div id="scMovementTableV720" class="sc-table-scroll"></div></details>
+  </section>
+  <section class="sc-section" aria-labelledby="scStockHeadingV720">
+   <h3 id="scStockHeadingV720">Estoque atual por espécie / produto</h3>
+   <p class="note">O estoque mostra o saldo atual. O filtro de datas vale apenas para as movimentações.</p>
+   <p id="scStockLegendV720" class="sc-legend"></p>
+   <div id="scInventoryV720"></div>
+   <details class="sc-number-details"><summary>Conferir números do estoque</summary><div id="scInventoryTableV720" class="sc-table-scroll"></div></details>
+  </section>
+ </div>
+</details>

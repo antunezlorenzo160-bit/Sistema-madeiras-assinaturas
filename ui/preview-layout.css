@@ -1,0 +1,170 @@
+#pricePolicyV710 input[type=checkbox]{width:auto}
+.price-notice-v710{padding:8px;border:1px solid currentColor;border-radius:6px}
+@media print{
+ body.custom-print #printAreaCustom .compact-load-row-v710{font-size:8pt!important;line-height:1.25!important;padding:1.2mm 0!important;border-bottom:.2mm solid #ccc;break-inside:avoid}
+ body.custom-print #printAreaCustom .compact-load-row-v710 span{display:inline!important;white-space:normal!important}
+ body.custom-print #printAreaCustom .compact-load-row-v710 span+span::before{content:' · '}
+ body.custom-print #printAreaCustom .compact-load-total-v710{font-size:8pt!important;font-weight:bold;break-inside:avoid}
+
+ body.custom-print #printAreaCustom:has(.compact-document-v710){font-size:8.5pt!important;line-height:1.15!important}
+ body.custom-print #printAreaCustom .compact-document-v710 .stats{display:flex!important;flex-wrap:wrap!important;gap:2mm!important;margin:2mm 0!important;break-inside:avoid}
+ body.custom-print #printAreaCustom .compact-document-v710 .stat{flex:1 1 25%;padding:1.5mm!important;min-height:0!important;margin:0!important}
+ body.custom-print #printAreaCustom .compact-document-v710 .stat small{font-size:7pt!important}
+ body.custom-print #printAreaCustom .compact-document-v710 .stat strong{font-size:9pt!important}
+ body.custom-print #printAreaCustom h2{font-size:13pt!important;margin:0 0 2mm!important}
+ body.custom-print #printAreaCustom h3{font-size:9pt!important;margin:2mm 0 1mm!important;break-after:avoid}
+ body.custom-print #printAreaCustom .v421-empresa-documento{margin:1mm 0 2mm!important;padding:1.5mm!important;min-height:0!important}
+ body.custom-print #printAreaCustom .v421-empresa-documento img{max-height:13mm!important;max-width:24mm!important}
+ body.custom-print #printAreaCustom .compact-columns-v710{column-count:2;column-gap:5mm;column-fill:balance;display:block!important}
+ body.custom-print #printAreaCustom .compact-group-v710{break-inside:auto;display:block!important;margin:0 0 2mm!important}
+ body.custom-print #printAreaCustom .compact-document-v710 table{width:100%!important;table-layout:auto!important;margin:0 0 2mm!important;border-collapse:collapse!important;break-inside:auto!important}
+ body.custom-print #printAreaCustom .compact-document-v710 th,
+ body.custom-print #printAreaCustom .compact-document-v710 td{font-size:8pt!important;line-height:1.15!important;padding:1mm .7mm!important;white-space:normal!important;height:auto!important;min-height:0!important;overflow-wrap:anywhere!important}
+ body.custom-print #printAreaCustom .compact-columns-v710 th,
+ body.custom-print #printAreaCustom .compact-columns-v710 td{font-size:7.5pt!important;padding:.8mm .5mm!important}
+ body.custom-print #printAreaCustom .compact-document-v710 tr{break-inside:avoid!important}
+ body.custom-print #printAreaCustom .compact-document-v710 thead{display:table-header-group!important}
+ body.custom-print #printAreaCustom .compact-document-v710 tfoot{display:table-row-group!important;font-weight:700}
+ body.custom-print #printAreaCustom .compact-document-v710 .table-wrap{overflow:visible!important;margin:0!important}
+ body.custom-print #printAreaCustom .compact-document-v710 .v404-carga-tabela{font-size:8pt!important}
+}
+
+@media print{
+ body.custom-print #printAreaCustom .compact-load-table-v711{table-layout:auto!important}
+ body.custom-print #printAreaCustom .compact-load-table-v711 th,
+ body.custom-print #printAreaCustom .compact-load-table-v711 td{font-size:7.2pt!important;padding:.7mm .35mm!important;line-height:1.05!important;text-align:right!important;white-space:normal!important;overflow-wrap:anywhere!important}
+ body.custom-print #printAreaCustom .compact-load-columns-v710 .compact-group-v710{break-inside:auto!important}
+ body.custom-print #printAreaCustom .compact-document-v710 .v418-romaneio-cards{gap:1mm!important;padding:1mm!important}
+ body.custom-print #printAreaCustom .compact-document-v710 .v418-romaneio-cards>*{padding:1mm!important;min-height:0!important;font-size:8pt!important}
+}
+
+/* V712: explicit balanced columns. Android must not fragment one long table
+   through CSS columns or inherit unrelated legacy nth-child widths. */
+@media print{
+ body.custom-print #printAreaCustom .compact-pages-v712{display:block!important;column-count:auto!important;width:100%!important}
+ body.custom-print #printAreaCustom .compact-sheet-v712{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:5mm!important;align-items:start!important;break-inside:avoid!important;page-break-inside:avoid!important}
+ body.custom-print #printAreaCustom .compact-sheet-v712+.compact-sheet-v712{break-before:page!important;page-break-before:always!important}
+ body.custom-print #printAreaCustom .compact-column-v712{display:block!important;min-width:0!important;width:100%!important}
+ body.custom-print #printAreaCustom .compact-document-v710 .compact-fixed-table-v712{width:100%!important;min-width:0!important;max-width:100%!important;table-layout:fixed!important;margin:0 0 1mm!important;border-collapse:collapse!important}
+ body.custom-print #printAreaCustom .compact-document-v710 .compact-fixed-table-v712 th,
+ body.custom-print #printAreaCustom .compact-document-v710 .compact-fixed-table-v712 td{width:auto!important;min-width:0!important;max-width:none!important;padding:.35mm .45mm!important;height:auto!important;min-height:0!important;font:8pt/1.05 Arial,Helvetica,sans-serif!important;text-align:right!important;white-space:nowrap!important;word-break:normal!important;overflow-wrap:normal!important;letter-spacing:normal!important;border-bottom:.15mm solid #d5ddd2!important}
+ body.custom-print #printAreaCustom .compact-fixed-table-v712 th{background:#e9f0e4!important;color:#1e3c2b!important;font-weight:700!important;font-size:7.3pt!important}
+ body.custom-print #printAreaCustom .compact-fixed-table-v712 tbody tr:nth-child(even){background:#f1f5ee!important}
+ body.custom-print #printAreaCustom .compact-document-v710 .compact-group-v710{display:block!important;break-inside:avoid!important;margin:0 0 1.3mm!important}
+ body.custom-print #printAreaCustom .compact-group-v710 h3{font:700 9pt/1.1 Arial,Helvetica,sans-serif!important;margin:1.5mm 0 1mm!important;color:#214c39!important;white-space:normal!important}
+ body.custom-print #printAreaCustom .compact-species-totals-v712{break-inside:avoid!important;padding-top:1.5mm!important;margin-top:2mm!important;border-top:.2mm solid #aab9a4!important}
+ body.custom-print #printAreaCustom .compact-species-totals-v712 p{font-size:8pt!important;margin:.8mm 0!important;line-height:1.1!important}
+ body.custom-print #printAreaCustom .compact-document-v710 .v418-romaneio-totais{display:flex!important;flex-wrap:nowrap!important;gap:1mm!important;margin:2mm 0!important}
+ body.custom-print #printAreaCustom .compact-document-v710 .v418-romaneio-totais>div{flex:1 1 0!important;min-width:0!important;padding:1.1mm!important;border-radius:0!important}
+ body.custom-print #printAreaCustom .compact-document-v710 .v418-romaneio-totais small{font-size:7pt!important;line-height:1!important}
+ body.custom-print #printAreaCustom .compact-document-v710 .v418-romaneio-totais b{font-size:8pt!important;line-height:1.1!important}
+ body.custom-print #printAreaCustom .compact-document-v710 .v418-romaneio-nota{font-size:7pt!important;line-height:1.1!important;margin:1.2mm 0!important}
+}
+@media print{
+ body.custom-print #printAreaCustom .compact-document-v710 .v407-cliente-documento,
+ body.custom-print #printAreaCustom .compact-document-v710 .v414-transporte-documento{margin:1mm 0!important;padding:1mm 2mm!important;font-size:8pt!important;line-height:1.1!important;border-radius:0!important}
+ body.custom-print #printAreaCustom>div:first-child h2+div{font-size:8pt!important;margin-bottom:2mm!important}
+ body.custom-print #printAreaCustom .compact-document-v710 .v421-empresa-documento{font-size:7.5pt!important;line-height:1.1!important}
+}
+
+@media print{body.custom-print #printAreaCustom .compact-document-v710 .compact-fixed-table-v712[data-columns="9"] th,body.custom-print #printAreaCustom .compact-document-v710 .compact-fixed-table-v712[data-columns="9"] td{white-space:normal!important;overflow-wrap:anywhere!important;font-size:7pt!important}}
+
+.v714-subtotais-recolher>summary{display:list-item!important;list-style:disclosure-closed inside!important;cursor:pointer;font-size:18px;font-weight:800;padding:8px 0;color:var(--accent2)}
+.v714-subtotais-recolher[open]>summary{list-style-type:disclosure-open!important}
+.v714-subtotais-recolher>summary:focus-visible{outline:2px solid currentColor;outline-offset:4px}
+.v714-subtotais-recolher[open]>.v585-subtotais-grade{margin-top:8px}
+@media print{
+ body.custom-print #printAreaCustom .compact-sheet-v712.compact-sheet-wide-v715{grid-template-columns:minmax(0,1fr)!important}
+ body.custom-print #printAreaCustom .compact-document-v710 .compact-fixed-table-v712[data-columns="7"] th,
+ body.custom-print #printAreaCustom .compact-document-v710 .compact-fixed-table-v712[data-columns="7"] td{font-size:7.3pt!important;padding:.35mm .3mm!important}
+ body.custom-print #printAreaCustom .compact-document-v710 .v403-fin-resumo{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:2mm!important;max-width:none!important;width:100%!important;margin:2mm 0 0!important;padding:1.2mm!important}
+ body.custom-print #printAreaCustom .compact-document-v710 .v403-fin-resumo>div{display:flex!important;flex-direction:column!important;gap:1mm!important;padding:1mm!important;min-width:0!important;font-size:7.5pt!important;line-height:1.1!important}
+ body.custom-print #printAreaCustom .compact-document-v710 .v403-fin-resumo .v403-fin-final{font-size:8pt!important;margin:0!important;padding:1mm!important;border-top:0!important;border-left:.2mm solid #aaa!important}
+ body.custom-print #printAreaCustom .compact-document-v710 .v403-fin-resumo strong{font-size:8pt!important;white-space:nowrap!important}
+}
+
+/* V716: override legacy six-column widths, including their nth-child specificity.
+   Otherwise the first six cells consume 100% and push the seventh into the gutter. */
+@media print{
+ body.custom-print #printAreaCustom .compact-document-v710 table.compact-fixed-table-v712[data-columns] th:nth-child(n),
+ body.custom-print #printAreaCustom .compact-document-v710 table.compact-fixed-table-v712[data-columns] td:nth-child(n){width:auto!important;min-width:0!important;max-width:none!important;box-sizing:border-box!important;text-align:right!important}
+ body.custom-print #printAreaCustom .compact-document-v710 table.compact-fixed-table-v712[data-columns] th:nth-child(n){font-size:6.7pt!important;line-height:1.1!important;white-space:normal!important;word-break:normal!important;overflow-wrap:normal!important}
+ body.custom-print #printAreaCustom .compact-document-v710 table.compact-fixed-table-v712[data-columns="7"] :is(th,td):nth-child(1){width:7%!important}
+ body.custom-print #printAreaCustom .compact-document-v710 table.compact-fixed-table-v712[data-columns="7"] :is(th,td):nth-child(2){width:8%!important}
+ body.custom-print #printAreaCustom .compact-document-v710 table.compact-fixed-table-v712[data-columns="7"] :is(th,td):nth-child(3){width:9%!important}
+ body.custom-print #printAreaCustom .compact-document-v710 table.compact-fixed-table-v712[data-columns="7"] :is(th,td):nth-child(4){width:10%!important}
+ body.custom-print #printAreaCustom .compact-document-v710 table.compact-fixed-table-v712[data-columns="7"] :is(th,td):nth-child(5){width:18%!important}
+ body.custom-print #printAreaCustom .compact-document-v710 table.compact-fixed-table-v712[data-columns="7"] :is(th,td):nth-child(6){width:23%!important}
+ body.custom-print #printAreaCustom .compact-document-v710 table.compact-fixed-table-v712[data-columns="7"] :is(th,td):nth-child(7){width:25%!important}
+ body.custom-print #printAreaCustom .compact-document-v710 table.compact-fixed-table-v712[data-columns="5"] :is(th,td):nth-child(1){width:12%!important}
+ body.custom-print #printAreaCustom .compact-document-v710 table.compact-fixed-table-v712[data-columns="5"] :is(th,td):nth-child(2){width:14%!important}
+ body.custom-print #printAreaCustom .compact-document-v710 table.compact-fixed-table-v712[data-columns="5"] :is(th,td):nth-child(3){width:16%!important}
+ body.custom-print #printAreaCustom .compact-document-v710 table.compact-fixed-table-v712[data-columns="5"] :is(th,td):nth-child(4){width:18%!important}
+ body.custom-print #printAreaCustom .compact-document-v710 table.compact-fixed-table-v712[data-columns="5"] :is(th,td):nth-child(5){width:40%!important}
+}
+
+/* V717: one row of top indicators; wrapping is limited to text inside each box. */
+@media print{
+ body.custom-print #printAreaCustom .compact-document-v710 [data-compact-totals="1"]{display:grid!important;grid-template-columns:repeat(var(--compact-totals-count,5),minmax(0,1fr))!important;gap:1mm!important;width:100%!important;max-width:100%!important;margin:1mm 0 1.5mm!important;padding:0!important;align-items:stretch!important}
+ body.custom-print #printAreaCustom .compact-document-v710 [data-compact-totals="1"]>span,
+ body.custom-print #printAreaCustom .compact-document-v710 [data-compact-totals="1"]>div{display:block!important;min-width:0!important;width:auto!important;max-width:none!important;margin:0!important;padding:1mm!important;box-sizing:border-box!important;border-radius:0!important;font-size:7.2pt!important;line-height:1.1!important;white-space:normal!important;overflow-wrap:normal!important}
+ body.custom-print #printAreaCustom .compact-document-v710 [data-compact-totals="1"] b{font-size:7.5pt!important;line-height:1.1!important;white-space:nowrap!important}
+ body.custom-print #printAreaCustom .compact-species-totals-v712{padding-top:1mm!important;margin-top:1.5mm!important}
+ body.custom-print #printAreaCustom .compact-species-totals-v712 p{font-size:7.5pt!important;margin:.5mm 0!important;line-height:1.1!important}
+}
+.sheet-final-totals-v718{margin:16px 0;padding-top:12px;border-top:1px solid var(--line);clear:both}
+.sheet-final-totals-v718 h3{font-size:16px;margin:0 0 10px}
+.sheet-final-totals-v718 p{font-size:13px;line-height:1.5;margin:6px 0;white-space:normal;overflow-wrap:anywhere}
+@media print{.sheet-final-totals-v718{break-inside:avoid;margin:2mm 0;padding-top:1mm}.sheet-final-totals-v718 p{font-size:7.5pt;line-height:1.1;margin:.5mm 0}}
+
+/* V746: summary rows must not pass behind the generic sticky table header. */
+@media screen{
+ html body #calculadora #resumoCalculadoraExport .table-wrap>table>thead>tr>th{position:static!important;top:auto!important}
+}
+
+/* V747: moderate desktop density; native mobile and printed documents stay unchanged. */
+@media screen and (min-width:1100px){
+ html body main .card{padding:10px!important;margin-bottom:10px!important;border-radius:10px!important}
+ html body main :is(.grid,.grid3,.stats){gap:8px!important}
+ html body main label{margin-bottom:3px;font-size:12px}
+ html body main :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="hidden"]),select){padding:7px 9px!important;min-height:36px!important;font-size:14px!important;border-radius:7px!important}
+ html body main textarea{padding:8px 9px!important;font-size:14px!important;border-radius:7px!important}
+ html body main :is(.btn,.modo-medida button,.quick-lengths button){padding:8px 11px!important;min-height:34px!important;font-size:14px!important}
+ html body main :is(.row-actions,.modo-medida){gap:6px!important;margin-top:8px;margin-bottom:8px}
+ html body main .stat{padding:8px 10px!important;border-radius:8px!important}
+ html body main .stat small{margin-bottom:3px!important}
+ html body main .stat strong{font-size:18px!important}
+ html body main .card :is(h2,h3){margin-bottom:10px!important}
+ html body main .card h2{font-size:20px}
+ html body main .card h3{font-size:17px}
+ html body main .table-wrap :is(th,td){padding-top:6px;padding-bottom:6px}
+ html body #calculadora :is(.volume-total-topo,#btnLancar){min-height:38px!important;padding-top:7px!important;padding-bottom:7px!important;font-size:15px!important}
+ html body #calculadora .calc-screen{padding:10px!important;margin-bottom:8px!important}
+ html body #menuLateralV525 .inicio-atalho-v464{min-height:52px!important;padding:7px 10px!important;margin-bottom:5px!important;border-radius:8px!important}
+ html body #menuLateralV525 .inicio-atalho-v464 strong{font-size:15px!important;margin-bottom:2px!important}
+ html body #menuLateralV525 .inicio-atalho-v464 span{font-size:11px!important;line-height:1.2!important}
+}
+
+/* V756: private log purchase workspace inside the existing Toras screen. */
+#cubagemToras .lp-nav-v756{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 10px;flex:0 0 auto}
+#cubagemToras .lp-nav-v756 [aria-pressed=true]{outline:2px solid var(--accent,#d9a441);outline-offset:1px}
+#cubagemToras .toras-layout[hidden],#cubagemToras #torasPurchasesV756[hidden]{display:none!important}
+#cubagemToras #torasPurchasesV756{flex:1;min-height:0;overflow:auto;padding:0 6px 12px;min-width:0}
+#torasPurchasesV756 .lp-line-v756,#torasPurchasesV756 .lp-receipt-v756{padding:10px;margin:8px 0;border:1px solid var(--line,#638371);border-radius:8px;overflow-wrap:anywhere}
+#torasPurchasesV756 .lp-line-v756{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px 10px;align-items:center}
+#torasPurchasesV756 .lp-line-v756 span{grid-column:1}
+#torasPurchasesV756 .lp-line-v756 button{grid-column:2;grid-row:1 / 3}
+#cubagemToras #torasPurchasesV756 .lp-check-v756{display:flex!important;align-items:center;gap:8px}
+#cubagemToras #torasPurchasesV756 input[type=checkbox]{width:auto;flex:0 0 auto}
+#torasPurchasesV756 #lpTotalV756{font-weight:700;line-height:1.5}
+#torasPurchasesV756 #lpStatusV756{font-size:13px;line-height:1.4}
+@media(max-width:600px){#cubagemToras #torasPurchasesV756 .grid3{grid-template-columns:repeat(2,minmax(0,1fr))!important}#torasPurchasesV756 .lp-line-v756{display:block}#torasPurchasesV756 .lp-line-v756 :is(strong,span){display:block;margin-bottom:5px}}
+
+/* V757: settlement fields and account rows share the purchase layout on all units. */
+.purchase-payment-v757{border:1px solid var(--line,#638371);border-radius:8px;margin:12px 0;padding:10px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.purchase-payment-v757 label{min-width:0}.purchase-payment-v757 [hidden]{display:none!important}
+#finPurchaseAccountsV757 .fin-payment-row-v757{border-top:1px solid var(--line);padding:12px 0;margin-top:8px}
+#finPurchaseAccountsV757 :is(input,select){max-width:100%;min-width:0}
+#finPurchaseAccountsV757 label{margin:8px 0}
+#finPurchaseAccountsV757 button{margin:5px 4px 5px 0}
+@media(max-width:600px){.purchase-payment-v757{grid-template-columns:1fr}}

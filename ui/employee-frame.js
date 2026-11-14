@@ -14,7 +14,7 @@ function employeeAssertWrite(ref){
 function employeeEmptySnapshot(){return {docs:[],size:0,empty:true,metadata:{fromCache:false,hasPendingWrites:false},exists:()=>false,data:()=>undefined,docChanges:()=>[]};}
 function employeeRead(fn){return (ref,...args)=>employeeReadAllowed(ref)?Promise.resolve(fn(employeeScopedReadReference(ref),...args)).then(snapshot=>employeeSanitizeLoadRead(ref,snapshot)):Promise.resolve(employeeEmptySnapshot());}
 function employeeSnapshot(fn){return (ref,...args)=>{if(employeeReadAllowed(ref))return fn(employeeScopedReadReference(ref),...args);const callback=args.find(x=>typeof x==='function');let stopped=false;queueMicrotask(()=>{if(!stopped)callback?.(employeeEmptySnapshot());});return ()=>{stopped=true;};};}
-function employeeAreaForTab(tab){return ({clientes:'clients',cadastro:'catalog',calculadora:'calculator',orcamento:'budgets',estoque:'stock',historico:'stock',movimentacoes:'stock',pedidos:'orders',carregamentos:'loads',producao:'production',servicos:'services',cubagemToras:'services'})[tab]||null;}
+function employeeAreaForTab(tab){return ({clientes:'clients',cadastro:'catalog',calculadora:'calculator',orcamento:'budgets',estoque:'stock',historico:'stock',movimentacoes:'stock',relatorios:'stock',pedidos:'orders',carregamentos:'loads',producao:'production',servicos:'services',cubagemToras:'services'})[tab]||null;}
 function employeeNavigationRoute(control){return control?.dataset?.pcnav||control?.dataset?.tab||control?.dataset?.inicioDestino||control?.dataset?.lateralDestino||null;}
 function employeeTabAllowed(tab){if(tab==='orcamento')return ['budgets','orders','loads'].some(area=>parent.__smEmployeeCan(area));if(['inicio','sair'].includes(tab))return true;const area=employeeAreaForTab(tab);return area?parent.__smEmployeeCan(area):parent.__smEmployeeMember()?.papel==='admin';}
 function employeeNavigationAllowed(control){
@@ -74,6 +74,8 @@ function employeeActionAllowed(target){
  const tab=employeeNavigationRoute(control);
  if(tab)return employeeNavigationAllowed(control);
  if(control.id==='sairInicioV492')return true;
+ if(control.closest?.('#stockChartsV720')||control.dataset?.reportView==='stock')return parent.__smEmployeeCan('stock');
+ if(control.closest?.('#financePanelV722')||control.dataset?.reportView==='finance')return false;
  if(control.dataset?.employeeContinueLoad)return parent.__smEmployeeCan('loads',true)&&parent.__smEmployeeCan('calculator',true);
  if(employeeSelectedDestination()==='carga'&&(control.id==='btnPacoteMenos'||control.id==='btnVerdeOuCorrigirV260'&&control.dataset?.modo==='corrigir'))return false;
  if(['btnGuardarResumoCalc','btnNovoResumoCalc','btnLimparLancamentos','btnApagarSomenteResumoCarga'].includes(control.id)&&employeeSelectedDestination()==='carga')return false;

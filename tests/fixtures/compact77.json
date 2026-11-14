@@ -1,0 +1,618 @@
+[
+  {
+    "especie": "Garapeira",
+    "qtd": 18,
+    "esp": "5",
+    "larg": "15",
+    "comp": "5,5",
+    "volume": "0,7425"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 1,
+    "esp": "5",
+    "larg": "20",
+    "comp": "5,5",
+    "volume": "0,0550"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 7,
+    "esp": "5",
+    "larg": "10",
+    "comp": "5,5",
+    "volume": "0,1925"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 2,
+    "esp": "5",
+    "larg": "5",
+    "comp": "5,5",
+    "volume": "0,0275"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 24,
+    "esp": "5",
+    "larg": "15",
+    "comp": "4,5",
+    "volume": "0,8100"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 18,
+    "esp": "5",
+    "larg": "10",
+    "comp": "4,5",
+    "volume": "0,4050"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 5,
+    "esp": "5",
+    "larg": "5",
+    "comp": "4,5",
+    "volume": "0,0563"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 11,
+    "esp": "5",
+    "larg": "20",
+    "comp": "4,5",
+    "volume": "0,4950"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 1,
+    "esp": "5",
+    "larg": "18",
+    "comp": "4,5",
+    "volume": "0,0405"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 1,
+    "esp": "5",
+    "larg": "19",
+    "comp": "4,5",
+    "volume": "0,0428"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 3,
+    "esp": "5",
+    "larg": "5",
+    "comp": "3,0",
+    "volume": "0,0225"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 13,
+    "esp": "5",
+    "larg": "15",
+    "comp": "3,0",
+    "volume": "0,2925"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 17,
+    "esp": "5",
+    "larg": "10",
+    "comp": "3,0",
+    "volume": "0,2550"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 57,
+    "esp": "5",
+    "larg": "5",
+    "comp": "2,5",
+    "volume": "0,3563"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 33,
+    "esp": "5",
+    "larg": "10",
+    "comp": "2,5",
+    "volume": "0,4125"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 21,
+    "esp": "5",
+    "larg": "15",
+    "comp": "2,5",
+    "volume": "0,3938"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 2,
+    "esp": "5",
+    "larg": "20",
+    "comp": "2,5",
+    "volume": "0,0500"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 2,
+    "esp": "5",
+    "larg": "20",
+    "comp": "3,5",
+    "volume": "0,0700"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 9,
+    "esp": "5",
+    "larg": "15",
+    "comp": "3,5",
+    "volume": "0,2363"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 9,
+    "esp": "5",
+    "larg": "10",
+    "comp": "3,5",
+    "volume": "0,1575"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 9,
+    "esp": "5",
+    "larg": "5",
+    "comp": "4,0",
+    "volume": "0,0900"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 10,
+    "esp": "5",
+    "larg": "10",
+    "comp": "4,0",
+    "volume": "0,2000"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 16,
+    "esp": "5",
+    "larg": "15",
+    "comp": "4,0",
+    "volume": "0,4800"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 25,
+    "esp": "8",
+    "larg": "10",
+    "comp": "2,5",
+    "volume": "0,5000"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 3,
+    "esp": "8",
+    "larg": "20",
+    "comp": "2,5",
+    "volume": "0,1200"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 14,
+    "esp": "8",
+    "larg": "15",
+    "comp": "2,5",
+    "volume": "0,4200"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 3,
+    "esp": "8",
+    "larg": "25",
+    "comp": "2,5",
+    "volume": "0,1500"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 3,
+    "esp": "8",
+    "larg": "35",
+    "comp": "2,5",
+    "volume": "0,2100"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 4,
+    "esp": "8",
+    "larg": "30",
+    "comp": "2,5",
+    "volume": "0,2400"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 1,
+    "esp": "8",
+    "larg": "9",
+    "comp": "2,5",
+    "volume": "0,0180"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 1,
+    "esp": "8",
+    "larg": "7",
+    "comp": "2,5",
+    "volume": "0,0140"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 1,
+    "esp": "8",
+    "larg": "9",
+    "comp": "2,5",
+    "volume": "0,0180"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 1,
+    "esp": "8",
+    "larg": "8",
+    "comp": "2,5",
+    "volume": "0,0160"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 1,
+    "esp": "8",
+    "larg": "40",
+    "comp": "2,5",
+    "volume": "0,0800"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 1,
+    "esp": "8",
+    "larg": "20",
+    "comp": "2,5",
+    "volume": "0,0400"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 11,
+    "esp": "8",
+    "larg": "15",
+    "comp": "5,5",
+    "volume": "0,7260"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 10,
+    "esp": "8",
+    "larg": "20",
+    "comp": "5,5",
+    "volume": "0,8800"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 1,
+    "esp": "8",
+    "larg": "6",
+    "comp": "5,5",
+    "volume": "0,0264"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 2,
+    "esp": "8",
+    "larg": "20",
+    "comp": "1,8",
+    "volume": "0,0576"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 4,
+    "esp": "8",
+    "larg": "10",
+    "comp": "1,8",
+    "volume": "0,0576"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 2,
+    "esp": "8",
+    "larg": "15",
+    "comp": "1,8",
+    "volume": "0,0432"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 1,
+    "esp": "8",
+    "larg": "19",
+    "comp": "1,8",
+    "volume": "0,0274"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 1,
+    "esp": "8",
+    "larg": "14",
+    "comp": "1,8",
+    "volume": "0,0202"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 3,
+    "esp": "8",
+    "larg": "20",
+    "comp": "6,0",
+    "volume": "0,2880"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 8,
+    "esp": "8",
+    "larg": "15",
+    "comp": "6,0",
+    "volume": "0,5760"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 1,
+    "esp": "8",
+    "larg": "24",
+    "comp": "2,0",
+    "volume": "0,0384"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 1,
+    "esp": "8",
+    "larg": "14",
+    "comp": "2,0",
+    "volume": "0,0224"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 2,
+    "esp": "8",
+    "larg": "10",
+    "comp": "2,0",
+    "volume": "0,0320"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 1,
+    "esp": "8",
+    "larg": "39",
+    "comp": "2,0",
+    "volume": "0,0624"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 1,
+    "esp": "8",
+    "larg": "30",
+    "comp": "2,0",
+    "volume": "0,0480"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 3,
+    "esp": "8",
+    "larg": "20",
+    "comp": "2,0",
+    "volume": "0,0960"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 5,
+    "esp": "8",
+    "larg": "15",
+    "comp": "4,5",
+    "volume": "0,2700"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 1,
+    "esp": "8",
+    "larg": "25",
+    "comp": "4,5",
+    "volume": "0,0900"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 2,
+    "esp": "8",
+    "larg": "10",
+    "comp": "4,5",
+    "volume": "0,0720"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 4,
+    "esp": "8",
+    "larg": "20",
+    "comp": "4,5",
+    "volume": "0,2880"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 2,
+    "esp": "8",
+    "larg": "8",
+    "comp": "3,0",
+    "volume": "0,0384"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 1,
+    "esp": "8",
+    "larg": "20",
+    "comp": "3,0",
+    "volume": "0,0480"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 1,
+    "esp": "8",
+    "larg": "9",
+    "comp": "3,0",
+    "volume": "0,0216"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 1,
+    "esp": "8",
+    "larg": "15",
+    "comp": "3,0",
+    "volume": "0,0360"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 2,
+    "esp": "8",
+    "larg": "15",
+    "comp": "5,0",
+    "volume": "0,1200"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 1,
+    "esp": "8",
+    "larg": "25",
+    "comp": "5,0",
+    "volume": "0,1000"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 4,
+    "esp": "8",
+    "larg": "20",
+    "comp": "5,0",
+    "volume": "0,3200"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 1,
+    "esp": "8",
+    "larg": "15",
+    "comp": "4,0",
+    "volume": "0,0480"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 1,
+    "esp": "8",
+    "larg": "12",
+    "comp": "4,0",
+    "volume": "0,0384"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 3,
+    "esp": "8",
+    "larg": "20",
+    "comp": "6,5",
+    "volume": "0,3120"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 1,
+    "esp": "8",
+    "larg": "25",
+    "comp": "6,5",
+    "volume": "0,1300"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 7,
+    "esp": "8",
+    "larg": "15",
+    "comp": "6,5",
+    "volume": "0,5460"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 1,
+    "esp": "8",
+    "larg": "15",
+    "comp": "7,0",
+    "volume": "0,0840"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 1,
+    "esp": "8",
+    "larg": "25",
+    "comp": "7,0",
+    "volume": "0,1400"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 1,
+    "esp": "8",
+    "larg": "20",
+    "comp": "3,5",
+    "volume": "0,0560"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 1,
+    "esp": "8",
+    "larg": "15",
+    "comp": "3,5",
+    "volume": "0,0420"
+  },
+  {
+    "especie": "Garapeira",
+    "qtd": 1,
+    "esp": "8",
+    "larg": "10",
+    "comp": "3,5",
+    "volume": "0,0280"
+  },
+  {
+    "especie": "Garrote",
+    "qtd": 6,
+    "esp": "20",
+    "larg": "20",
+    "comp": "4,5",
+    "volume": "1,0800"
+  },
+  {
+    "especie": "Garrote",
+    "qtd": 1,
+    "esp": "20",
+    "larg": "20",
+    "comp": "5,5",
+    "volume": "0,2200"
+  },
+  {
+    "especie": "Garrote",
+    "qtd": 1,
+    "esp": "20",
+    "larg": "20",
+    "comp": "6,0",
+    "volume": "0,2400"
+  },
+  {
+    "especie": "Garrote",
+    "qtd": 1,
+    "esp": "20",
+    "larg": "20",
+    "comp": "5,0",
+    "volume": "0,2000"
+  },
+  {
+    "especie": "Garrote",
+    "qtd": 1,
+    "esp": "20",
+    "larg": "20",
+    "comp": "4,0",
+    "volume": "0,1600"
+  }
+]
