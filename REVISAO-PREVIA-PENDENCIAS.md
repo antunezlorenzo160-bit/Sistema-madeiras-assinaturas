@@ -368,3 +368,14 @@ Validação: build limpo, regra restrita incorporada e32scripts válidos;2suíte
 Pedido para compactar as telas no computador. CSS restrito a screen e largura mínima1100px reduz espaçamento de cartões/grades, campos de entrada de linha única, botões, indicadores e atalhos laterais. Campos36px, botões34px, cartões10px de padding, menu52px mínimos. Texto de entrada14px, indicadores18px; textos longos podem crescer sem corte. Exclui checkbox/radio/range/cor/arquivo/ocultos; textarea mantém altura. Não usa zoom/transform, não altera posição do cabeçalho/menu, conteúdo, dados, rolagem ou comportamento. Celular e impressão/PDF fora da regra.
 
 Validação: build limpo e32scripts válidos;4suítes pertinentes passaram (rolagem desktop, teclado móvel, total linear e posição de viagens). Regra conferida no HTML gerado. Sem avaliação visual em navegador real; tamanho final deve ser conferido no monitor do usuário.
+
+
+## Encaixar tela inteira no PC V748 — 14/11
+
+Usuário rejeitou só a redução dos espaços e escolheu explicitamente diminuir também letras e botões para caber tudo. Novo ajuste desktop >=1100px liga por padrão e mede a aba ativa, largura disponível e altura restante abaixo do cabeçalho. Aplica zoom proporcional até caber, reconferindo após reflow. Recalcula ao trocar aba, abrir painéis, receber novas linhas e redimensionar janela. Remove limites de rolagem dos wrappers de tabelas/gráficos nessa apresentação e mede o conteúdo visível completo; não oculta registros. Menu lateral também se reduz quando excede a altura.
+
+Botão fixo Tamanho normal com percentual retorna à escala original; Ajustar à tela religa. Sem persistência, sem dados/fila/localStorage. Celular e impressão restauram estilos anteriores; PDF usa escala normal. Telas com muitos registros podem ficar muito pequenas por escolha explícita do usuário. Elementos modais continuam seus fluxos normais. Não muda cálculos, permissões, registros nem sincronização.
+
+Validação: build limpo/33scripts sintaticamente válidos e6suítes pertinentes passaram (encaixe desktop, rolagem, teclado móvel, total linear, gráficos e posição de viagens). Casos novos medem telas altas/largas e40000px de conteúdo, recalculam novas linhas e conferem tamanho normal, breakpoint móvel e impressão/restauração. Sem validação visual no monitor do usuário nem navegador real. Apenas prévia12; produção inalterada.
+
+Checagem adicional da tabela desktop passou após incluir no harness as dependências reais isLinearTotalV744/linearPieceTextV744 que já eram exigidas desdeV744;7suítes pertinentes ao todo. Wrapper pc-preview-table-wrap também expandido na apresentação ajustada.

@@ -144,3 +144,13 @@
  html body #menuLateralV525 .inicio-atalho-v464 strong{font-size:15px!important;margin-bottom:2px!important}
  html body #menuLateralV525 .inicio-atalho-v464 span{font-size:11px!important;line-height:1.2!important}
 }
+
+/* V748: desktop fit measures all visible content instead of clipping it. */
+#desktopFitV748{display:none}
+@media screen and (min-width:1100px){
+ #desktopFitV748:not([hidden]){display:block;position:fixed;right:14px;bottom:8px;z-index:2200;padding:6px 10px;border:1px solid var(--accent);border-radius:7px;background:#17211d;color:#fff;font:12px Arial,sans-serif;cursor:pointer}
+ html body.desktop-fit-v748 main>.tab.active{min-height:0!important;height:auto!important;max-height:none!important}
+ html body.desktop-fit-v748 main .tab.active :is(.table-wrap,.sc-chart-scroll,.sc-table-scroll,.fin-table-scroll,.pc-destino-scroll,.pc-preview-table-wrap){max-height:none!important;overflow:visible!important}
+ html body.desktop-fit-v748 #calculadora .pc-destino-panel{position:static!important;max-height:none!important;overflow:visible!important}
+}
+@media print{#desktopFitV748{display:none!important}main>.tab{zoom:1!important}}
