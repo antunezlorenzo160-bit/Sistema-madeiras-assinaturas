@@ -35,7 +35,6 @@ export function applyPendingPreview(html){
  app=app.replaceAll("if(!ativo||ativo.tagName!=='INPUT')$('largura').focus({preventScroll:true});", "if((!ativo||ativo.tagName!=='INPUT')&&window.__smCalcKeyboardV733?.canRestoreFocus($('largura'))!==false)$('largura').focus({preventScroll:true});");
  replace("if(modoMedida==='granel')$('volumeGranelV384')?.focus();else if(modoMedida==='m3fechado')$('volumeFechadoV387')?.focus();else $('largura').focus()", "const nextField=modoMedida==='granel'?$('volumeGranelV384'):modoMedida==='m3fechado'?$('volumeFechadoV387'):$('largura');if(window.__smCalcKeyboardV733?.canRestoreFocus(nextField)!==false&&document.activeElement!==nextField)nextField?.focus({preventScroll:true})");
  replace("control.closest?.('#financePanelV722')","control.closest?.('#financePanelV722,#sharedTripsV741')");
- app=app.replace('</body>','<script id="desktop-fit-v748">'+read('ui/desktop-fit.js')+'</script></body>');
  app=app.replace('</body>','<script id="mobile-calculator-keyboard-v733">'+read('ui/mobile-calculator-keyboard.js')+'</script></body>');
  app=app.replace('</head>','<style id="mobile-calculator-keyboard-v733-style">'+read('ui/mobile-calculator-keyboard.css')+'</style></head>');
  // New stock exits keep an immutable instant for cost chronology, including offline recovery.

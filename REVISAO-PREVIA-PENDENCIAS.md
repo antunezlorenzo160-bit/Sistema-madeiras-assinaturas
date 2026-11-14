@@ -379,3 +379,10 @@ Botão fixo Tamanho normal com percentual retorna à escala original; Ajustar à
 Validação: build limpo/33scripts sintaticamente válidos e6suítes pertinentes passaram (encaixe desktop, rolagem, teclado móvel, total linear, gráficos e posição de viagens). Casos novos medem telas altas/largas e40000px de conteúdo, recalculam novas linhas e conferem tamanho normal, breakpoint móvel e impressão/restauração. Sem validação visual no monitor do usuário nem navegador real. Apenas prévia12; produção inalterada.
 
 Checagem adicional da tabela desktop passou após incluir no harness as dependências reais isLinearTotalV744/linearPieceTextV744 que já eram exigidas desdeV744;7suítes pertinentes ao todo. Wrapper pc-preview-table-wrap também expandido na apresentação ajustada.
+
+
+## Remoção do ajuste automático V749 — 14/11
+
+Usuário pediu retirar o ajuste por ter deixado a tela muito pequena. Removidos script desktop-fit.js, inclusão no builder, CSS específico e testes exclusivos do recurso. Sem zoom automático, botão ou observadores de ajuste. Mantidas compactação moderadaV747, correção do cabeçalhoV746 e rolagemV745. Sem migração ou limpeza de dados; recurso não persistia configurações.
+
+Validação: build limpo confirmou ausência do script/botão/estiloV748,32scripts válidos e2suítes de regressão desktop passaram. Apenas prévia12; produção inalterada.
