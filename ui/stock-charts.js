@@ -16,14 +16,14 @@ function movementChartMarkupV720(rows,kind,availableWidth){
  const maximum=Math.max(0,...rows.flatMap(r=>[r.in,r.out]));
  if(!maximum)return '<p class="empty">Nenhuma entrada ou saída neste período e nos filtros selecionados.</p>';
  const compact=Number(availableWidth)>0&&Number(availableWidth)<=640;
- const width=compact?Math.max(240,Math.floor(availableWidth)-2):Math.max(640,rows.length*24+70),height=compact?210:246,left=compact?52:65,right=compact?8:15,top=15,bottom=compact?35:45,plotH=height-top-bottom,step=(width-left-right)/rows.length;
+ const width=Number(availableWidth)>0?Math.max(240,Math.floor(availableWidth)-2):Math.max(640,rows.length*24+70),height=compact?210:246,left=compact?52:65,right=compact?8:15,top=15,bottom=compact?35:45,plotH=height-top-bottom,step=(width-left-right)/rows.length;
  const scale=10**Math.floor(Math.log10(maximum)),ceiling=Math.ceil(maximum/scale)*scale;
  const axis=Array.from({length:5},(_,i)=>{const value=ceiling*i/4,y=top+plotH-value/ceiling*plotH;return '<line x1="'+left+'" x2="'+(width-right)+'" y1="'+y+'" y2="'+y+'" class="sc-grid-line"/><text x="'+(left-7)+'" y="'+(y+4)+'" text-anchor="end">'+esc(Number(value.toFixed(4)).toLocaleString('pt-BR'))+'</text>';}).join('');
  const bars=rows.map((r,i)=>{
   const x=left+i*step+step*.16,bw=step*.3,selected=r.key===stockChartsSelectionV720;
   const label=stockChartLabelV720(r.key),description=label+': entradas '+stockChartFormatV720(r.in,kind)+', saídas '+stockChartFormatV720(r.out,kind);
   const rect=(value,offset,cls)=>{const h=value>0?Math.max(1,value/ceiling*plotH):0;return '<rect class="'+cls+'" x="'+(x+offset)+'" y="'+(top+plotH-h)+'" width="'+bw+'" height="'+h+'" rx="2"/>';};
-  return '<g role="button" tabindex="0" data-chart-period="'+r.key+'" aria-label="'+esc(description)+'" class="sc-period'+(selected?' sc-selected':'')+'"><title>'+esc(description)+'</title><rect class="sc-hit" x="'+(left+i*step)+'" y="'+top+'" width="'+step+'" height="'+plotH+'"/>'+rect(r.in,0,'sc-in')+rect(r.out,bw+Math.min(2,step*.08),'sc-out')+((i%Math.max(1,Math.ceil(rows.length/(compact?4:25)))===0)?'<text x="'+(left+(i+.5)*step)+'" y="'+(height-24)+'" text-anchor="middle">'+esc(r.key.length===7?label:label.slice(0,5))+'</text>':'')+'</g>';
+  return '<g role="button" tabindex="0" data-chart-period="'+r.key+'" aria-label="'+esc(description)+'" class="sc-period'+(selected?' sc-selected':'')+'"><title>'+esc(description)+'</title><rect class="sc-hit" x="'+(left+i*step)+'" y="'+top+'" width="'+step+'" height="'+plotH+'"/>'+rect(r.in,0,'sc-in')+rect(r.out,bw+Math.min(2,step*.08),'sc-out')+((i%Math.max(1,Math.ceil(rows.length/(compact?4:Math.max(2,Math.floor((width-left-right)/65)))))===0)?'<text x="'+(left+(i+.5)*step)+'" y="'+(height-24)+'" text-anchor="middle">'+esc(r.key.length===7?label:label.slice(0,5))+'</text>':'')+'</g>';
  }).join('');
  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+width+' '+height+'" style="min-width:'+width+'px" role="group" aria-label="Entradas e saídas em '+(kind==='m2'?'metros quadrados':kind==='linear'?'metros lineares':'metros cúbicos')+'">'+axis+bars+'</svg>';
 }

@@ -75,3 +75,60 @@
 @media(max-width:640px){.trip-toolbar-v742 .fin-actions button{flex:1 1 140px}.trip-toolbar-v742{font-size:13px}}
 
 #cashPanelV759 .cash-row-v759{border-top:1px solid var(--line);padding:12px 0;font-size:14px;overflow-wrap:anywhere}#cashPanelV759 .cash-row-v759 p{margin:5px 0}#cashPanelV759 .cash-row-v759 button{margin-top:8px}#cashPanelV759 .fin-stats{grid-template-columns:repeat(4,minmax(0,1fr))}@media(max-width:900px){#cashPanelV759 .fin-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* V760: a desktop dashboard uses width instead of shrinking the whole application. */
+@media screen and (min-width:1100px){
+ #relatorios>h2{font-size:20px;margin:2px 0 8px}
+ #relatorios .reports-tabs-v722{margin:4px 0 10px;gap:8px}
+ #relatorios .reports-tabs-v722 button{min-height:34px}
+ #relatorios #stockChartsV720{padding:12px!important;margin-bottom:10px}
+ #stockChartsV720>summary{font-size:16px;min-height:26px;line-height:1.4}
+ #stockChartsV720 .sc-intro{margin:4px 0 8px;gap:8px;flex-wrap:nowrap}
+ #stockChartsV720 .sc-intro p{font-size:13px}
+ #stockChartsV720 .sc-intro button{min-height:32px;flex:0 0 auto}
+ #stockChartsV720 .sc-filters{grid-template-columns:minmax(86px,.8fr) minmax(100px,1fr) minmax(150px,1.5fr) repeat(2,minmax(120px,1fr)) minmax(90px,.8fr);gap:8px}
+ #stockChartsV720 .sc-filters label{gap:3px;margin:0;font-size:12px}
+ #stockChartsV720 .sc-filters :is(input,select){min-height:34px;padding:7px 8px}
+ #stockChartsV720 #scSyncV720{margin:5px 0;font-size:12px}
+ #stockChartsV720 #scResultsV720{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:12px;align-items:start}
+ #stockChartsV720 #scResultsV720[hidden]{display:none!important}
+ #stockChartsV720 .sc-stats{grid-column:1/-1;margin:3px 0 0;gap:10px}
+ #stockChartsV720 .sc-stats>div{padding:10px 12px}
+ #stockChartsV720 .sc-stats small{margin-bottom:4px}
+ #stockChartsV720 .sc-stats strong{font-size:21px}
+ #stockChartsV720 .sc-section{margin:0;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--panel2)}
+ #stockChartsV720 .sc-section h3{font-size:16px;margin-bottom:7px}
+ #stockChartsV720 .sc-section .note{line-height:1.35;margin:5px 0}
+ #stockChartsV720 .sc-legend{margin:6px 0;gap:12px}
+ #stockChartsV720 .sc-chart-scroll{overflow-x:hidden}
+ #stockChartsV720 .sc-chart-scroll svg{min-width:0!important;max-width:100%;width:100%;height:auto}
+ #stockChartsV720 #scInventoryV720{max-height:260px;overflow:auto;scrollbar-gutter:stable;padding-right:6px}
+ #stockChartsV720 .sc-stock-row{margin:10px 0}
+ #stockChartsV720 .sc-number-details{margin:8px 0 0;padding:7px 9px}
+ #stockChartsV720 .sc-number-details>summary{min-height:26px;line-height:26px}
+ #financePanelV722 .fin-period{grid-template-columns:repeat(3,minmax(130px,1fr)) auto;align-items:end;margin:8px 0}
+ #financePanelV722 .fin-period label{gap:3px}
+ #financePanelV722 #finStatsV722{grid-template-columns:repeat(4,minmax(0,1fr));margin:8px 0}
+ #financePanelV722 #finStatsV722>div{padding:10px 12px}
+ #financePanelV722 #finStatsV722 strong{font-size:20px}
+ #financePanelV722 #finPendingV722{margin:6px 0 10px}
+ #financePanelV722 .dashboard-charts-v760{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:12px;align-items:start;margin:10px 0 14px}
+ #financePanelV722 .dashboard-charts-v760>details{min-width:0;padding:12px;background:var(--panel2);border:1px solid var(--line);border-radius:10px}
+ #financePanelV722 .dashboard-charts-v760>details>summary{font-size:15px;min-height:28px}
+ #financePanelV722 .dashboard-charts-v760 #finChartV722{max-height:360px;overflow:auto;scrollbar-gutter:stable}
+ #financePanelV722 .dashboard-charts-v760 #finOtherStatsV735{grid-template-columns:repeat(2,minmax(0,1fr));margin:8px 0}
+ #financePanelV722 .fin-period-chart{padding:8px 0;margin-top:6px}
+ #financePanelV722 .fin-chart-label{margin:5px 0 3px}
+ #financePanelV722 .dashboard-settings-v760{margin-top:12px;border-top:1px solid var(--line);padding-top:8px}
+ #cashPanelV759:not([hidden]){display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:12px;align-items:start}
+ #cashPanelV759>.card:first-child{grid-column:1/-1}
+ #cashPanelV759>.card{min-width:0}
+ #cashPanelV759>.card:first-child .fin-period{grid-template-columns:repeat(2,minmax(140px,1fr)) auto;align-items:end;margin:8px 0}
+ #cashPanelV759 #cashStatsV759{grid-template-columns:repeat(4,minmax(0,1fr));margin:8px 0}
+}
+@media screen and (min-width:1100px){
+ #relatorios #stockChartsV720{position:relative}
+ #stockChartsV720>summary{padding-right:160px;min-height:34px}
+ #stockChartsV720 .sc-intro{position:absolute;top:10px;right:12px;margin:0}
+ #stockChartsV720 .sc-intro p{display:none}
+}
