@@ -400,3 +400,10 @@ Validação: build limpo32scripts válidos, CSS incorporado e2suítes de regress
 Pedido para abreviar carregamento para carga nos botões e organizar no PC e celular. Labels Guardar carga/Fechar carga/Apagar carga (Nova carga se usada). Grade de2colunas só no destino carga: Limpar campos/Guardar carga, Fechar carga/Apagar carga; Apagar resumo abaixo em largura total, mantendo a distinção entre remover itens e limpar resumo. Botões40px mínimos, fonte14px e quebra para nomes longos. Hidden e permissões preservados; nenhuma mudança em handlers/confirmações/salvamento/baixa, outros destinos ou PDF.
 
 Validação: build limpo32scripts válidos; labels/grade confirmados no HTML gerado e3suítes pertinentes passaram (calculadora desktop, teclado móvel e baixa de cargas). Sem validação visual real. Apenas prévia12; produção inalterada.
+
+
+## Remover frase de identificação opcional V752 — 14/11
+
+Removido o small ajudaIdentificacaoMovimento abaixo do nome de comprador/destino (também usado por vendedor/origem), conforme pedido. PC e celular. Campo, placeholder opcional e lógica de histórico preservados. Não havia referências JavaScript ao elemento.
+
+Validação: build limpo32scripts válidos, frase/elemento ausentes e campo preservado no HTML gerado. Apenas prévia12; produção inalterada.

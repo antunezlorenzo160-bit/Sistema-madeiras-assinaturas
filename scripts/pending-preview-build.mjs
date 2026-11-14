@@ -20,6 +20,8 @@ export function applyPendingPreview(html){
  replace('    carregamentos.push({...salvo});\n    lancamentos.push({...salvo});','    const priced=attachPriceV710(salvo,carregamentos.filter(i=>i.grupoCargaId===salvo.grupoCargaId));\n    Object.assign(salvo,priceLoadServices(priced));\n    carregamentos.push({...salvo});\n    lancamentos.push({...salvo});\n    repriceLoadsV710();\n    Object.assign(salvo,carregamentos.find(i=>i.id===salvo.id)||salvo);');
  // The reusable-client listener lives outside V407's closure; use its own field schema.
  replace('for(const[k]of camposClienteV407){const campo=form.querySelector(', 'for(const[k]of camposClientesV492){const campo=form.querySelector(');
+ // V752: remove the optional identification helper requested by the user.
+ replace('<small id="ajudaIdentificacaoMovimento" class="muted">Opcional. Se não preencher, o histórico mostrará —.</small>', '');
  // V751: short labels for the calculator load actions; handlers stay untouched.
  replace("guardar.textContent='Guardar carregamento'", "guardar.textContent='Guardar carga'");
  replace("bg.textContent=carga?'Fechar carregamento':'Guardar resumo'", "bg.textContent=carga?'Fechar carga':'Guardar resumo'");
