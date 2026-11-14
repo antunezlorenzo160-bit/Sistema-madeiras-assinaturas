@@ -118,3 +118,9 @@ test('draft grouping preserves dimensions, species, price, condition and drying 
  const bulk={...first,tipoMedida:'granel',largura:0,espessura:0,comprimento:0,quantidade:.1,volume:.1},grouped=groupStockPurchaseLinesV754([bulk,{...bulk,id:second.id,quantidade:.2,volume:.2}]);assert.equal(grouped[0].volume,.3);assert.equal(grouped[0].quantidade,.3);
  const result=normalizeStockPurchase(purchase({lines:merged}));assert.equal(result.goodsCents,400000);assert.equal(result.totalCents,430000);
 });
+
+test('grouping fractional dimensions recomputes physical volume without accumulating per-launch rounding',()=>{
+ const original=line({largura:1.234,espessura:2.345,comprimento:3.456,quantidade:1,volume:1.234/100*2.345/100*3.456});
+ const rows=Array.from({length:201},(_,n)=>({...original,id:'line-'+n}));const grouped=groupStockPurchaseLinesV754(rows);assert.equal(grouped[0].volume,original.largura/100*original.espessura/100*original.comprimento*201);
+ grouped[0].id=lineId;assert.doesNotThrow(()=>normalizeStockPurchase(purchase({lines:grouped})));
+});

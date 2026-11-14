@@ -15,7 +15,7 @@ export function groupStockPurchaseLinesV754(lines){
   const current=groups.get(key);
   if(!current){groups.set(key,{...line});continue;}
   current.quantidade+=line.quantidade;
-  current.volume=(purchaseVolumeUnits(current.volume)+purchaseVolumeUnits(line.volume))/1e9;
+  current.volume=current.tipoMedida==='m3'?current.largura/100*current.espessura/100*current.comprimento*current.quantidade:(purchaseVolumeUnits(current.volume)+purchaseVolumeUnits(line.volume))/1e9;
   if(current.tipoMedida==='granel')current.quantidade=current.volume;
  }
  return [...groups.values()];
