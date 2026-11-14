@@ -6,6 +6,20 @@ export function stockCostKey(item){
  const num=k=>Number(item[k]||0).toFixed(6),green=item.estadoMadeira==='verde'||item.origemMadeira==='verde'||item.origemMovimentacao==='Mad. verde';
  return JSON.stringify([item.madeiraId,kind,green?'verde':'seca',...(kind==='granel'?[]:['espessura','largura','comprimento'].map(num))]);
 }
+// Group only unconfirmed draft lines with identical physical and purchase conditions.
+export function groupStockPurchaseLinesV754(lines){
+ const groups=new Map(),ids=new Set();
+ for(const line of lines){
+  if(ids.has(line.id))throw Error('Item repetido na lista da compra.');ids.add(line.id);
+  const key=JSON.stringify([line.madeiraId,line.tipoMedida,line.estadoMadeira,line.secagemDias??0,line.unitCents,line.largura,line.espessura,line.comprimento]);
+  const current=groups.get(key);
+  if(!current){groups.set(key,{...line});continue;}
+  current.quantidade+=line.quantidade;
+  current.volume=(purchaseVolumeUnits(current.volume)+purchaseVolumeUnits(line.volume))/1e9;
+  if(current.tipoMedida==='granel')current.quantidade=current.volume;
+ }
+ return [...groups.values()];
+}
 export function normalizeStockPurchase(input){
  const allowed=['companyId','id','date','supplier','reference','stock','freightCents','otherCents','freightIncluded','otherIncluded','lines'];
  if(!input||typeof input!=='object'||Array.isArray(input)||Object.keys(input).some(k=>!allowed.includes(k))||typeof input.companyId!=='string'||!/^[-\w]{1,120}$/.test(input.companyId)||!purchaseUuidV728.test(input.id||'')||!['estoque1','estoque2'].includes(input.stock))throw Error('Dados do descarregamento inválidos.');

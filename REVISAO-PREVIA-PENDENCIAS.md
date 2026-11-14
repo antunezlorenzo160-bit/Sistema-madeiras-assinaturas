@@ -416,3 +416,10 @@ Usuário confirmou botões da compra. Encontrada recriação incondicional de pu
 Regressão reproduzida antes: change substituíaDOM1vez antes do clique; depois0, clique remove só a linha escolhida e preserva campos/estoque. Testes adicionais: confirmação incerta/compra confirmada bloqueiam remoção; falha de armazenamento preserva linha e mostra erro. Sem mudança em transação do servidor, estoque, financeiro ou duplicidade/retry.
 
 Validação:2suítes compra/UI passaram, build limpo32scripts válidos. Sem teste nativo no celular ou registros privados reais. Apenas prévia12; produção inalterada.
+
+
+## Agrupamento de medidas na compra V754 — 14/11
+
+Usuário considera200linhas suficientes se peças iguais se agruparem. Agrupa no rascunho por madeiraId, unidade, espessura/largura/comprimento exatos, preço por m³, condição seca/verde e prazo de secagem. Soma peças/volume e preserva primeiroID sem mutar entrada; granel soma metros cúbicos com precisão1e-9. Captura agrupa antes de validar limite200, render/confirm recebe a mesma linha. Abertura de rascunho antigo não confirmado agrupa com persistência verificada; falha preserva original e mostraerro. Compras confirmadas e confirmação incerta/payload assinado permanecem intactos. Não agrupa preços diferentes nem espécies/condições distintas. IDs repetidos rejeitados. Mantidas validações físicas e limites.
+
+Ajuda explica200linhas agrupadas, não200peças. Mensagem confirma medida agrupada e estoque inalterado. Teste201lançamentos iguais→1linha/201peças, reload/payload preservados; fronteiras dimensões/espécie/preço/condição/prazo, granel0.1+0.2, totais financeiros, rascunho anterior e imutabilidade pending/confirmed.2suítes de compra/UI passaram. Build limpo32scripts válidos. Sem dados privados ou confirmação real. Apenas prévia12; produção inalterada.

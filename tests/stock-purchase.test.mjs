@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {normalizeStockPurchase,stockCostKey} from '../public/stock-purchase.mjs';
+import {normalizeStockPurchase,stockCostKey,groupStockPurchaseLinesV754} from '../public/stock-purchase.mjs';
 import {confirmStockPurchase,purchaseRecordsPath,purchaseRecordId} from '../Netlify/Funtions/lib/stock-purchase.mjs';
 import {financeCollectionPath,saveFinanceEntry,cancelFinanceEntry} from '../Netlify/Funtions/lib/company-finance.mjs';
 import {projectLoadSales,saveLoadSaleConfig} from '../Netlify/Funtions/lib/load-sales.mjs';
@@ -109,4 +109,12 @@ test('a load in another measure receives the prior same-species purchase average
  s.records.set('empresas/tenant/dados/sm2_movimentos/registros/out-ref',{...shape,id:'out-ref',tipo:'saida',grupoCargaId:'load-ref',quantidade:8,volume:4,data:'08/11/2026, 10:00:00'});
  s.records.set('empresas/tenant/dados/sm2_carregamentos/registros/ref-line',{...shape,id:'ref-line',tipoMedida:'m3',quantidade:8,volume:4,valor:8000,cargaStatus:'concluido',cargaBaixadaEm:at+3600000,grupoCargaId:'load-ref'});
  const writes=s.writes.length,sale=(await projectLoadSales(s.db,'tenant',{from:'2026-11-08',to:'2026-11-08'}))[0];assert.equal(sale.costCents,520000);assert.equal(sale.source.usesSpeciesReference,true);assert.equal(sale.source.costMode,'average');assert.equal(s.writes.length,writes);
+});
+
+test('draft grouping preserves dimensions, species, price, condition and drying period boundaries',()=>{
+ const first=line(),second=line({id:'a2d00244-a75c-44a4-aa30-bd78176a744d'}),before=JSON.stringify([first,second]);
+ const merged=groupStockPurchaseLinesV754([first,second]);assert.equal(merged.length,1);assert.equal(merged[0].quantidade,4);assert.equal(merged[0].volume,4);assert.equal(merged[0].id,first.id);assert.equal(JSON.stringify([first,second]),before);
+ for(const change of [{madeiraId:'other'},{largura:99},{espessura:99},{comprimento:2},{unitCents:120000},{estadoMadeira:'verde'},{secagemDias:30}])assert.equal(groupStockPurchaseLinesV754([first,{...second,...change}]).length,2);
+ const bulk={...first,tipoMedida:'granel',largura:0,espessura:0,comprimento:0,quantidade:.1,volume:.1},grouped=groupStockPurchaseLinesV754([bulk,{...bulk,id:second.id,quantidade:.2,volume:.2}]);assert.equal(grouped[0].volume,.3);assert.equal(grouped[0].quantidade,.3);
+ const result=normalizeStockPurchase(purchase({lines:merged}));assert.equal(result.goodsCents,400000);assert.equal(result.totalCents,430000);
 });

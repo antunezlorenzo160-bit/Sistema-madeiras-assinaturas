@@ -41,11 +41,11 @@ function stockPurchaseCaptureV728(item,destination){
   const draft=purchaseReadFieldsV728();if(draft.stock&&draft.stock!==destination)throw Error('Confirme esta lista no estoque escolhido antes de trocar de estoque.');
   const unitCents=financeCents(draft.unit.trim());
   const line={id:item.id,madeiraId:item.madeiraId,madeira:item.madeira,tipoMedida:item.tipoMedida,largura:Number(item.largura||0),espessura:Number(item.espessura||0),comprimento:Number(item.comprimento||0),quantidade:Number(item.quantidade||0),volume:Number(item.volume||0),estadoMadeira:item.tipoMedida==='m3'&&$('chkMadeiraVerde')?.checked?'verde':'seca',unitCents};
-  const next={...draft,stock:destination,supplier:draft.supplier||String(item.fornecedorOrigem||''),lines:[...draft.lines,line]};
+  const next={...draft,stock:destination,supplier:draft.supplier||String(item.fornecedorOrigem||''),lines:groupStockPurchaseLinesV754([...draft.lines,line])};
   // Validate physical quantity and price now; supplier may be completed before confirmation.
   if(line.estadoMadeira==='verde')line.secagemDias=Number($('diasSecagemVerde')?.value||0);
   purchasePayloadV728({...next,supplier:next.supplier||'Fornecedor a preencher'});
-  purchaseStoreV728(next);purchaseFillV728();status.textContent='Item adicionado à lista. O estoque ainda não foi alterado.';
+  purchaseStoreV728(next);purchaseFillV728();status.textContent=next.lines.length<draft.lines.length+1?'Medida agrupada na lista: peças e volume somados. O estoque ainda não foi alterado.':'Item adicionado à lista. O estoque ainda não foi alterado.';
   if(item.tipoMedida==='m3')prepararProximoLancamentoM3();else{$('volumeGranelV384').value='';calcPreview();}
  }catch(e){status.textContent=e.message;}
  return true;
@@ -91,6 +91,9 @@ async function purchaseConfirmV728(){
 function purchaseMountV728(){
  const node=purchaseElV728('stockPurchaseV728');if(!node||!purchaseOwnerV728()||stockPurchaseDraftV728)return;
  try{const saved=JSON.parse(window.__v456Local.getItem(purchaseStorageV728())||'null');stockPurchaseDraftV728=saved&&typeof saved==='object'&&Array.isArray(saved.lines)&&saved.id?saved:purchaseFreshV728();}catch{stockPurchaseDraftV728=purchaseFreshV728();}
+ if(!stockPurchaseDraftV728.pending&&!stockPurchaseDraftV728.confirmed){
+  try{const lines=groupStockPurchaseLinesV754(stockPurchaseDraftV728.lines);if(JSON.stringify(lines)!==JSON.stringify(stockPurchaseDraftV728.lines))purchaseStoreV728({...stockPurchaseDraftV728,lines});}catch(e){purchaseElV728('purchaseStatusV728').textContent=e.message;}
+ }
  purchaseFillV728();stockPurchaseVisibilityV728();
  for(const input of node.querySelectorAll('input'))input.addEventListener('change',purchaseInputV728);
  purchaseElV728('purchaseLinesV728').addEventListener('click',event=>{const button=event.target.closest('[data-purchase-remove]');if(!button||stockPurchaseBusyV728||stockPurchaseDraftV728.pending||stockPurchaseDraftV728.confirmed)return;try{purchaseStoreV728({...purchaseReadFieldsV728(),lines:stockPurchaseDraftV728.lines.filter((_,n)=>n!==Number(button.dataset.purchaseRemove))});purchaseRenderV728();purchaseElV728('purchaseStatusV728').textContent='Item retirado da lista. O estoque não foi alterado.';}catch(e){purchaseElV728('purchaseStatusV728').textContent=e.message;}});
