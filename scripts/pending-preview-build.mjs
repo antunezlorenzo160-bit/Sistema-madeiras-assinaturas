@@ -10,8 +10,8 @@ export function applyPendingPreview(html){
  let app=JSON.parse(html.slice(start,end));if(app.includes('// PENDING_PREVIEW_V710'))return html;
  const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
  const replace=(a,b)=>{if(!app.includes(a)||app.indexOf(a)!==app.lastIndexOf(a))throw Error('Trecho da prévia mudou: '+a.slice(0,80));app=app.replace(a,()=>b);};
- const pure=['public/document-pricing.mjs','public/compact-load-tables.mjs','public/compact-documents.mjs','public/sheet-item-totals.mjs','public/stock-charts.mjs','public/company-finance.mjs','public/load-transport.mjs','public/load-sales.mjs','public/minimum-profit.mjs','public/purchase-payments.mjs','public/stock-purchase.mjs','public/opening-stock-cost.mjs','public/finance-reconciliation.mjs','public/shared-trips.mjs','public/linear-total.mjs','public/log-purchase.mjs'].map(p=>read(p).replace(/^import .*;\n/gm,'').replaceAll('export ','')).join('\n');
- const helpers=read('ui/preview-pricing.js')+'\n'+read('ui/compact-print-settings.js')+'\n'+read('ui/sheet-totals.js')+'\n'+read('ui/stock-charts.js')+'\n'+read('ui/company-finance.js')+'\n'+read('ui/reports.js')+'\n'+read('ui/load-transport.js')+'\n'+read('ui/stock-purchase.js')+'\n'+read('ui/shared-trips.js')+'\n'+read('ui/log-purchase.js')+'\n'+read('ui/purchase-payments.js');
+ const pure=['public/document-pricing.mjs','public/compact-load-tables.mjs','public/compact-documents.mjs','public/sheet-item-totals.mjs','public/stock-charts.mjs','public/company-finance.mjs','public/load-transport.mjs','public/load-sales.mjs','public/minimum-profit.mjs','public/purchase-payments.mjs','public/cash-book.mjs','public/stock-purchase.mjs','public/opening-stock-cost.mjs','public/finance-reconciliation.mjs','public/shared-trips.mjs','public/linear-total.mjs','public/log-purchase.mjs'].map(p=>read(p).replace(/^import .*;\n/gm,'').replaceAll('export ','')).join('\n');
+ const helpers=read('ui/preview-pricing.js')+'\n'+read('ui/compact-print-settings.js')+'\n'+read('ui/sheet-totals.js')+'\n'+read('ui/stock-charts.js')+'\n'+read('ui/company-finance.js')+'\n'+read('ui/reports.js')+'\n'+read('ui/load-transport.js')+'\n'+read('ui/stock-purchase.js')+'\n'+read('ui/shared-trips.js')+'\n'+read('ui/log-purchase.js')+'\n'+read('ui/purchase-payments.js')+'\n'+read('ui/cash.js');
  replace('function calcPreview(){','// PENDING_PREVIEW_V710\n'+pure+'\n'+helpers+'\nfunction calcPreview(){');
  app=app.replace('function calcPreview(){', 'function calcPreview(){calcPreviewBaseV710();stockPurchaseVisibilityV728();document.getElementById("pricePreviewV710")?.remove();previewDocumentValueV710();}\nfunction calcPreviewBaseV710(){');
  replace('orcamento.push(oi);','orcamento.push(attachPriceV710(oi,orcamento));\n      repriceBudgetV710();\n      Object.assign(oi,orcamento.find(i=>i.id===oi.id)||oi);');
@@ -51,7 +51,8 @@ export function applyPendingPreview(html){
  }
  app=app.replaceAll("if(!ativo||ativo.tagName!=='INPUT')$('largura').focus({preventScroll:true});", "if((!ativo||ativo.tagName!=='INPUT')&&window.__smCalcKeyboardV733?.canRestoreFocus($('largura'))!==false)$('largura').focus({preventScroll:true});");
  replace("if(modoMedida==='granel')$('volumeGranelV384')?.focus();else if(modoMedida==='m3fechado')$('volumeFechadoV387')?.focus();else $('largura').focus()", "const nextField=modoMedida==='granel'?$('volumeGranelV384'):modoMedida==='m3fechado'?$('volumeFechadoV387'):$('largura');if(window.__smCalcKeyboardV733?.canRestoreFocus(nextField)!==false&&document.activeElement!==nextField)nextField?.focus({preventScroll:true})");
- replace("control.closest?.('#financePanelV722')","control.closest?.('#financePanelV722,#sharedTripsV741,#torasPurchasesV756')");
+ replace("control.dataset?.reportView==='finance'","['finance','cash'].includes(control.dataset?.reportView)");
+ replace("control.closest?.('#financePanelV722')","control.closest?.('#financePanelV722,#sharedTripsV741,#torasPurchasesV756,#cashPanelV759')");
  app=app.replace('</body>','<script id="mobile-calculator-keyboard-v733">'+read('ui/mobile-calculator-keyboard.js')+'</script></body>');
  app=app.replace('</head>','<style id="mobile-calculator-keyboard-v733-style">'+read('ui/mobile-calculator-keyboard.css')+'</style></head>');
  // New stock exits keep an immutable instant for cost chronology, including offline recovery.
@@ -70,7 +71,7 @@ export function applyPendingPreview(html){
  replace('<span class="v408-destino-seta" aria-hidden="true">›</span>\n      </button>`;', '<span class="v408-destino-seta" aria-hidden="true">›</span>\n      </button></div>`;');
  app=app.replaceAll("el.hidden=!aparece;","el.hidden=!aparece;if(el.closest('.trip-list-row-v742'))el.closest('.trip-list-row-v742').hidden=!aparece;");
  // Reports are separate from stock. Navigation permissions remain in the existing guard.
- const reports=read('ui/reports.html').replace('__REPORT_STOCK_CHARTS__',read('ui/stock-charts.html')).replace('__REPORT_FINANCE__',read('ui/company-finance.html'));
+ const reports=read('ui/reports.html').replace('__REPORT_STOCK_CHARTS__',read('ui/stock-charts.html')).replace('__REPORT_FINANCE__',read('ui/company-finance.html')).replace('__REPORT_CASH__',read('ui/cash.html'));
  replace('<section id="estoque" class="tab">',reports+'<section id="estoque" class="tab">');
  const loadMenu='<button type="button" class="inicio-atalho-v464" data-inicio-destino="carregamentos">';
  replace(loadMenu,'<button type="button" class="inicio-atalho-v464" data-inicio-destino="relatorios"><strong>Gráficos e relatórios</strong><span>Indicadores e acompanhamento</span></button>'+loadMenu);
