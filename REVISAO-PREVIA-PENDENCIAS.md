@@ -361,3 +361,10 @@ Validação:4suítes pertinentes passaram (rolagem desktop, teclado móvel, tota
 Foto do usuário mostrou total de bloco atrás dos títulos Madeira/Qtd./Medidas durante a rolagem. O cabeçalho genérico th sticky top0 prendia os títulos enquanto o corpo seguia rolando, com fundo translúcido. Correção CSS restrita à tela da tabela do resumo da calculadora: cabeçalho acompanha as linhas, sem ficar fixo. Não altera dados, grupos, totais, impressão/PDF ou outras tabelas.
 
 Validação: build limpo, regra restrita incorporada e32scripts válidos;2suítes de regressão (rolagem desktop e total linear) passaram. Sem confirmação visual em navegador real.
+
+
+## Densidade moderada do PC V747 — 14/11
+
+Pedido para compactar as telas no computador. CSS restrito a screen e largura mínima1100px reduz espaçamento de cartões/grades, campos de entrada de linha única, botões, indicadores e atalhos laterais. Campos36px, botões34px, cartões10px de padding, menu52px mínimos. Texto de entrada14px, indicadores18px; textos longos podem crescer sem corte. Exclui checkbox/radio/range/cor/arquivo/ocultos; textarea mantém altura. Não usa zoom/transform, não altera posição do cabeçalho/menu, conteúdo, dados, rolagem ou comportamento. Celular e impressão/PDF fora da regra.
+
+Validação: build limpo e32scripts válidos;4suítes pertinentes passaram (rolagem desktop, teclado móvel, total linear e posição de viagens). Regra conferida no HTML gerado. Sem avaliação visual em navegador real; tamanho final deve ser conferido no monitor do usuário.

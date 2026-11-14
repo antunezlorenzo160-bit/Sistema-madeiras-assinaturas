@@ -121,3 +121,26 @@
 @media screen{
  html body #calculadora #resumoCalculadoraExport .table-wrap>table>thead>tr>th{position:static!important;top:auto!important}
 }
+
+/* V747: moderate desktop density; native mobile and printed documents stay unchanged. */
+@media screen and (min-width:1100px){
+ html body main .card{padding:10px!important;margin-bottom:10px!important;border-radius:10px!important}
+ html body main :is(.grid,.grid3,.stats){gap:8px!important}
+ html body main label{margin-bottom:3px;font-size:12px}
+ html body main :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="hidden"]),select){padding:7px 9px!important;min-height:36px!important;font-size:14px!important;border-radius:7px!important}
+ html body main textarea{padding:8px 9px!important;font-size:14px!important;border-radius:7px!important}
+ html body main :is(.btn,.modo-medida button,.quick-lengths button){padding:8px 11px!important;min-height:34px!important;font-size:14px!important}
+ html body main :is(.row-actions,.modo-medida){gap:6px!important;margin-top:8px;margin-bottom:8px}
+ html body main .stat{padding:8px 10px!important;border-radius:8px!important}
+ html body main .stat small{margin-bottom:3px!important}
+ html body main .stat strong{font-size:18px!important}
+ html body main .card :is(h2,h3){margin-bottom:10px!important}
+ html body main .card h2{font-size:20px}
+ html body main .card h3{font-size:17px}
+ html body main .table-wrap :is(th,td){padding-top:6px;padding-bottom:6px}
+ html body #calculadora :is(.volume-total-topo,#btnLancar){min-height:38px!important;padding-top:7px!important;padding-bottom:7px!important;font-size:15px!important}
+ html body #calculadora .calc-screen{padding:10px!important;margin-bottom:8px!important}
+ html body #menuLateralV525 .inicio-atalho-v464{min-height:52px!important;padding:7px 10px!important;margin-bottom:5px!important;border-radius:8px!important}
+ html body #menuLateralV525 .inicio-atalho-v464 strong{font-size:15px!important;margin-bottom:2px!important}
+ html body #menuLateralV525 .inicio-atalho-v464 span{font-size:11px!important;line-height:1.2!important}
+}
