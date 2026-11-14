@@ -386,3 +386,10 @@ Checagem adicional da tabela desktop passou após incluir no harness as dependê
 Usuário pediu retirar o ajuste por ter deixado a tela muito pequena. Removidos script desktop-fit.js, inclusão no builder, CSS específico e testes exclusivos do recurso. Sem zoom automático, botão ou observadores de ajuste. Mantidas compactação moderadaV747, correção do cabeçalhoV746 e rolagemV745. Sem migração ou limpeza de dados; recurso não persistia configurações.
 
 Validação: build limpo confirmou ausência do script/botão/estiloV748,32scripts válidos e2suítes de regressão desktop passaram. Apenas prévia12; produção inalterada.
+
+
+## Botões secundários do contador no PC V750 — 14/11
+
+Pedido para diminuir Ligar/Desligar contador e Corrigir. CSS screen>=1100px deixa toggle na largura do texto/alinhado à direita, mínimo30px de altura e fonte12px. Corrigir fica30px de altura, mínimo84px de largura e fonte12px; seletor limitado a data-modo=corrigir preserva botão Madeira verde. Regras explícitas vencem os mínimos44px do estilo anterior. Nenhuma mudança em listeners, contador, lançamento ou celular.
+
+Validação: build limpo32scripts válidos, CSS incorporado e2suítes de regressão (calculadora desktop/teclado móvel) passaram. Sem teste visual real. Apenas prévia12; produção inalterada.
