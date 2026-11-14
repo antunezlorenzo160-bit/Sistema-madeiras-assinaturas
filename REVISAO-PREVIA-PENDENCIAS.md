@@ -354,3 +354,10 @@ Validação:10suítes pertinentes passaram.11casos novos no modelo/integração 
 Retirada a pausa por passagem do mouse sobre input, textarea, select e contenteditable na zona de rolagem automática. O alvo ignora a barra interna do campo e procura seu contêiner/página, inclusive nos campos da calculadora. Não altera valor nem chama foco. Clique continua interrompendo a rolagem; arraste, saída do ponteiro, perda de foco, toque, centro da tela, diálogos e controles não editáveis da calculadora preservam o comportamento anterior.
 
 Validação:4suítes pertinentes passaram (rolagem desktop, teclado móvel, total linear e posição das viagens). Testes executam o código gerado e verificam subida/descida sobre os quatro tipos de campo, dentro/fora da calculadora, conteúdo interno imóvel, valor intacto e interrupções. Build limpo com32scripts sintaticamente válidos. Sem teste visual em navegador real. Apenas prévia12; produção inalterada.
+
+
+## Cabeçalho sobreposto no resumo V746 — 14/11
+
+Foto do usuário mostrou total de bloco atrás dos títulos Madeira/Qtd./Medidas durante a rolagem. O cabeçalho genérico th sticky top0 prendia os títulos enquanto o corpo seguia rolando, com fundo translúcido. Correção CSS restrita à tela da tabela do resumo da calculadora: cabeçalho acompanha as linhas, sem ficar fixo. Não altera dados, grupos, totais, impressão/PDF ou outras tabelas.
+
+Validação: build limpo, regra restrita incorporada e32scripts válidos;2suítes de regressão (rolagem desktop e total linear) passaram. Sem confirmação visual em navegador real.

@@ -116,3 +116,8 @@
 .sheet-final-totals-v718 h3{font-size:16px;margin:0 0 10px}
 .sheet-final-totals-v718 p{font-size:13px;line-height:1.5;margin:6px 0;white-space:normal;overflow-wrap:anywhere}
 @media print{.sheet-final-totals-v718{break-inside:avoid;margin:2mm 0;padding-top:1mm}.sheet-final-totals-v718 p{font-size:7.5pt;line-height:1.1;margin:.5mm 0}}
+
+/* V746: summary rows must not pass behind the generic sticky table header. */
+@media screen{
+ html body #calculadora #resumoCalculadoraExport .table-wrap>table>thead>tr>th{position:static!important;top:auto!important}
+}
