@@ -144,3 +144,18 @@
  html body #menuLateralV525 .inicio-atalho-v464 strong{font-size:15px!important;margin-bottom:2px!important}
  html body #menuLateralV525 .inicio-atalho-v464 span{font-size:11px!important;line-height:1.2!important}
 }
+
+/* V756: private log purchase workspace inside the existing Toras screen. */
+#cubagemToras .lp-nav-v756{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 10px;flex:0 0 auto}
+#cubagemToras .lp-nav-v756 [aria-pressed=true]{outline:2px solid var(--accent,#d9a441);outline-offset:1px}
+#cubagemToras .toras-layout[hidden],#cubagemToras #torasPurchasesV756[hidden]{display:none!important}
+#cubagemToras #torasPurchasesV756{flex:1;min-height:0;overflow:auto;padding:0 6px 12px;min-width:0}
+#torasPurchasesV756 .lp-line-v756,#torasPurchasesV756 .lp-receipt-v756{padding:10px;margin:8px 0;border:1px solid var(--line,#638371);border-radius:8px;overflow-wrap:anywhere}
+#torasPurchasesV756 .lp-line-v756{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px 10px;align-items:center}
+#torasPurchasesV756 .lp-line-v756 span{grid-column:1}
+#torasPurchasesV756 .lp-line-v756 button{grid-column:2;grid-row:1 / 3}
+#cubagemToras #torasPurchasesV756 .lp-check-v756{display:flex!important;align-items:center;gap:8px}
+#cubagemToras #torasPurchasesV756 input[type=checkbox]{width:auto;flex:0 0 auto}
+#torasPurchasesV756 #lpTotalV756{font-weight:700;line-height:1.5}
+#torasPurchasesV756 #lpStatusV756{font-size:13px;line-height:1.4}
+@media(max-width:600px){#cubagemToras #torasPurchasesV756 .grid3{grid-template-columns:repeat(2,minmax(0,1fr))!important}#torasPurchasesV756 .lp-line-v756{display:block}#torasPurchasesV756 .lp-line-v756 :is(strong,span){display:block;margin-bottom:5px}}

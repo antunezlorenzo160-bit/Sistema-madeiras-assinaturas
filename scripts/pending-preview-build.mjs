@@ -10,8 +10,8 @@ export function applyPendingPreview(html){
  let app=JSON.parse(html.slice(start,end));if(app.includes('// PENDING_PREVIEW_V710'))return html;
  const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
  const replace=(a,b)=>{if(!app.includes(a)||app.indexOf(a)!==app.lastIndexOf(a))throw Error('Trecho da prévia mudou: '+a.slice(0,80));app=app.replace(a,()=>b);};
- const pure=['public/document-pricing.mjs','public/compact-load-tables.mjs','public/compact-documents.mjs','public/sheet-item-totals.mjs','public/stock-charts.mjs','public/company-finance.mjs','public/load-transport.mjs','public/load-sales.mjs','public/minimum-profit.mjs','public/stock-purchase.mjs','public/opening-stock-cost.mjs','public/finance-reconciliation.mjs','public/shared-trips.mjs','public/linear-total.mjs'].map(p=>read(p).replace(/^import .*;\n/gm,'').replaceAll('export ','')).join('\n');
- const helpers=read('ui/preview-pricing.js')+'\n'+read('ui/compact-print-settings.js')+'\n'+read('ui/sheet-totals.js')+'\n'+read('ui/stock-charts.js')+'\n'+read('ui/company-finance.js')+'\n'+read('ui/reports.js')+'\n'+read('ui/load-transport.js')+'\n'+read('ui/stock-purchase.js')+'\n'+read('ui/shared-trips.js');
+ const pure=['public/document-pricing.mjs','public/compact-load-tables.mjs','public/compact-documents.mjs','public/sheet-item-totals.mjs','public/stock-charts.mjs','public/company-finance.mjs','public/load-transport.mjs','public/load-sales.mjs','public/minimum-profit.mjs','public/stock-purchase.mjs','public/opening-stock-cost.mjs','public/finance-reconciliation.mjs','public/shared-trips.mjs','public/linear-total.mjs','public/log-purchase.mjs'].map(p=>read(p).replace(/^import .*;\n/gm,'').replaceAll('export ','')).join('\n');
+ const helpers=read('ui/preview-pricing.js')+'\n'+read('ui/compact-print-settings.js')+'\n'+read('ui/sheet-totals.js')+'\n'+read('ui/stock-charts.js')+'\n'+read('ui/company-finance.js')+'\n'+read('ui/reports.js')+'\n'+read('ui/load-transport.js')+'\n'+read('ui/stock-purchase.js')+'\n'+read('ui/shared-trips.js')+'\n'+read('ui/log-purchase.js');
  replace('function calcPreview(){','// PENDING_PREVIEW_V710\n'+pure+'\n'+helpers+'\nfunction calcPreview(){');
  app=app.replace('function calcPreview(){', 'function calcPreview(){calcPreviewBaseV710();stockPurchaseVisibilityV728();document.getElementById("pricePreviewV710")?.remove();previewDocumentValueV710();}\nfunction calcPreviewBaseV710(){');
  replace('orcamento.push(oi);','orcamento.push(attachPriceV710(oi,orcamento));\n      repriceBudgetV710();\n      Object.assign(oi,orcamento.find(i=>i.id===oi.id)||oi);');
@@ -20,6 +20,9 @@ export function applyPendingPreview(html){
  replace('    carregamentos.push({...salvo});\n    lancamentos.push({...salvo});','    const priced=attachPriceV710(salvo,carregamentos.filter(i=>i.grupoCargaId===salvo.grupoCargaId));\n    Object.assign(salvo,priceLoadServices(priced));\n    carregamentos.push({...salvo});\n    lancamentos.push({...salvo});\n    repriceLoadsV710();\n    Object.assign(salvo,carregamentos.find(i=>i.id===salvo.id)||salvo);');
  // The reusable-client listener lives outside V407's closure; use its own field schema.
  replace('for(const[k]of camposClienteV407){const campo=form.querySelector(', 'for(const[k]of camposClientesV492){const campo=form.querySelector(');
+ // V756: owner-only log purchases live inside Toras, backed by the private financial API.
+ replace('import { iniciarCubagemToras, criarSincronismoToras } from "/toras.mjs";', 'import { iniciarCubagemToras, criarSincronismoToras, volumeToras, chaveEspecieToras } from "/toras.mjs";');
+ replace('iniciarCubagemToras({...sincronismoListaToras,storage:', 'iniciarCubagemToras({montarCompras:mountLogPurchaseV756,...sincronismoListaToras,storage:');
  // V755: purchase packets carry their true count even when measures were grouped.
  app=app.replaceAll('g.pacotes+=1','g.pacotes+=purchasePacketCountV755(x)');
  app=app.replaceAll('if(x.contadoComoPacote===true)g.pacotes', 'if(x.contadoComoPacote===true&&purchasePacketCountV755(x)>0)g.pacotes');
@@ -48,7 +51,7 @@ export function applyPendingPreview(html){
  }
  app=app.replaceAll("if(!ativo||ativo.tagName!=='INPUT')$('largura').focus({preventScroll:true});", "if((!ativo||ativo.tagName!=='INPUT')&&window.__smCalcKeyboardV733?.canRestoreFocus($('largura'))!==false)$('largura').focus({preventScroll:true});");
  replace("if(modoMedida==='granel')$('volumeGranelV384')?.focus();else if(modoMedida==='m3fechado')$('volumeFechadoV387')?.focus();else $('largura').focus()", "const nextField=modoMedida==='granel'?$('volumeGranelV384'):modoMedida==='m3fechado'?$('volumeFechadoV387'):$('largura');if(window.__smCalcKeyboardV733?.canRestoreFocus(nextField)!==false&&document.activeElement!==nextField)nextField?.focus({preventScroll:true})");
- replace("control.closest?.('#financePanelV722')","control.closest?.('#financePanelV722,#sharedTripsV741')");
+ replace("control.closest?.('#financePanelV722')","control.closest?.('#financePanelV722,#sharedTripsV741,#torasPurchasesV756')");
  app=app.replace('</body>','<script id="mobile-calculator-keyboard-v733">'+read('ui/mobile-calculator-keyboard.js')+'</script></body>');
  app=app.replace('</head>','<style id="mobile-calculator-keyboard-v733-style">'+read('ui/mobile-calculator-keyboard.css')+'</style></head>');
  // New stock exits keep an immutable instant for cost chronology, including offline recovery.

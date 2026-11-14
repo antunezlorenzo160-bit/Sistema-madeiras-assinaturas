@@ -61,7 +61,7 @@ export function instalarAtalhosToras(form, view) {
   }, true);
 }
 
-export function iniciarCubagemToras({ document: doc = document, storage, copiar, pdf, observarPrecos, salvarPrecos, observarLista, gravarLinha, salvarIdentificacao }) {
+export function iniciarCubagemToras({ document: doc = document, storage, copiar, pdf, observarPrecos, salvarPrecos, observarLista, gravarLinha, salvarIdentificacao, montarCompras }) {
   const abrir = doc.getElementById('btnCubagemToras');
   if (!abrir || doc.getElementById('cubagemToras')) return;
   const dialog = doc.createElement('dialog');
@@ -98,6 +98,7 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
     <div class="export-actions"><button type="button" class="btn btn-secondary" data-copiar>Copiar lista</button><button type="button" class="btn btn-primary" data-pdf>Gerar PDF</button><button type="button" class="btn btn-secondary" data-limpar>Limpar lista</button></div>
     <div id="torasExport"><h3>Resumo da cubagem de toras</h3><p>Método: cilindro pelo diâmetro, sem desconto de casca.</p><p>Volume = π × (diâmetro em metros)² ÷ 4 × comprimento × quantidade.</p><div id="torasIdentificacao"></div><div id="torasLinhas"></div><p id="torasTotal"></p></div></section></div>`;
   doc.body.appendChild(dialog);
+  montarCompras?.({dialog,doc});
   const el = id => dialog.querySelector('#' + id);
   // O modal está fora de <main>. Copiar a aparência dos controles reais
   // também respeita temas cujos seletores são limitados ao conteúdo principal.
@@ -390,7 +391,7 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
       el('toraDiametro').value = ''; preview(); el('toraDiametro').focus();
     } catch (e) { el('toraPreview').textContent = e.message; }
   });
-  abrir.addEventListener('click', () => { aplicarTema(); dialog.showModal(); dialog.scrollTop=0; dialog.querySelector('.toras-calculo').scrollTop=0; dialog.querySelector('.toras-planilha').scrollTop=0; el('toraDiametro').focus({preventScroll:true}); });
+  abrir.addEventListener('click', () => { montarCompras?.({dialog,doc}); aplicarTema(); dialog.showModal(); dialog.scrollTop=0; dialog.querySelector('.toras-calculo').scrollTop=0; dialog.querySelector('.toras-planilha').scrollTop=0; el('toraDiametro').focus({preventScroll:true}); });
   dialog.querySelector('[data-fechar]').onclick = () => dialog.close();
   dialog.querySelector('[data-copiar]').onclick = async () => {
     if (!linhas.length) { el('toraAviso').textContent = 'Adicione uma tora à lista primeiro.'; return; }
