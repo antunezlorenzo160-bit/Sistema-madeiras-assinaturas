@@ -1,3 +1,4 @@
+import {applyDeliveryReceiptOuterV765} from './delivery-receipt-build.mjs';
 import {applyLinearTotalV744} from './linear-total-build.mjs';
 import {readFileSync,writeFileSync} from 'node:fs';
 import {resolve} from 'node:path';
@@ -11,7 +12,7 @@ export function applyPendingPreview(html){
  const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
  const replace=(a,b)=>{if(!app.includes(a)||app.indexOf(a)!==app.lastIndexOf(a))throw Error('Trecho da prévia mudou: '+a.slice(0,80));app=app.replace(a,()=>b);};
  const pure=['public/document-pricing.mjs','public/compact-load-tables.mjs','public/compact-documents.mjs','public/sheet-item-totals.mjs','public/stock-charts.mjs','public/company-finance.mjs','public/load-transport.mjs','public/load-sales.mjs','public/minimum-profit.mjs','public/purchase-payments.mjs','public/cash-book.mjs','public/stock-purchase.mjs','public/opening-stock-cost.mjs','public/finance-reconciliation.mjs','public/shared-trips.mjs','public/linear-total.mjs','public/log-purchase.mjs'].map(p=>read(p).replace(/^import .*;\n/gm,'').replaceAll('export ','')).join('\n');
- const helpers=read('ui/preview-pricing.js')+'\n'+read('ui/compact-print-settings.js')+'\n'+read('ui/sheet-totals.js')+'\n'+read('ui/stock-charts.js')+'\n'+read('ui/company-finance.js')+'\n'+read('ui/reports.js')+'\n'+read('ui/load-transport.js')+'\n'+read('ui/stock-purchase.js')+'\n'+read('ui/shared-trips.js')+'\n'+read('ui/log-purchase.js')+'\n'+read('ui/purchase-payments.js')+'\n'+read('ui/cash.js')+'\n'+read('ui/desktop-dashboard.js');
+ const helpers=read('ui/preview-pricing.js')+'\n'+read('ui/compact-print-settings.js')+'\n'+read('ui/sheet-totals.js')+'\n'+read('ui/stock-charts.js')+'\n'+read('ui/company-finance.js')+'\n'+read('ui/reports.js')+'\n'+read('ui/load-transport.js')+'\n'+read('ui/stock-purchase.js')+'\n'+read('ui/shared-trips.js')+'\n'+read('ui/log-purchase.js')+'\n'+read('ui/purchase-payments.js')+'\n'+read('ui/cash.js')+'\n'+read('ui/desktop-dashboard.js')+'\n'+read('ui/delivery-receipt.js');
  replace('function calcPreview(){','// PENDING_PREVIEW_V710\n'+pure+'\n'+helpers+'\nfunction calcPreview(){');
  app=app.replace('function calcPreview(){', 'function calcPreview(){calcPreviewBaseV710();stockPurchaseVisibilityV728();document.getElementById("pricePreviewV710")?.remove();previewDocumentValueV710();}\nfunction calcPreviewBaseV710(){');
  replace('orcamento.push(oi);','orcamento.push(attachPriceV710(oi,orcamento));\n      repriceBudgetV710();\n      Object.assign(oi,orcamento.find(i=>i.id===oi.id)||oi);');
@@ -40,6 +41,9 @@ export function applyPendingPreview(html){
  replaceStockV761('<small>Pacotes nesta largura</small>', '<small>Pacotes informados nesta largura</small>');
  replaceStockV761('<td><strong>${pacotesComp} pct</strong></td>', "<td><strong>${pacotesComp>0?pacotesComp+' pct':'—'}</strong></td>");
  replaceStockV761("${blocos||'<div class=\"empty\">Sem peças nesta largura.</div>'}", "<p class=\"note packet-note-v761\">Peças totais incluem os pacotes. — indica quantidade de pacotes não informada.</p>${blocos||'<div class=\"empty\">Sem peças nesta largura.</div>'}");
+ // V765: signed orders share the existing recipient link, without downloading a PDF.
+ replace('<div class="row-actions no-print" style="margin:0"><button class="btn btn-secondary" onclick="copiarBloco(\'orcGuardado_${o.id}\')">', '<div class="row-actions no-print" style="margin:0">${status===\'entregue\'&&o.assinaturaStatus===\'assinado\'?`<button type="button" class="btn btn-primary" data-delivery-receipt-v765="${esc(o.id)}">Compartilhar comprovante</button>`:\'\'}<button class="btn btn-secondary" onclick="copiarBloco(\'orcGuardado_${o.id}\')">');
+ replace(" if(control.dataset?.employeeContinueLoad)", " if(control.dataset?.deliveryReceiptV765)return parent.__smEmployeeCan('orders');\n if(control.dataset?.employeeContinueLoad)");
  // V752: remove the optional identification helper requested by the user.
  replace('<small id="ajudaIdentificacaoMovimento" class="muted">Opcional. Se não preencher, o histórico mostrará —.</small>', '');
  // V751: short labels for the calculator load actions; handlers stay untouched.
@@ -105,6 +109,6 @@ export function applyPendingPreview(html){
  app=app.replace(/<body([^>]*)>/, '<body$1><aside class="no-print" style="padding:10px;background:#fff0ca;color:#493b19;font:14px system-ui">Prévia para testes. Use documentos de teste e preserve os registros da empresa.</aside>');
  replace("return `<section class=\"v585-subtotais-especies\"><h3>Totais físicos e subtotal por espécie</h3><div class=\"v585-subtotais-grade\">${cards}</div></section>`;","return `<details class=\"v585-subtotais-especies v714-subtotais-recolher\"><summary>Totais físicos e subtotal por espécie</summary><div class=\"v585-subtotais-grade\">${cards}</div></details>`;");
  app=app.replace('</head>','<style id="preview-layout-v710">'+read('ui/preview-layout.css')+'\n'+read('ui/stock-charts.css')+'\n'+read('ui/reports.css')+'\n'+read('ui/load-transport.css')+'\n'+read('ui/stock-purchase.css')+'</style></head>');
- return html.slice(0,start)+JSON.stringify(app).replaceAll('</','<\\/')+html.slice(end);
+ return applyDeliveryReceiptOuterV765(html.slice(0,start)+JSON.stringify(app).replaceAll('</','<\\/')+html.slice(end),read('ui/delivery-receipt-root.js'));
 }
 if(process.argv[1]&&pathToFileURL(resolve(process.argv[1])).href===import.meta.url){const path=process.argv[2]||new URL('../public/index.html',import.meta.url);writeFileSync(path,applyPendingPreview(readFileSync(path,'utf8')));writeFileSync(new URL('../Netlify/Funtions/lib/finance-context.mjs',import.meta.url),'// Generated by the build. Preview and production records are isolated.\nexport const FINANCE_PREVIEW='+financePreviewContext(process.env.CONTEXT)+';\n');console.log('Prévia: precificação, planilhas e impressão compacta preparadas; movimentação original preservada.');}
