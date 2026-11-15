@@ -1,5 +1,10 @@
 // Documentos combinados; não cria itens de estoque, carga ou lançamentos financeiros.
+export function orderCustomerLabelV768(order){
+ const direct=[order?.cliente,order?.clienteBusca,order?.nomeCliente,order?.clienteNome,order?.nome_cliente,order?.customerName].find(value=>typeof value==='string'&&value.trim());if(direct)return direct.trim();
+ for(const field of ['dadosCliente','clienteDados','contato']){const value=order?.[field];if(!value||typeof value!=='object')continue;const name=[value.nome,value.cliente,value.name].find(v=>typeof v==='string'&&v.trim());if(name)return name.trim();}return '';
+}
 export const orderCustomerNameV767=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLocaleLowerCase('pt-BR').replace(/\s+/g,' ');
+export const orderCustomerIdentifiedV768=name=>!['','cliente','cliente não informado','cliente nao informado','não informado','nao informado','sem cliente'].includes(orderCustomerNameV767(name));
 export const orderLoadActiveV767=row=>row.excluido!==true&&!row.cargaArquivadaInconsistenteEm&&!['cancelado','cancelled','excluido'].includes(row.cargaStatus);
 export const orderLoadDraftV767=row=>orderLoadActiveV767(row)&&row.cargaStatus==='montagem'&&!row.cargaBaixadaEm&&!row.cargaFechadaEm;
 const finite=(v,label)=>{const n=Number(v||0);if(!Number.isFinite(n)||n<0||n>1e12)throw Error('Confira '+label+' no pedido.');return n;};
@@ -8,7 +13,7 @@ function rates(item,flag,key,value){if(!item[flag])return 0;if(item[key]!==undef
 // Largest remainder keeps the sum of rounded lines equal to the document total.
 function centsParts(values,total=Math.round(values.reduce((s,n)=>s+n,0))){const result=values.map(Math.floor),delta=total-result.reduce((s,n)=>s+n,0);if(delta<0||delta>values.length)throw Error('Valores do pedido precisam de conferência.');const indexes=values.map((v,i)=>({i,rest:v-result[i]})).sort((a,b)=>b.rest-a.rest||a.i-b.i);for(let i=0;i<delta;i++)result[indexes[i].i]++;return result;}
 export function orderCommercialV767(order){
- if(!order||!['confirmado','entregue'].includes(order.status)||order.excluido===true||!Array.isArray(order.itens)||!order.itens.length||order.itens.length>400)throw Error('Escolha um pedido confirmado ou entregue.');
+ if(!order||order.status!=='confirmado'||order.excluido===true||!Array.isArray(order.itens)||!order.itens.length||order.itens.length>400)throw Error('Escolha um pedido confirmado que ainda aguarda entrega.');
  const raw=order.itens.map(item=>{const {kind}=orderLineUnitsV767(item),amount=finite(item.valor,'o valor');let material=amount,end=0,apl=0,enc=0,friso=0;
   if(kind==='m3'&&!item.vendaFechadaM3){end=material*rates(item,'endireitamento','precoEndireitamento','valorEndireitamento')/100;apl=material*rates(item,'aplainamento','precoAplainamento','valorAplainamento')/100;}
   if(kind==='linear'){const e=rates(item,'encaixe','encaixePercentual','valorEncaixe'),f=rates(item,'friso','frisoPercentual','valorFriso');material=amount/(1+(e+f)/100);enc=material*e/100;friso=material*f/100;}
@@ -19,4 +24,4 @@ export function orderCommercialV767(order){
  return {subtotalCents:sum,discountCents,totalCents:sum-discountCents,lines:raw.map((_,i)=>({grossCents:gross.slice(i*5,i*5+5).reduce((s,n)=>s+n,0),parts:net.slice(i*5,i*5+5)}))};
 }
 
-export function orderDocumentV767(order){const values=orderCommercialV767(order);return {orderId:order.id,customer:String(order.cliente||order.dadosCliente?.nome||''),subtotalCents:values.subtotalCents,discountCents:values.discountCents,totalCents:values.totalCents,lines:order.itens.map((item,index)=>{const fields=['madeira','especie','produto','tipoLinear','qualidade','tipoMedida','tipoCadastro','quantidade','volume','comprimento','largura','espessura','linearTotalV744','vendaFechadaM3'];return {...Object.fromEntries(fields.filter(k=>item[k]!==undefined).map(k=>[k,item[k]])),parts:values.lines[index].parts};})};}
+export function orderDocumentV767(order){const values=orderCommercialV767(order);return {orderId:order.id,customer:orderCustomerLabelV768(order),subtotalCents:values.subtotalCents,discountCents:values.discountCents,totalCents:values.totalCents,lines:order.itens.map((item,index)=>{const fields=['madeira','especie','produto','tipoLinear','qualidade','tipoMedida','tipoCadastro','quantidade','volume','comprimento','largura','espessura','linearTotalV744','vendaFechadaM3'];return {...Object.fromEntries(fields.filter(k=>item[k]!==undefined).map(k=>[k,item[k]])),parts:values.lines[index].parts};})};}
