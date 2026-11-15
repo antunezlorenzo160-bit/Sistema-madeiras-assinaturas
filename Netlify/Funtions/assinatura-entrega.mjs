@@ -110,6 +110,7 @@ export async function signDelivery({ db, token, recipientName, signatureImage, p
   const tokenRef = db.doc(`${TOKEN_INDEX}/${tokenHash}`);
   const tokenSnap = await tokenRef.get();
   if (!tokenSnap.exists) throw new ApiError(404, 'Link inválido ou já utilizado.');
+  if(tokenSnap.data().receiptOnly===true)throw new ApiError(409,'Este link é apenas para consultar o comprovante.');
   const { empresaId, inviteId } = tokenSnap.data();
   if (typeof empresaId !== 'string' || typeof inviteId !== 'string') throw new ApiError(404, 'Link inválido ou já utilizado.');
   const inviteRef = db.doc(`empresas/${empresaId}/dados/${COLLECTION}/registros/${inviteId}`);
@@ -147,6 +148,7 @@ export async function previewDelivery({db,token}){
  const convite=await db.doc(`empresas/${empresaId}/dados/${COLLECTION}/registros/${inviteId}`).get();
  const inv=convite.data();
  if(!convite.exists||inv.empresaId!==empresaId||typeof inv.orderId!=='string'||!['pending','signed'].includes(inv.status))throw new ApiError(404,'Link inválido ou já utilizado.');
+ if(index.data().receiptOnly===true&&inv.status!=='signed')throw new ApiError(404,'Comprovante indisponível.');
  if(inv.status==='signed'&&inv.receiptV765){let receipt;try{receipt=readDeliveryReceiptV765(inv);}catch(e){throw new ApiError(409,e.message);}return {pedido:receipt.pedido,receipt,alreadySigned:true};}
  const registro=await db.doc(`empresas/${empresaId}/dados/${ORDER_COLLECTION}/registros/${inv.orderId}`).get();
  if(!registro.exists||registro.data().status!=='entregue')throw new ApiError(409,'O pedido não está marcado como entregue.');
@@ -163,8 +165,25 @@ export async function receiptLinkV765({db,key,uid,orderId,siteUrl}){
   const context=await deliveryReadContextV765(db,uid,r=>tx.get(r)).catch(e=>{throw new ApiError(403,e.message);});if(context.empresaId!==initial.empresaId)throw new ApiError(409,'A empresa mudou. Entre novamente.');
   const {invitation}=refs(db,context.empresaId,orderId),snap=await tx.get(invitation),inv=snap.exists?snap.data():null;
   if(!inv||inv.empresaId!==context.empresaId||inv.orderId!==orderId||inv.status!=='signed')throw new ApiError(409,'O pedido ainda não tem confirmação de assinatura.');
-  let token;try{token=unseal(key,inv.tokenCipher);}catch{throw new ApiError(409,'Não foi possível recuperar o link do comprovante.');}
-  const index=await tx.get(db.doc(`${TOKEN_INDEX}/${digest(token)}`));if(!index.exists||index.data().empresaId!==context.empresaId||index.data().inviteId!==snap.id)throw new ApiError(409,'O link do comprovante precisa ser conferido.');
+  let token=null;
+  // Old invitations can have an absent cipher or a cipher from an earlier secret.
+  // Keep all existing links untouched; a replacement can only read a signed receipt.
+  for(const cipher of [inv.receiptTokenCipherV766,inv.tokenCipher]){
+   let candidate;try{candidate=unseal(key,cipher);}catch{continue;}
+   if(!/^[A-Za-z0-9_-]{40,60}$/.test(candidate))continue;
+   const index=await tx.get(db.doc(`${TOKEN_INDEX}/${digest(candidate)}`));
+   if(index.exists&&index.data().empresaId===context.empresaId&&index.data().inviteId===snap.id){token=candidate;break;}
+  }
+  if(!token){
+   try{if(inv.receiptV765)readDeliveryReceiptV765(inv);else{
+    const order=await tx.get(db.doc(`empresas/${context.empresaId}/dados/${ORDER_COLLECTION}/registros/${orderId}`));
+    if(!order.exists||order.data().status!=='entregue')throw Error('Pedido assinado não disponível para conferência.');
+    readDeliveryReceiptV765(inv,order.data());
+   }}catch(e){throw new ApiError(409,e.message);}
+   token=randomBytes(32).toString('base64url');
+   tx.create(db.doc(`${TOKEN_INDEX}/${digest(token)}`),{empresaId:context.empresaId,inviteId:snap.id,status:'signed',receiptOnly:true,createdAt:Date.now(),createdBy:uid});
+   tx.update(invitation,{receiptTokenCipherV766:seal(key,token)});
+  }
   return {...context,link:siteUrl+'/?assinar='+encodeURIComponent(token)};
  });
  const fresh=await deliveryReadContextV765(db,uid).catch(e=>{throw new ApiError(403,e.message);});if(fresh.empresaId!==result.empresaId)throw new ApiError(409,'A empresa mudou.');return result;
