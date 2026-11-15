@@ -35,6 +35,18 @@ export function compactPrintClone(root,options={}){
   const first=loadTables[0].closest('.v401-carga-grupo')||loadTables[0];first.before(columns);
   for(const table of loadTables){const wrapper=table.closest('.v401-carga-grupo');if(wrapper&&wrapper.children.length===1)wrapper.remove();else table.remove();}
  }
+ // Included orders use the same explicit print columns as the load. Transform
+ // only the detached clone; retain order boundaries, service labels and totals.
+ for(const order of root.querySelectorAll('.order-document-order-v767')){
+  const tables=[...order.querySelectorAll('.order-document-table-v770')];
+  if(!tables.length)continue;
+  const groups=orderPrintGroupsV772(tables);
+  const lines=Math.max(1,...groups.flatMap(g=>g.rows.map(row=>Math.max(...row.map(cell=>cell.split('\n').length)))));
+  const pages=renderCompactPages(root.ownerDocument,groups,Math.max(4,Math.floor(36/lines)));
+  pages.classList.add('order-document-pages-v772');
+  tables[0].closest('.order-document-table-wrap-v770').before(pages);
+  for(const table of tables)table.closest('.order-document-table-wrap-v770').remove();
+ }
  // Keep the full global metrics at the top; remove only an equivalent repeated footer.
  const metricBlocks=[...root.querySelectorAll('.v418-romaneio-totais')];
  if(metricBlocks.length>1){
@@ -76,4 +88,17 @@ export function renderCompactPages(doc,groups,capacity=44){
  const totals=groups.flatMap(g=>g.totals||[]);
  if(totals.length){const foot=doc.createElement('div');foot.className='compact-species-totals-v712';const heading=doc.createElement('h3');heading.textContent='Totais por espécie e espessura';foot.append(heading);for(const text of totals){const p=doc.createElement('p');p.textContent=text;foot.append(p);}pages.append(foot);}
  return pages;
+}
+
+// Keep displayed amounts as text: no repricing, quantity or service recalculation.
+export function orderPrintGroupsV772(tables){
+ return tables.map(table=>({
+  title:table.tHead.rows[0].textContent.trim(),
+  headers:[...table.tHead.rows[1].cells].map(cell=>cell.textContent.trim()),
+  rows:[...table.tBodies].flatMap(body=>[...body.rows]).map(row=>[...row.cells].map(cell=>{
+   const services=[...cell.querySelectorAll('.order-document-service-v770')];
+   return services.length?services.map(service=>[...service.children].map(child=>child.textContent.trim()).join(' ')).join('\n'):cell.textContent.trim();
+  })),
+  totals:table.tFoot?[table.tHead.rows[0].textContent.trim()+' — '+[...table.tFoot.rows[0].cells].map(cell=>cell.textContent.trim()).join(': ')]:[]
+ }));
 }
