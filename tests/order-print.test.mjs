@@ -24,3 +24,15 @@ test('included order uses two explicit columns and repeats labels without losing
  assert(sections.every(s=>s.children[1].children[0].children[0].children.map(c=>c.textContent).join('|')===groups[0].headers.join('|')));
  assert.equal(pages.children.at(-1).children.at(-1).textContent,'Garapeira — Subtotal com serviços: R$ 59.400,00');
 });
+
+import {simplifyOrderPrintV773} from '../public/compact-documents.mjs';
+test('combined PDF removes redundant single-order and load totals but retains real adjustments and separate order totals',()=>{
+ const node=(text='',final=false)=>({removed:false,textContent:text,remove(){this.removed=true;},classList:{contains:()=>final},querySelector:()=>({textContent:text})});
+ const orderTotal=node(),order={querySelector:()=>orderTotal};
+ const summary=values=>Object.assign(node(),{children:values.map((v,i)=>node(v,i===4))});
+ const noAdjust=summary(['R$ 384,00','− R$ 0,00','+ R$ 0,00','+ R$ 0,00','R$ 384,00']);
+ const withAdjust=summary(['R$ 384,00','− R$ 10,00','+ R$ 20,00','+ R$ 0,00','R$ 394,00']);
+ const root={querySelectorAll:selector=>selector==='.order-document-order-v767'?[order]:[noAdjust,withAdjust]};
+ simplifyOrderPrintV773(root);assert(orderTotal.removed);assert(noAdjust.removed);assert(!withAdjust.removed);assert(withAdjust.children[4].removed);assert(withAdjust.children[3].removed);assert(!withAdjust.children[0].removed);assert(!withAdjust.children[1].removed);assert(!withAdjust.children[2].removed);
+ orderTotal.removed=false;root.querySelectorAll=selector=>selector==='.order-document-order-v767'?[order,order]:[];simplifyOrderPrintV773(root);assert(!orderTotal.removed);
+});

@@ -40,13 +40,14 @@ export function compactPrintClone(root,options={}){
  for(const order of root.querySelectorAll('.order-document-order-v767')){
   const tables=[...order.querySelectorAll('.order-document-table-v770')];
   if(!tables.length)continue;
-  const groups=orderPrintGroupsV772(tables);
+  const groups=orderPrintGroupsV772(tables).map(group=>({...group,totals:[]}));
   const lines=Math.max(1,...groups.flatMap(g=>g.rows.map(row=>Math.max(...row.map(cell=>cell.split('\n').length)))));
   const pages=renderCompactPages(root.ownerDocument,groups,Math.max(4,Math.floor(36/lines)));
   pages.classList.add('order-document-pages-v772');
   tables[0].closest('.order-document-table-wrap-v770').before(pages);
   for(const table of tables)table.closest('.order-document-table-wrap-v770').remove();
  }
+ simplifyOrderPrintV773(root);
  // Keep the full global metrics at the top; remove only an equivalent repeated footer.
  const metricBlocks=[...root.querySelectorAll('.v418-romaneio-totais')];
  if(metricBlocks.length>1){
@@ -101,4 +102,21 @@ export function orderPrintGroupsV772(tables){
   })),
   totals:table.tFoot?[table.tHead.rows[0].textContent.trim()+' — '+[...table.tFoot.rows[0].cells].map(cell=>cell.textContent.trim()).join(': ')]:[]
  }));
+}
+
+// The final combined summary owns the totals; keep only useful load adjustments.
+export function simplifyOrderPrintV773(root){
+ const orders=[...root.querySelectorAll('.order-document-order-v767')];
+ if(!orders.length)return;
+ if(orders.length===1)orders[0].querySelector('.order-document-value-v767')?.remove();
+ for(const summary of root.querySelectorAll('.v403-fin-resumo')){
+  const rows=[...summary.children];
+  if(rows.length!==5||!rows[4].classList.contains('v403-fin-final'))continue;
+  const adjustments=rows.slice(1,4),isZero=row=>{
+   const text=row.querySelector('strong')?.textContent||'';
+   return /R\$/.test(text)&&/^0+$/.test(text.replace(/[^0-9]/g,''));
+  };
+  if(adjustments.every(isZero))summary.remove();
+  else{rows[4].remove();for(const row of adjustments)if(isZero(row))row.remove();}
+ }
 }
