@@ -24,4 +24,12 @@ export function orderCommercialV767(order){
  return {subtotalCents:sum,discountCents,totalCents:sum-discountCents,lines:raw.map((_,i)=>({grossCents:gross.slice(i*5,i*5+5).reduce((s,n)=>s+n,0),parts:net.slice(i*5,i*5+5)}))};
 }
 
-export function orderDocumentV767(order){const values=orderCommercialV767(order);return {orderId:order.id,customer:orderCustomerLabelV768(order),subtotalCents:values.subtotalCents,discountCents:values.discountCents,totalCents:values.totalCents,lines:order.itens.map((item,index)=>{const fields=['madeira','especie','produto','tipoLinear','qualidade','tipoMedida','tipoCadastro','quantidade','volume','comprimento','largura','espessura','linearTotalV744','vendaFechadaM3'];return {...Object.fromEntries(fields.filter(k=>item[k]!==undefined).map(k=>[k,item[k]])),parts:values.lines[index].parts};})};}
+export function orderDocumentV767(order){
+ const values=orderCommercialV767(order);
+ return {orderId:order.id,customer:orderCustomerLabelV768(order),subtotalCents:values.subtotalCents,discountCents:values.discountCents,totalCents:values.totalCents,lines:order.itens.map((item,index)=>{
+  const fields=['madeira','especie','produto','tipoLinear','qualidade','tipoMedida','tipoCadastro','quantidade','volume','comprimento','largura','espessura','linearTotalV744','vendaFechadaM3'],kind=item.tipoMedida||item.tipoCadastro||'m3';
+  const definitions=kind==='m3'&&!item.vendaFechadaM3?[[1,'endireitamento','precoEndireitamento','valorEndireitamento','Endireitamento'],[2,'aplainamento','precoAplainamento','valorAplainamento','Aplainamento']]:kind==='linear'?[[3,'encaixe','encaixePercentual','valorEncaixe','Encaixe'],[4,'friso','frisoPercentual','valorFriso','Friso']]:[];
+  const services=definitions.filter(([,flag])=>item[flag]===true).map(([part,flag,percent,value,label])=>({part,label,percent:rates(item,flag,percent,value)}));
+  return {...Object.fromEntries(fields.filter(k=>item[k]!==undefined).map(k=>[k,item[k]])),parts:values.lines[index].parts,services};
+ })};
+}

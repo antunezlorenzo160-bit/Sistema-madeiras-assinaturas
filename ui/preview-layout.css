@@ -187,3 +187,14 @@
 .order-document-value-v767{display:flex;justify-content:space-between;gap:12px;padding:4px 0}
 .order-document-grand-v767{font-size:18px;border-top:1px solid currentColor;margin-top:8px;padding-top:12px}
 @media print{.order-document-modal-v767{display:none!important}.order-document-order-v767{border-color:#ccc}.order-document-grand-v767{break-inside:avoid}}
+
+/* V770: itemized order tables with explicit service names and charges. */
+.order-document-table-v770{width:100%;min-width:480px;border-collapse:collapse;font-size:12px}
+.order-document-table-v770 th,.order-document-table-v770 td{padding:6px 7px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line,#638371)}
+.order-document-table-v770 thead th{position:static!important}
+.order-document-table-v770 .order-document-species-v770{font-size:13px;font-weight:700}
+.order-document-table-v770 .order-document-money-v770{white-space:nowrap;text-align:right}
+.order-document-service-v770 span,.order-document-service-v770 strong{display:block}
+.order-document-service-v770+.order-document-service-v770{margin-top:5px}
+.order-document-table-v770 tfoot td{font-weight:700}
+@media print{.order-document-table-wrap-v770{overflow:visible!important}.order-document-table-v770{min-width:0!important;width:100%!important;font-size:8pt!important;table-layout:auto}.order-document-table-v770 th,.order-document-table-v770 td{padding:3px 4px!important;border-color:#bbb}.order-document-table-v770 .order-document-species-v770{font-size:9pt!important}.order-document-table-v770 tr{break-inside:avoid}.order-document-table-v770 thead{display:table-header-group}.order-document-table-v770 tfoot{display:table-row-group}}
