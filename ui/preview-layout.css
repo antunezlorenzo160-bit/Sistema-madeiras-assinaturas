@@ -172,3 +172,18 @@
 /* V761: distinguish pieces per packet from total physical pieces in stock. */
 .planilha-m2-beneficiado .packet-size-v761{display:block;font-size:10px;line-height:1.25;white-space:normal;font-weight:400;margin-top:3px;color:var(--muted)}
 .planilha-m2-beneficiado .packet-note-v761{font-size:12px;line-height:1.4;margin:8px 0}
+
+/* V767: commercial order attachments follow the original and copy documents. */
+.order-document-modal-v767{width:min(680px,calc(100% - 28px));max-height:85vh;overflow:auto;box-sizing:border-box;border:1px solid var(--line);border-radius:14px;background:var(--card,#172b20);color:var(--text,#edf6f0);padding:18px}
+.order-document-modal-v767::backdrop{background:#0009}
+.order-document-modal-v767 fieldset{border:0;padding:0;margin:10px 0;min-width:0}
+.order-document-modal-v767 label{display:block;margin:12px 0}
+.order-document-modal-v767 input[type=checkbox]{width:auto;display:inline-block;margin-right:8px}
+.order-document-modal-v767 button{margin:6px 6px 6px 0}
+.order-document-v767{border-top:2px solid currentColor;margin-top:18px;padding-top:12px}
+.order-document-order-v767{margin:14px 0;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.order-document-order-v767 article{padding:8px 0;break-inside:avoid}
+.order-document-order-v767 p{margin:5px 0;font-size:12px}
+.order-document-value-v767{display:flex;justify-content:space-between;gap:12px;padding:4px 0}
+.order-document-grand-v767{font-size:18px;border-top:1px solid currentColor;margin-top:8px;padding-top:12px}
+@media print{.order-document-modal-v767{display:none!important}.order-document-order-v767{border-color:#ccc}.order-document-grand-v767{break-inside:avoid}}
