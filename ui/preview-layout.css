@@ -172,22 +172,3 @@
 /* V761: distinguish pieces per packet from total physical pieces in stock. */
 .planilha-m2-beneficiado .packet-size-v761{display:block;font-size:10px;line-height:1.25;white-space:normal;font-weight:400;margin-top:3px;color:var(--muted)}
 .planilha-m2-beneficiado .packet-note-v761{font-size:12px;line-height:1.4;margin:8px 0}
-/* V763: simple review, with technical fields folded away. */
-.fiscal-v762 fieldset{border:0;padding:0;margin:12px 0;min-width:0}
-.fiscal-v762 details{border:1px solid var(--line);border-radius:10px;padding:12px;margin:12px 0}
-.fiscal-grid-v762{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}
-.fiscal-heading-v763,.fiscal-product-heading-v763{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
-.fiscal-heading-v763 h3{margin:0}
-.fiscal-badge-v763{font-size:12px;color:var(--muted);border:1px solid var(--line);padding:4px 8px;border-radius:20px}
-.fiscal-unavailable-v763{font-size:13px;color:var(--muted);margin:10px 0}
-.fiscal-step-v763{margin:18px 0;padding-bottom:14px;border-bottom:1px solid var(--line)}
-.fiscal-step-v763 h4{margin:0 0 12px}
-.fiscal-product-v763{border:1px solid var(--line);border-radius:10px;padding:12px;margin:10px 0}
-.fiscal-product-v763 .note{margin:6px 0}
-.fiscal-product-v763 details{border:0;padding:0;margin:10px 0 0}
-.fiscal-product-heading-v763 strong:first-child{flex:1;min-width:160px;overflow-wrap:anywhere}
-.fiscal-product-heading-v763 strong:last-child{white-space:nowrap}
-.fiscal-totals-v763>div{display:flex;justify-content:space-between;gap:12px;padding:7px 0}
-.fiscal-totals-v763 .fiscal-total-v763{font-size:20px;border-top:1px solid var(--line);margin-top:6px;padding-top:14px}
-.fiscal-save-v763{margin-top:10px}
-@media(max-width:700px){.fiscal-grid-v762{grid-template-columns:1fr}.fiscal-v762 .row-actions{display:flex;flex-wrap:wrap}.fiscal-save-v763{width:100%}}
