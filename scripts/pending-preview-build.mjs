@@ -26,10 +26,20 @@ export function applyPendingPreview(html){
  // V755: purchase packets carry their true count even when measures were grouped.
  app=app.replaceAll('g.pacotes+=1','g.pacotes+=purchasePacketCountV755(x)');
  app=app.replaceAll('if(x.contadoComoPacote===true)g.pacotes', 'if(x.contadoComoPacote===true&&purchasePacketCountV755(x)>0)g.pacotes');
- replace('const pecasPacote=Number(x.quantidade||0);', 'const pecasPacote=Number(x.purchasePiecesPerPacketV755||x.quantidade||0);');
+ replace('const pecasPacote=Number(x.quantidade||0);', 'const pacotesLinha=purchasePacketCountV755(x),pecasPacote=pacotesLinha>0?Number(x.purchasePiecesPerPacketV755||x.quantidade||0):0;');
  replace('g.pecasTotal+=pecasPacote;', 'g.pecasTotal+=Number(x.quantidade||0);');
  replace("const k=chaveAgrupamentoItem(x)+(t==='m2'?`|Q${Number(x.quantidade||0).toFixed(6)}`:'');", "const k=chaveAgrupamentoItem(x)+(t==='m2'?`|Q${Number(x.purchasePiecesPerPacketV755||x.quantidade||0).toFixed(6)}`:'');");
  replace('pecasPacote:Number(x.quantidade||0)', 'pecasPacote:Number(x.purchasePiecesPerPacketV755||x.quantidade||0)');
+ // V761: stock rows show total pieces; unknown packet counts never mix with counted packets.
+ const replaceStockV761=(a,b)=>{const start=app.indexOf('function renderPlanilhasM3Especies(){'),next=app.indexOf("\ndocument.querySelectorAll('.planilha-estoque-btn')",start+20),end=next<0?app.length:next,source=app.slice(start,end);if(start<0||!source.includes(a)||source.indexOf(a)!==source.lastIndexOf(a))throw Error('Trecho m² mudou: '+a.slice(0,80));app=app.slice(0,start)+source.replace(a,()=>b)+app.slice(end);};
+ replaceStockV761('<thead><tr><th>pk</th><th>pç</th><th>largura</th><th>comprimento</th><th>área</th></tr></thead>', '<thead><tr><th>pacotes</th><th>peças totais</th><th>largura</th><th>comprimento</th><th>área</th></tr></thead>');
+ replaceStockV761('<td>${g.pecasPacote}pç</td>', '<td>${g.pecasTotal}pç</td>');
+ replaceStockV761('if(x.contadoComoPacote===true&&purchasePacketCountV755(x)>0)g.pacotes+=purchasePacketCountV755(x);', 'if(pacotesLinha>0)g.pacotes+=pacotesLinha;');
+ replaceStockV761("<td>${g.pacotes>0?g.pacotes:(g.semContador>0?'—':'0')}</td>", "<td>${g.pacotes>0?g.pacotes:(g.semContador>0?'—':'0')}${g.pacotes>0?'<small class=\"packet-size-v761\">'+g.pecasPacote+' pç/pct</small>':''}</td>");
+ replaceStockV761('const pacotes=filtrados.filter(x=>x.contadoComoPacote===true).length;', 'const pacotes=filtrados.reduce((sum,x)=>sum+purchasePacketCountV755(x),0);');
+ replaceStockV761('<small>Pacotes nesta largura</small>', '<small>Pacotes informados nesta largura</small>');
+ replaceStockV761('<td><strong>${pacotesComp} pct</strong></td>', "<td><strong>${pacotesComp>0?pacotesComp+' pct':'—'}</strong></td>");
+ replaceStockV761("${blocos||'<div class=\"empty\">Sem peças nesta largura.</div>'}", "<p class=\"note packet-note-v761\">Peças totais incluem os pacotes. — indica quantidade de pacotes não informada.</p>${blocos||'<div class=\"empty\">Sem peças nesta largura.</div>'}");
  // V752: remove the optional identification helper requested by the user.
  replace('<small id="ajudaIdentificacaoMovimento" class="muted">Opcional. Se não preencher, o histórico mostrará —.</small>', '');
  // V751: short labels for the calculator load actions; handlers stay untouched.

@@ -168,3 +168,7 @@
 #finPurchaseAccountsV757 label{margin:8px 0}
 #finPurchaseAccountsV757 button{margin:5px 4px 5px 0}
 @media(max-width:600px){.purchase-payment-v757{grid-template-columns:1fr}}
+
+/* V761: distinguish pieces per packet from total physical pieces in stock. */
+.planilha-m2-beneficiado .packet-size-v761{display:block;font-size:10px;line-height:1.25;white-space:normal;font-weight:400;margin-top:3px;color:var(--muted)}
+.planilha-m2-beneficiado .packet-note-v761{font-size:12px;line-height:1.4;margin:8px 0}
