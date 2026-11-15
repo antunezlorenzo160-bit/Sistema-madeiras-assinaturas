@@ -10,8 +10,8 @@ export function applyPendingPreview(html){
  let app=JSON.parse(html.slice(start,end));if(app.includes('// PENDING_PREVIEW_V710'))return html;
  const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
  const replace=(a,b)=>{if(!app.includes(a)||app.indexOf(a)!==app.lastIndexOf(a))throw Error('Trecho da prévia mudou: '+a.slice(0,80));app=app.replace(a,()=>b);};
- const pure=['public/document-pricing.mjs','public/compact-load-tables.mjs','public/compact-documents.mjs','public/sheet-item-totals.mjs','public/stock-charts.mjs','public/company-finance.mjs','public/load-transport.mjs','public/load-sales.mjs','public/minimum-profit.mjs','public/purchase-payments.mjs','public/cash-book.mjs','public/stock-purchase.mjs','public/opening-stock-cost.mjs','public/finance-reconciliation.mjs','public/shared-trips.mjs','public/linear-total.mjs','public/log-purchase.mjs'].map(p=>read(p).replace(/^import .*;\n/gm,'').replaceAll('export ','')).join('\n');
- const helpers=read('ui/preview-pricing.js')+'\n'+read('ui/compact-print-settings.js')+'\n'+read('ui/sheet-totals.js')+'\n'+read('ui/stock-charts.js')+'\n'+read('ui/company-finance.js')+'\n'+read('ui/reports.js')+'\n'+read('ui/load-transport.js')+'\n'+read('ui/stock-purchase.js')+'\n'+read('ui/shared-trips.js')+'\n'+read('ui/log-purchase.js')+'\n'+read('ui/purchase-payments.js')+'\n'+read('ui/cash.js')+'\n'+read('ui/desktop-dashboard.js');
+ const pure=['public/document-pricing.mjs','public/compact-load-tables.mjs','public/compact-documents.mjs','public/sheet-item-totals.mjs','public/stock-charts.mjs','public/company-finance.mjs','public/load-transport.mjs','public/load-sales.mjs','public/minimum-profit.mjs','public/purchase-payments.mjs','public/cash-book.mjs','public/stock-purchase.mjs','public/opening-stock-cost.mjs','public/finance-reconciliation.mjs','public/shared-trips.mjs','public/linear-total.mjs','public/log-purchase.mjs','public/fiscal-preparation.mjs'].map(p=>read(p).replace(/^import .*;\n/gm,'').replaceAll('export ','')).join('\n');
+ const helpers=read('ui/preview-pricing.js')+'\n'+read('ui/compact-print-settings.js')+'\n'+read('ui/sheet-totals.js')+'\n'+read('ui/stock-charts.js')+'\n'+read('ui/company-finance.js')+'\n'+read('ui/reports.js')+'\n'+read('ui/load-transport.js')+'\n'+read('ui/stock-purchase.js')+'\n'+read('ui/shared-trips.js')+'\n'+read('ui/log-purchase.js')+'\n'+read('ui/purchase-payments.js')+'\n'+read('ui/cash.js')+'\n'+read('ui/desktop-dashboard.js')+'\n'+read('ui/fiscal-preparation.js');
  replace('function calcPreview(){','// PENDING_PREVIEW_V710\n'+pure+'\n'+helpers+'\nfunction calcPreview(){');
  app=app.replace('function calcPreview(){', 'function calcPreview(){calcPreviewBaseV710();stockPurchaseVisibilityV728();document.getElementById("pricePreviewV710")?.remove();previewDocumentValueV710();}\nfunction calcPreviewBaseV710(){');
  replace('orcamento.push(oi);','orcamento.push(attachPriceV710(oi,orcamento));\n      repriceBudgetV710();\n      Object.assign(oi,orcamento.find(i=>i.id===oi.id)||oi);');
@@ -61,8 +61,8 @@ export function applyPendingPreview(html){
  }
  app=app.replaceAll("if(!ativo||ativo.tagName!=='INPUT')$('largura').focus({preventScroll:true});", "if((!ativo||ativo.tagName!=='INPUT')&&window.__smCalcKeyboardV733?.canRestoreFocus($('largura'))!==false)$('largura').focus({preventScroll:true});");
  replace("if(modoMedida==='granel')$('volumeGranelV384')?.focus();else if(modoMedida==='m3fechado')$('volumeFechadoV387')?.focus();else $('largura').focus()", "const nextField=modoMedida==='granel'?$('volumeGranelV384'):modoMedida==='m3fechado'?$('volumeFechadoV387'):$('largura');if(window.__smCalcKeyboardV733?.canRestoreFocus(nextField)!==false&&document.activeElement!==nextField)nextField?.focus({preventScroll:true})");
- replace("control.dataset?.reportView==='finance'","['finance','cash'].includes(control.dataset?.reportView)");
- replace("control.closest?.('#financePanelV722')","control.closest?.('#financePanelV722,#sharedTripsV741,#torasPurchasesV756,#cashPanelV759')");
+ replace("control.dataset?.reportView==='finance'","['finance','cash','fiscal'].includes(control.dataset?.reportView)");
+ replace("control.closest?.('#financePanelV722')","control.closest?.('#financePanelV722,#sharedTripsV741,#torasPurchasesV756,#cashPanelV759,#fiscalPanelV762')");
  app=app.replace('</body>','<script id="mobile-calculator-keyboard-v733">'+read('ui/mobile-calculator-keyboard.js')+'</script></body>');
  app=app.replace('</head>','<style id="mobile-calculator-keyboard-v733-style">'+read('ui/mobile-calculator-keyboard.css')+'</style></head>');
  // New stock exits keep an immutable instant for cost chronology, including offline recovery.
@@ -71,6 +71,9 @@ export function applyPendingPreview(html){
  // Opt-in purchase capture happens before the legacy stock arrays or offline queue are touched.
  replace("      const eh2=destino==='estoque2',col=eh2?COL.estoque2:COL.estoque1,nome=eh2?'Estoque 2':'Estoque 1';", "      if(stockPurchaseCaptureV728(item,destino))return;\n      const eh2=destino==='estoque2',col=eh2?COL.estoque2:COL.estoque1,nome=eh2?'Estoque 2':'Estoque 1';");
  replace('<div id="cargaEstoqueEscolha"',read('ui/stock-purchase.html')+'<div id="cargaEstoqueEscolha"');
+ // V762: one preparation shared by saved quote/order and optionally its commercial load.
+ replace('<div class="row-actions no-print" style="margin:0"><button class="btn btn-secondary" onclick="copiarBloco(\'orcGuardado_${o.id}\')">', '<div class="row-actions no-print" style="margin:0">${finOwnerV722()?`<button type="button" class="btn btn-secondary" data-fiscal-source="order" data-fiscal-id="${esc(o.id)}">Preparar NF-e</button>`:\'\'}<button class="btn btn-secondary" onclick="copiarBloco(\'orcGuardado_${o.id}\')">');
+ replace('<div class="v400-copia-acoes"><button type="button" class="btn btn-primary" onclick="gerarCopiaComercialV400(\'${gidjs}\',${idx})">Gerar cópia comercial</button></div>', '<div class="v400-copia-acoes"><button type="button" class="btn btn-primary" onclick="gerarCopiaComercialV400(\'${gidjs}\',${idx})">Gerar cópia comercial</button>${finOwnerV722()?`<button type="button" class="btn btn-secondary" data-fiscal-source="load" data-fiscal-id="${esc(gid)}">Preparar NF-e</button>`:\'\'}</div>');
  // Reopening a saved quote is not consent to reprice its historical lines.
  replace('orcamento=itens.map(x=>aplicarCobrancaOrcamento(x));','orcamento=itens.map(x=>aplicarCobrancaOrcamento(x.autoPriceV1?{...x,autoPriceV1:{...x.autoPriceV1,locked:true}}:x));');
  // Shared journeys are organized beside the original load list; finance keeps only a link/results.
@@ -81,7 +84,7 @@ export function applyPendingPreview(html){
  replace('<span class="v408-destino-seta" aria-hidden="true">›</span>\n      </button>`;', '<span class="v408-destino-seta" aria-hidden="true">›</span>\n      </button></div>`;');
  app=app.replaceAll("el.hidden=!aparece;","el.hidden=!aparece;if(el.closest('.trip-list-row-v742'))el.closest('.trip-list-row-v742').hidden=!aparece;");
  // Reports are separate from stock. Navigation permissions remain in the existing guard.
- const reports=read('ui/reports.html').replace('__REPORT_STOCK_CHARTS__',read('ui/stock-charts.html')).replace('__REPORT_FINANCE__',read('ui/company-finance.html')).replace('__REPORT_CASH__',read('ui/cash.html'));
+ const reports=read('ui/reports.html').replace('__REPORT_STOCK_CHARTS__',read('ui/stock-charts.html')).replace('__REPORT_FINANCE__',read('ui/company-finance.html')).replace('__REPORT_CASH__',read('ui/cash.html')).replace('__REPORT_FISCAL__',read('ui/fiscal-preparation.html'));
  replace('<section id="estoque" class="tab">',reports+'<section id="estoque" class="tab">');
  const loadMenu='<button type="button" class="inicio-atalho-v464" data-inicio-destino="carregamentos">';
  replace(loadMenu,'<button type="button" class="inicio-atalho-v464" data-inicio-destino="relatorios"><strong>Gráficos e relatórios</strong><span>Indicadores e acompanhamento</span></button>'+loadMenu);

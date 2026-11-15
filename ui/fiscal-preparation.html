@@ -1,0 +1,18 @@
+<section id="fiscalPanelV762" class="card fiscal-v762" hidden>
+ <h3>Fiscal · preparação de NF-e</h3>
+ <p class="note">Rascunho interno — não emitido. O envio à SEFAZ, certificado, XML e DANFE ainda dependem da integração com um emissor. Cada empresa tem seu próprio cadastro e seus rascunhos.</p>
+ <p id="fiscalStatusV762" role="status" aria-live="polite"></p>
+ <div class="row-actions no-print"><button type="button" class="btn btn-secondary" id="fiscalReloadV762">Consultar rascunhos</button><button type="button" class="btn btn-secondary" id="fiscalRestoreV762" hidden>Recuperar edição neste aparelho</button><button type="button" class="btn btn-primary" id="fiscalRetryV762" hidden>Conferir tentativa pendente</button></div>
+ <details><summary>Cadastro fiscal desta empresa</summary><form id="fiscalConfigFormV762"><fieldset id="fiscalConfigFieldsV762"><div id="fiscalIssuerV762" class="fiscal-grid-v762"></div><p class="note">Informe os dados com a contabilidade. Não envie certificado, senha ou chave de API por estes campos.</p><button type="submit" class="btn btn-primary">Salvar cadastro fiscal</button><p id="fiscalConfigStatusV762" class="note"></p></fieldset></form></details>
+ <details><summary>Últimos 100 rascunhos · não emitidos</summary><div id="fiscalListV762"></div></details>
+ <form id="fiscalDraftFormV762" hidden><fieldset id="fiscalDraftFieldsV762">
+ <h4 id="fiscalOriginV762"></h4><p id="fiscalLinkV762" class="note"></p>
+ <div id="fiscalOrderLinkV762" hidden><label>Pedido/orçamento desta carga<select id="fiscalOrderV762"></select></label><button type="button" class="btn btn-secondary" id="fiscalLinkOrderV762">Carregar pedido para vincular</button><p class="note">Escolha somente o pedido que originou esta carga. O vínculo é salvo junto com o rascunho; não altera o pedido.</p></div>
+ <p class="note">Valores reais do documento original. Percentuais de simulação da cópia comercial não reduzem os valores fiscais. Produtos, quantidades e valores são conferidos na origem.</p>
+ <h4>Destinatário</h4><div id="fiscalRecipientV762" class="fiscal-grid-v762"></div>
+ <h4>Produtos e valores da origem</h4><div class="table-wrap"><table><thead><tr><th>Produto</th><th>Quantidade</th><th>Valor</th><th>NCM</th><th>CFOP</th></tr></thead><tbody id="fiscalProductsV762"></tbody></table></div>
+ <p id="fiscalTotalsV762"></p><details><summary>Transporte e dados fiscais já salvos na carga</summary><div id="fiscalLegacyV762"></div></details>
+ <label>Observações para conferência<textarea id="fiscalNotesV762" rows="3" maxlength="2000"></textarea></label>
+ <div id="fiscalIssuesV762" class="note"></div><button type="submit" class="btn btn-primary">Salvar preparação · não emitir</button><p id="fiscalDraftStatusV762" class="note"></p>
+ </fieldset></form>
+</section>

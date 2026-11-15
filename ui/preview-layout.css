@@ -172,3 +172,10 @@
 /* V761: distinguish pieces per packet from total physical pieces in stock. */
 .planilha-m2-beneficiado .packet-size-v761{display:block;font-size:10px;line-height:1.25;white-space:normal;font-weight:400;margin-top:3px;color:var(--muted)}
 .planilha-m2-beneficiado .packet-note-v761{font-size:12px;line-height:1.4;margin:8px 0}
+.fiscal-v762 fieldset{border:0;padding:0;margin:12px 0;min-width:0}
+.fiscal-v762 details{border:1px solid var(--line);border-radius:12px;padding:12px;margin:12px 0}
+.fiscal-grid-v762{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:12px 0}
+.fiscal-v762 input[data-ncm]{min-width:100px;width:110px}
+.fiscal-v762 input[data-cfop]{min-width:65px;width:75px}
+.fiscal-v762 table{min-width:550px}
+@media(max-width:700px){.fiscal-grid-v762{grid-template-columns:1fr}.fiscal-v762 .row-actions{display:flex;flex-wrap:wrap}}
