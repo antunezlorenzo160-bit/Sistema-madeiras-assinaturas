@@ -9,6 +9,18 @@ function setup(id){const fields=Object.fromEntries(['calcMadeira','precoM3','qua
 for(const id of [undefined,'missing','pin'])test('Use selects actual species and restores material measures with ID '+id,()=>{const s=setup(id);s.c.prepararMaterialProducaoNaCalculadora('o',0,0);assert.equal(s.fields.calcMadeira.value,'pin');assert.equal(s.fields.quantidade.value,12);assert.equal(s.fields.espessura.value,2.5);assert.equal(s.fields.largura.value,30);assert.equal(s.fields.comprimento.value,5);assert.equal(s.c.producaoCalcPendente.pedidoId,'o');assert.equal(s.alerts.length,0);assert.equal(s.state.fullscreen,false);assert.deepEqual(s.writes,['destination']);});
 test('missing species reports a problem without preparing a stock operation',()=>{const s=setup();s.fields.calcMadeira.options=[{value:'',textContent:'Selecione'}];s.c.prepararMaterialProducaoNaCalculadora('o',0,0);assert.equal(s.c.producaoCalcPendente,null);assert(s.alerts[0].includes('não localizada'));assert.equal(s.writes.length,0);});
 
-test('one successful Use disables further preparation of that line without launching or deducting stock',()=>{
- const s=setup('pin');s.c.prepararMaterialProducaoNaCalculadora('o',0,0);assert(s.c.linhaProducaoCalcJaUsada('o',0,0));assert(!s.c.linhaProducaoCalcJaUsada('o',0,1));s.fields.quantidade.value=1;s.c.prepararMaterialProducaoNaCalculadora('o',0,0);assert.equal(s.fields.quantidade.value,1);assert.deepEqual(s.writes,['destination']);assert.equal(s.c.producaoCalcPendente.pedidoId,'o');
+test('Use prepares fields without marking deduction and can be retried before launch',()=>{
+ const s=setup('pin');s.c.prepararMaterialProducaoNaCalculadora('o',0,0);assert(!s.c.linhaProducaoCalcJaUsada('o',0,0));s.fields.quantidade.value=1;s.c.prepararMaterialProducaoNaCalculadora('o',0,0);assert.equal(s.fields.quantidade.value,12);assert.deepEqual(s.writes,['destination','destination']);assert.equal(s.c.producaoCalcPendente.pedidoId,'o');
+});
+test('actual deduction state ignores legacy session check marks and distinguishes queued load from physical deduction',()=>{
+ const c={orcamentosGuardados:[{id:'o'}],carregamentos:[],baixaLinhaRegistradaV362:()=>false,window:{__v456Session:{getItem:()=> '1'}}};
+ vm.createContext(c);const a=app.indexOf('function estadoLinhaProducaoV774('),b=app.indexOf('let producaoCalcPendente=',a);vm.runInContext(app.slice(a,b),c);
+ assert.equal(c.estadoLinhaProducaoV774('o',0,0),'pendente');assert(!c.linhaProducaoCalcJaUsada('o',0,0));
+ c.carregamentos.push({cargaStatus:'montagem',producaoPendenteV388:{pedidoId:'o',itemIndex:0,linhaIndex:0}});
+ assert.equal(c.estadoLinhaProducaoV774('o',0,0),'na_carga');assert(c.linhaProducaoCalcJaUsada('o',0,0));assert(!c.linhaProducaoCalcJaUsada('o',1,0));
+ c.carregamentos[0].cargaStatus='aguardando_conferencia';assert.equal(c.estadoLinhaProducaoV774('o',0,0),'na_carga');
+ c.carregamentos[0].cargaBaixadaEm=100;assert.equal(c.estadoLinhaProducaoV774('o',0,0),'baixado');
+ c.carregamentos[0].cargaArquivadaInconsistenteEm=200;assert.equal(c.estadoLinhaProducaoV774('o',0,0),'pendente');
+ c.baixaLinhaRegistradaV362=()=>true;assert.equal(c.estadoLinhaProducaoV774('o',0,0),'baixado');
+ assert(app.includes("?'Baixado':'Na carga'"));assert(app.includes('A saída aparece em Movimentações após fechar a carga'));
 });
