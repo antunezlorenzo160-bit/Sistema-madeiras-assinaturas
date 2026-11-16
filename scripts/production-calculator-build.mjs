@@ -9,6 +9,12 @@ export function applyProductionCalculator(app){
  fn=fn.replace("opt=[...sel.options].find(op=>{","opt=options.find(op=>{");
  fn=fn.replace("  requestAnimationFrame(()=>{try{$('largura').focus({preventScroll:true});}catch(e){}});", "  const split=document.getElementById('pcSplitWorkspace');if(split)split.classList.remove('prod-dir-fullscreen');const full=document.getElementById('pcAbrirDestinoCompleto');if(full)full.textContent='Abrir tela completa';\n  requestAnimationFrame(()=>{try{$('largura').focus({preventScroll:true});$('largura').scrollIntoView({block:'nearest',behavior:'smooth'});}catch(e){}});");
  }
+ if(!fn.includes('// PRODUCTION_MEASURES_SERVICES_V775')){
+  const anchor="  if(!l)return alert('Medida calculada não localizada.');";
+  if(!fn.includes(anchor))throw Error('Production physical length anchor missing');
+  fn=fn.replace(anchor,anchor+"\n  // PRODUCTION_MEASURES_SERVICES_V775\n  if(tipoLinha==='m3'&&l.origem==='restante'&&item.compensarPerda!==false&&Number(item.comprimentoCobrado)>Number(l.comprimento))l={...l,comprimento:Number(item.comprimentoCobrado)};");
+  fn=fn.replace("  calcPreview();", "  if($('chkEndireitamento'))$('chkEndireitamento').checked=tipoLinha==='m3'&&item.endireitamento===true;\n  if($('chkAplainamento'))$('chkAplainamento').checked=tipoLinha==='m3'&&item.aplainamento===true;\n  calcPreview();");
+ }
  // Preparing calculator fields is not a physical deduction.
  fn=fn.replace("  // PRODUCTION_CALCULATOR_SINGLE_USE_V2\n  window.__v456Session.setItem(chaveUsoProducaoCalc(pedidoId,itemIndex,linhaIndex),'1');\n  try{pcAtualizarPlanilhaDirecionada();}catch{}\n",'');
  app=app.slice(0,begin)+fn+app.slice(end);
