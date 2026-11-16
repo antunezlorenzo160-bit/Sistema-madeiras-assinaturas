@@ -132,3 +132,8 @@
  #stockChartsV720 .sc-intro{position:absolute;top:10px;right:12px;margin:0}
  #stockChartsV720 .sc-intro p{display:none}
 }
+
+/* Reports keep the navigation and sync status without the system logo. */
+@media screen{
+ body:has(#relatorios.tab.active)>header h1.marca-v474{display:none!important}
+}
