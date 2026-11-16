@@ -19,12 +19,14 @@ function updatePricedRowsV710(items,collectionName,budget=false,previous=items){
  }
  return priced;
 }
-function repriceBudgetV710(){
+function repriceBudgetV710(checkpoint=false){
+ if(lotePacotesEmCurso&&!checkpoint)return;
  if(!orcamento.some(i=>i.autoPriceV1&&!i.autoPriceV1.locked))return;
  orcamento=updatePricedRowsV710(orcamento,COL.orcamento,true);
  window.__v456Local.setItem(STORAGE.orcamento,JSON.stringify(orcamento));
 }
-function repriceLoadsV710(){
+function repriceLoadsV710(checkpoint=false){
+ if(lotePacotesEmCurso&&!checkpoint)return;
  if(parent.__smEmployeeMember?.()?.papel!=='admin')return;
  if(typeof carregamentos==='undefined')return;
  adoptCurrentLoadPricingV730();

@@ -14,12 +14,12 @@ const operation=(overrides={})=>({nome:'sm2_orcamento_itens',id:'piece',chave:'s
 function setup(ops,initial){
  let queue=ops,stored=initial,revision=0,writes=0,reads=0,scheduled=0,afterRead=()=>{},failure=false;
  const context=vm.createContext({empresaV456:'tenant',db:{},COL:{orcamento:'sm2_orcamento_itens',madeiras:'sm2_madeiras'},lotePacotesEmCurso:false,
-  conexaoOnline:()=>true,offlineSyncPromiseV396:null,offlineOps:()=>queue,salvarOfflineOps:next=>{queue=next;},
+  acessoPlanoAtual:()=>({write:true}),employeeAssertWrite(){},exigirEscritaPlano(){},conexaoOnline:()=>true,offlineSyncPromiseV396:null,offlineOps:()=>queue,salvarOfflineOps:next=>{queue=next;},
   doc:(db,nome,id)=>({path:`empresas/tenant/dados/${nome}/registros/${id}`}),
   agendarAplicacaoV428:()=>scheduled++,erroCadastroSyncV457:'',atualizarPendenciasCadastroV457(){},
   deleteDoc:async()=>{},setDoc:async()=>assert.fail('budget must use guarded transaction'),
   diagnosticoLeiturasV700:{wrapRead:(kind,read)=>read},console:{warn(){},error(){}},
-  parent:{__smDadosFirestoreV538:value=>value,__v470Runtime:()=>({sdk:{runTransaction:async(db,callback)=>{
+  parent:{__smEmployeeCollectionCan:()=>true,__smDadosFirestoreV538:value=>value,__v470Runtime:()=>({sdk:{runTransaction:async(db,callback)=>{
     if(failure)throw Error('unavailable');
     for(let attempt=0;attempt<5;attempt++){
      const before=revision;let staged;
