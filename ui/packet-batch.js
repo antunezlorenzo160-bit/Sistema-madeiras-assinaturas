@@ -10,13 +10,17 @@ async function adicionarPacotesDigitados(){
  adicionandoPacotesDigitados=true;lotePacotesEmCurso=true;window.__smPacketBatchActiveV779=true;
  for(const {el}of controls)el.disabled=true;
  botao.disabled=true;botao.textContent='Lançando 0 de '+numero+'…';
- let concluidos=0,falha=null;
+ let concluidos=0,ultimoSalvo=0,falha=null;
  try{
   for(let i=0;i<numero;i++){
    const antes=contadorPacotes;await lancar();if(contadorPacotes<=antes)break;
    concluidos++;
-   if(concluidos%10===0){
-    await persistirBlocoPacotes();
+   const beforeCopies=contadorPacotes;let copied=0;
+   try{copied=copiarPacotesCargaV780(numero-concluidos);}
+   finally{const added=Math.max(0,contadorPacotes-beforeCopies);concluidos+=added;i+=added;}
+   if(copied>0||concluidos%10===0){
+    botao.textContent='Salvando '+concluidos+' de '+numero+'…';
+    await persistirBlocoPacotes();ultimoSalvo=concluidos;
     botao.textContent='Lançando '+concluidos+' de '+numero+'…';
     await new Promise(resolve=>setTimeout(resolve,0));
    }else if(concluidos%2===0)await new Promise(resolve=>setTimeout(resolve,0));
@@ -25,7 +29,7 @@ async function adicionarPacotesDigitados(){
  }catch(error){falha=error;}
  finally{
   // Always release the UI, including when a local persistence checkpoint fails.
-  try{await persistirBlocoPacotes();}catch(error){falha=error;}
+  try{if(concluidos>ultimoSalvo||falha)await persistirBlocoPacotes();}catch(error){falha=error;}
   finally{
    lotePacotesEmCurso=false;adicionandoPacotesDigitados=false;window.__smPacketBatchActiveV779=false;
    for(const {el,disabled}of controls)el.disabled=disabled;
@@ -37,6 +41,7 @@ async function adicionarPacotesDigitados(){
  if(falha){packetPersistenceFailureV778();alert('O lote foi interrompido após '+concluidos+' pacote(s). Não repita o lote inteiro. Confira o resumo e preserve esta página. Falha ao salvar: '+String(falha?.message||falha));return;}
  calcPreview();atualizarTelasAposLancamento(destinoSelecionado());atualizarPainelPacotes();
  if(concluidos<numero)atualizarStatusSync('aguarda',concluidos+' de '+numero+' pacote(s) lançados; confira a quantidade restante antes de continuar');
+ else if(concluidos>0)atualizarStatusSync('aguarda',concluidos+' pacote(s) salvos neste aparelho • envio pendente de confirmação');
  sincronizarOfflineOps().catch(()=>{});
 }
 function packetPersistenceFailureV778(){
