@@ -85,10 +85,12 @@ export function paginateCompactGroups(groups,capacity=44,columnCount=2){
  const advance=()=>{if(column<columnCount-1){column++;used=0;}else{pages.push(columns);columns=Array.from({length:columnCount},()=>[]);column=0;used=0;}};
  for(const group of groups){let offset=0;
   while(offset<group.rows.length){
-   if(capacity-used<3)advance();
-   const take=Math.min(group.rows.length-offset,capacity-used-2);
-   columns[column].push({...group,continued:offset>0,rows:group.rows.slice(offset,offset+take)});
-   offset+=take;used+=take+2;
+   const footerCost=group.footer?1:0;
+   if(capacity-used<3+footerCost)advance();
+   const take=Math.min(group.rows.length-offset,capacity-used-2-footerCost);
+   const finalFragment=offset+take===group.rows.length;
+   columns[column].push({...group,continued:offset>0,finalFragment,rows:group.rows.slice(offset,offset+take)});
+   offset+=take;used+=take+2+(finalFragment?footerCost:0);
    if(offset<group.rows.length)advance();
   }
  }

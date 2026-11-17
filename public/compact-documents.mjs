@@ -12,7 +12,7 @@ export function compactPrintClone(root,options={}){
     group=groups.find(g=>g.name===name);if(!group){group={name,rows:[],totals:[],header:[]};groups.push(group);}continue;
    }
    if(row.classList.contains('grupo-especie-head')){header=[...row.cells].filter(c=>!c.classList.contains('resumo-coluna-espacadora')).map(c=>c.textContent.trim());if(group)group.header=header;continue;}
-   if(row.classList.contains('resumo-total-espessura')){if(group)group.totals.push(row.textContent.trim());continue;}
+   if(row.classList.contains('resumo-total-espessura')){if(group){const text=row.textContent.trim();group.totals.push(text);const total=text.match(/([\d.,]+)\s*(m³|m²|m)\s*$/);if(total)group.footer={label:total[2]==='m³'?'Volume total':total[2]==='m²'?'Área total':'Metros lineares',value:total[1]+' '+total[2]};}continue;}
    if(row.classList.contains('resumo-total-bloco-v597'))continue;
    if(!group||!row.classList.contains('linha-excluir-pecas'))continue;
    const cells=[...row.cells].filter(c=>!c.classList.contains('resumo-coluna-espacadora'));
@@ -80,6 +80,11 @@ export function renderCompactPages(doc,groups,capacity=44){
     const table=doc.createElement('table');table.className='compact-fixed-table-v712';
     const headers=g.headers||g.header;table.dataset.columns=String(headers.length);const head=table.createTHead().insertRow();for(const label of headers){const th=doc.createElement('th');th.textContent=label;head.append(th);}
     const tbody=table.createTBody();for(const values of g.rows){const tr=tbody.insertRow();for(const value of values)tr.insertCell().textContent=value;}
+    if(g.footer&&g.finalFragment){
+     const foot=doc.createElement('tfoot'),row=foot.insertRow();row.className='compact-group-total-v784';
+     const label=row.insertCell();label.colSpan=headers.length-1;label.textContent=g.footer.label;
+     row.insertCell().textContent=g.footer.value;table.append(foot);
+    }
     section.append(table);col.append(section);
    }
    sheet.append(col);
