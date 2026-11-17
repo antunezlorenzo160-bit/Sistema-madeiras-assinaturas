@@ -7,7 +7,7 @@ async function adicionarPacotesDigitados(){
  conferirMedidaContadorPacotes();
  const botao=$('btnLancar'),rotulo=botao.textContent;
  const controls=[...document.querySelectorAll('#calculadora input,#calculadora select,#calculadora button')].map(el=>({el,disabled:el.disabled}));
- adicionandoPacotesDigitados=true;lotePacotesEmCurso=true;
+ adicionandoPacotesDigitados=true;lotePacotesEmCurso=true;window.__smPacketBatchActiveV779=true;
  for(const {el}of controls)el.disabled=true;
  botao.disabled=true;botao.textContent='Lançando 0 de '+numero+'…';
  let concluidos=0,falha=null;
@@ -16,7 +16,7 @@ async function adicionarPacotesDigitados(){
    const antes=contadorPacotes;await lancar();if(contadorPacotes<=antes)break;
    concluidos++;
    if(concluidos%10===0){
-    persistirBlocoPacotes();
+    await persistirBlocoPacotes();
     botao.textContent='Lançando '+concluidos+' de '+numero+'…';
     await new Promise(resolve=>setTimeout(resolve,0));
    }else if(concluidos%2===0)await new Promise(resolve=>setTimeout(resolve,0));
@@ -25,9 +25,9 @@ async function adicionarPacotesDigitados(){
  }catch(error){falha=error;}
  finally{
   // Always release the UI, including when a local persistence checkpoint fails.
-  try{persistirBlocoPacotes();}catch(error){falha=error;}
+  try{await persistirBlocoPacotes();}catch(error){falha=error;}
   finally{
-   lotePacotesEmCurso=false;adicionandoPacotesDigitados=false;
+   lotePacotesEmCurso=false;adicionandoPacotesDigitados=false;window.__smPacketBatchActiveV779=false;
    for(const {el,disabled}of controls)el.disabled=disabled;
    botao.textContent=rotulo;
    entradaPacotes.value=concluidos===numero?'':String(numero-concluidos);
@@ -44,15 +44,15 @@ function packetPersistenceFailureV778(){
  $('btnLancar').disabled=true;
  let retry=document.getElementById('packetRetrySaveV778');
  if(!retry){retry=document.createElement('button');retry.id='packetRetrySaveV778';retry.type='button';retry.className='btn btn-secondary';retry.textContent='Tentar salvar sem lançar novamente';$('btnLancar').after(retry);}
- retry.onclick=()=>{
+ retry.onclick=async()=>{
   if(lotePacotesEmCurso)return;
-  lotePacotesEmCurso=true;
+  lotePacotesEmCurso=true;window.__smPacketBatchActiveV779=true;
   try{
-   persistirBlocoPacotes();
+   await persistirBlocoPacotes();
    window.__smPacketPersistencePendingV778=false;retry.remove();$('btnLancar').disabled=false;
    atualizarStatusSync('aguarda','Lote salvo no aparelho; confira o resumo antes de continuar');
   }catch(error){alert('Os dados ainda não puderam ser salvos. Preserve esta página. '+String(error?.message||error));}
-  finally{lotePacotesEmCurso=false;}
+  finally{lotePacotesEmCurso=false;window.__smPacketBatchActiveV779=false;}
   if(!window.__smPacketPersistencePendingV778){calcPreview();atualizarTelasAposLancamento(destinoSelecionado());atualizarPainelPacotes();sincronizarOfflineOps().catch(()=>{});}
  };
 }

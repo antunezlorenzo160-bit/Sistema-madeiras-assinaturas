@@ -20,5 +20,5 @@ test('after persistence failure, retry saves existing records without relaunchin
  const s=setup({fail:true});await s.c.adicionarPacotesDigitados();const count=s.rows.length;
  await s.c.adicionarPacotesDigitados();assert.equal(s.rows.length,count);
  s.c.persistirBlocoPacotes=()=>{for(const row of s.rows)s.stored.set(row.id,{...row});};
- s.retry.onclick();assert.equal(s.rows.length,count);assert.equal(s.stored.size,count);assert.equal(s.c.window.__smPacketPersistencePendingV778,false);assert.equal(s.button.disabled,false);assert(s.retry.removed);assert.equal(s.input.value,'310');
+ await s.retry.onclick();assert.equal(s.rows.length,count);assert.equal(s.stored.size,count);assert.equal(s.c.window.__smPacketPersistencePendingV778,false);assert.equal(s.button.disabled,false);assert(s.retry.removed);assert.equal(s.input.value,'310');
 });

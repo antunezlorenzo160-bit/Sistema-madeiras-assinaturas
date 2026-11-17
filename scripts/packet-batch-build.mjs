@@ -8,6 +8,7 @@ export function applyPacketBatchV777(app){
  replace('function calcPreview(){calcPreviewBaseV710();', 'function calcPreview(){if(lotePacotesEmCurso)return;calcPreviewBaseV710();');
  replace('  function atualizarFluxoCargaV388(){','  function atualizarFluxoCargaV388(){\n    if(lotePacotesEmCurso)return;');
  replace('function pcAtualizarPlanilhaDirecionada(){','function pcAtualizarPlanilhaDirecionada(){\n  if(lotePacotesEmCurso)return;');
- replace('function persistirBlocoPacotes(){\n persistindoBlocoPacotes=true;',"function persistirBlocoPacotes(){\n if(destinoSelecionado()==='orcamento')repriceBudgetV710(true);else if(destinoSelecionado()==='carga')repriceLoadsV710(true);\n persistindoBlocoPacotes=true;");
+ replace('function persistirBlocoPacotes(){\n persistindoBlocoPacotes=true;',"async function persistirBlocoPacotes(){\n if(destinoSelecionado()==='orcamento')repriceBudgetV710(true);else if(destinoSelecionado()==='carga')repriceLoadsV710(true);\n persistindoBlocoPacotes=true;");
+ replace(' }finally{persistindoBlocoPacotes=false;}\n}\nfunction save(chaves){',' }finally{persistindoBlocoPacotes=false;}\n await window.__v456Local.flush?.();\n}\nfunction save(chaves){');
  return app;
 }
