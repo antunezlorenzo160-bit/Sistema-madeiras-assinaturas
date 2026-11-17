@@ -85,7 +85,8 @@ export function paginateCompactGroups(groups,capacity=44,columnCount=2){
  const advance=()=>{if(column<columnCount-1){column++;used=0;}else{pages.push(columns);columns=Array.from({length:columnCount},()=>[]);column=0;used=0;}};
  for(const group of groups){let offset=0;
   while(offset<group.rows.length){
-   const footerCost=group.footer?1:0;
+   const footerCost=(group.footer?1:0)+(group.extraFooter?1:0);
+   if(footerCost>capacity-3)throw Error('Capacidade insuficiente para os totais da tabela.');
    if(capacity-used<3+footerCost)advance();
    const take=Math.min(group.rows.length-offset,capacity-used-2-footerCost);
    const finalFragment=offset+take===group.rows.length;

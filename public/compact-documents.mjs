@@ -8,12 +8,12 @@ export function compactPrintClone(root,options={}){
   const groups=[];let group=null,header=[];
   for(const row of [...body.rows]){
    if(row.classList.contains('grupo-especie-titulo')){
-    const name=row.textContent.trim().replace(/\s*[•·]\s*Comp\..*$/,'').replace(/\s*[—–-]\s*Comp\..*$/,'');
+    const name=row.textContent.trim();
     group=groups.find(g=>g.name===name);if(!group){group={name,rows:[],totals:[],header:[]};groups.push(group);}continue;
    }
    if(row.classList.contains('grupo-especie-head')){header=[...row.cells].filter(c=>!c.classList.contains('resumo-coluna-espacadora')).map(c=>c.textContent.trim());if(group)group.header=header;continue;}
-   if(row.classList.contains('resumo-total-espessura')){if(group){const text=row.textContent.trim();group.totals.push(text);const total=text.match(/([\d.,]+)\s*(m³|m²|m)\s*$/);if(total)group.footer={label:total[2]==='m³'?'Volume total':total[2]==='m²'?'Área total':'Metros lineares',value:total[1]+' '+total[2]};}continue;}
-   if(row.classList.contains('resumo-total-bloco-v597'))continue;
+   if(row.classList.contains('resumo-total-espessura')){if(group){const text=row.textContent.trim();group.totals.push(text);const total=text.match(/([\d.,]+)\s*(m³|m²|m)\s*$/);if(total){const footer={label:total[2]==='m³'?'Volume total da espessura':total[2]==='m²'?'Área total':'Metros lineares',value:total[1]+' '+total[2]};if(group.footer)group.extraFooter=footer;else group.footer=footer;}}continue;}
+   if(row.classList.contains('resumo-total-bloco-v597')){if(group){const total=row.textContent.trim().match(/([\d.,]+)\s*(m³|m²|m)\s*$/),length=group.name.match(/Comp\.\s*(.+)$/)?.[1];if(total)group.footer={label:length?'Subtotal — '+length:total[2]==='m³'?'Volume total':total[2]==='m²'?'Área total':'Metros lineares',value:total[1]+' '+total[2]};}continue;}
    if(!group||!row.classList.contains('linha-excluir-pecas'))continue;
    const cells=[...row.cells].filter(c=>!c.classList.contains('resumo-coluna-espacadora'));
    group.rows.push(cells.map(c=>c.textContent.trim()));
@@ -81,9 +81,13 @@ export function renderCompactPages(doc,groups,capacity=44){
     const headers=g.headers||g.header;table.dataset.columns=String(headers.length);const head=table.createTHead().insertRow();for(const label of headers){const th=doc.createElement('th');th.textContent=label;head.append(th);}
     const tbody=table.createTBody();for(const values of g.rows){const tr=tbody.insertRow();for(const value of values)tr.insertCell().textContent=value;}
     if(g.footer&&g.finalFragment){
-     const foot=doc.createElement('tfoot'),row=foot.insertRow();row.className='compact-group-total-v784';
-     const label=row.insertCell();label.colSpan=headers.length-1;label.textContent=g.footer.label;
-     row.insertCell().textContent=g.footer.value;table.append(foot);
+     const foot=doc.createElement('tfoot');
+     for(const total of [g.footer,g.extraFooter].filter(Boolean)){
+      const row=foot.insertRow();row.className='compact-group-total-v784';
+      const label=row.insertCell();label.colSpan=headers.length-1;label.textContent=total.label;
+      row.insertCell().textContent=total.value;
+     }
+     table.append(foot);
     }
     section.append(table);col.append(section);
    }
