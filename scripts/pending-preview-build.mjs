@@ -1,3 +1,4 @@
+import {applyCompactStorageV778} from './compact-storage-build.mjs';
 import {applyPacketBatchV777} from './packet-batch-build.mjs';
 import {applyOrderDocumentBuildV767} from './order-document-build.mjs';
 import {applyDeliveryReceiptOuterV765} from './delivery-receipt-build.mjs';
@@ -92,6 +93,7 @@ export function applyPendingPreview(html){
  const loadMenu='<button type="button" class="inicio-atalho-v464" data-inicio-destino="carregamentos">';
  replace(loadMenu,'<button type="button" class="inicio-atalho-v464" data-inicio-destino="relatorios"><strong>Gráficos e relatórios</strong><span>Indicadores e acompanhamento</span></button>'+loadMenu);
  replace("return 'R$ '+val.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:4})+unidadePrecoLinhaV399(i);", "return 'R$ '+val.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:4})+unidadePrecoLinhaV399(i)+(i.servicePricingV727===true&&Number(i.valorServicos)>0?' (com serviços)':'');");
+ app=applyCompactStorageV778(app);
  app=applyPacketBatchV777(app);
  app=applyOrderDocumentBuildV767(app);
  app=applyLinearTotalV744(app);

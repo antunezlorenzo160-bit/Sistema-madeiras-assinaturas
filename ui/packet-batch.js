@@ -1,5 +1,5 @@
 async function adicionarPacotesDigitados(){
- if(adicionandoPacotesDigitados)return;
+ if(adicionandoPacotesDigitados||window.__smPacketPersistencePendingV778)return;
  const texto=entradaPacotes.value.trim(),numero=Number(texto);
  if(!texto)return;
  if(!Number.isSafeInteger(numero)||numero<1){alert('Informe uma quantidade inteira e positiva de pacotes.');return;}
@@ -34,8 +34,25 @@ async function adicionarPacotesDigitados(){
   }
  }
  // Repaint once after the saved batch, rather than once per package.
- if(falha){alert('O lote foi interrompido após '+concluidos+' pacote(s). Não repita o lote inteiro. Confira o resumo e preserve esta página. Falha ao salvar: '+String(falha?.message||falha));return;}
+ if(falha){packetPersistenceFailureV778();alert('O lote foi interrompido após '+concluidos+' pacote(s). Não repita o lote inteiro. Confira o resumo e preserve esta página. Falha ao salvar: '+String(falha?.message||falha));return;}
  calcPreview();atualizarTelasAposLancamento(destinoSelecionado());atualizarPainelPacotes();
  if(concluidos<numero)atualizarStatusSync('aguarda',concluidos+' de '+numero+' pacote(s) lançados; confira a quantidade restante antes de continuar');
  sincronizarOfflineOps().catch(()=>{});
+}
+function packetPersistenceFailureV778(){
+ window.__smPacketPersistencePendingV778=true;
+ $('btnLancar').disabled=true;
+ let retry=document.getElementById('packetRetrySaveV778');
+ if(!retry){retry=document.createElement('button');retry.id='packetRetrySaveV778';retry.type='button';retry.className='btn btn-secondary';retry.textContent='Tentar salvar sem lançar novamente';$('btnLancar').after(retry);}
+ retry.onclick=()=>{
+  if(lotePacotesEmCurso)return;
+  lotePacotesEmCurso=true;
+  try{
+   persistirBlocoPacotes();
+   window.__smPacketPersistencePendingV778=false;retry.remove();$('btnLancar').disabled=false;
+   atualizarStatusSync('aguarda','Lote salvo no aparelho; confira o resumo antes de continuar');
+  }catch(error){alert('Os dados ainda não puderam ser salvos. Preserve esta página. '+String(error?.message||error));}
+  finally{lotePacotesEmCurso=false;}
+  if(!window.__smPacketPersistencePendingV778){calcPreview();atualizarTelasAposLancamento(destinoSelecionado());atualizarPainelPacotes();sincronizarOfflineOps().catch(()=>{});}
+ };
 }
