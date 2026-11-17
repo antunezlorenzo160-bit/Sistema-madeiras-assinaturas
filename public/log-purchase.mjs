@@ -5,9 +5,9 @@ export function groupLogPurchaseLinesV756(lines){
  const result=new Map(),ids=new Set();
  for(const row of lines){
   if(ids.has(row.id))throw Error('Tora repetida na lista.');ids.add(row.id);
-  volumeToras(row.diametro,row.comprimento,row.quantidade);
-  const key=JSON.stringify([chaveEspecieToras(row.especie),row.diametro,row.comprimento,row.unitCents]),saved=result.get(key);
-  if(saved){saved.quantidade+=row.quantidade;volumeToras(saved.diametro,saved.comprimento,saved.quantidade);}else result.set(key,{...row});
+  volumeToras(row.diametro,row.comprimento,row.quantidade,row.formula);
+  const key=JSON.stringify([chaveEspecieToras(row.especie),row.diametro,row.comprimento,row.unitCents,row.formula===undefined?'cilindrica':row.formula]),saved=result.get(key);
+  if(saved){saved.quantidade+=row.quantidade;volumeToras(saved.diametro,saved.comprimento,saved.quantidade,saved.formula);}else result.set(key,{...row});
  }
  return [...result.values()];
 }
@@ -22,13 +22,14 @@ export function normalizeLogPurchaseV756(input){
  if(typeof input.freightIncluded!=='boolean'||typeof input.otherIncluded!=='boolean'||!Array.isArray(input.lines)||!input.lines.length||input.lines.length>200)throw Error('Adicione de 1 a 200 medidas agrupadas de toras.');
  const ids=new Set();let goodsCents=0,totalVolumeUnits=0,totalQuantity=0;
  const lines=input.lines.map(row=>{
-  if(!row||typeof row!=='object'||Object.keys(row).some(k=>!['id','especie','diametro','comprimento','quantidade','unitCents'].includes(k))||!logPurchaseUuidV756.test(row.id||'')||ids.has(row.id))throw Error('Medida de tora inválida.');ids.add(row.id);
+  if(!row||typeof row!=='object'||Object.keys(row).some(k=>!['id','especie','diametro','comprimento','quantidade','unitCents','formula'].includes(k))||!logPurchaseUuidV756.test(row.id||'')||ids.has(row.id))throw Error('Medida de tora inválida.');ids.add(row.id);
+  if(row.formula==='diametro_quadrado'&&volumeToras(100,1,1,'diametro_quadrado').total!==1)throw Error('Conecte e atualize a página para carregar a fórmula escolhida antes de confirmar.');
   const especie=text(row.especie,100,true);if(row.diametro>1000||row.comprimento>100||row.quantidade>1000000)throw Error('Medida de tora acima do limite.');
-  const volume=volumeToras(row.diametro,row.comprimento,row.quantidade).total,volumeUnits=Math.round(volume*1e9);if(volume>1000000||!Number.isSafeInteger(volumeUnits)||volumeUnits<=0)throw Error('Volume de toras fora do limite.');
+  const volume=volumeToras(row.diametro,row.comprimento,row.quantidade,row.formula).total,volumeUnits=Math.round(volume*1e9);if(volume>1000000||!Number.isSafeInteger(volumeUnits)||volumeUnits<=0)throw Error('Volume de toras fora do limite.');
   const unitCents=money(row.unitCents);if(!unitCents)throw Error('Informe o preço de compra das toras por m³.');
   const amountCents=Number((BigInt(volumeUnits)*BigInt(unitCents)+500000000n)/1000000000n);if(amountCents<1)throw Error('O valor de cada medida precisa ser de pelo menos um centavo.');
   goodsCents+=amountCents;totalVolumeUnits+=volumeUnits;totalQuantity+=row.quantidade;
-  return {id:row.id,especie,diametro:row.diametro,comprimento:row.comprimento,quantidade:row.quantidade,unitCents,volume:volumeUnits/1e9,amountCents};
+  return {id:row.id,especie,...(row.formula!==undefined?{formula:row.formula}:{}),diametro:row.diametro,comprimento:row.comprimento,quantidade:row.quantidade,unitCents,volume:volumeUnits/1e9,amountCents};
  });
  const addedCents=(input.freightIncluded?0:freightCents)+(input.otherIncluded?0:otherCents),totalCents=goodsCents+addedCents;
  if(!Number.isSafeInteger(totalCents)||totalCents>100000000000||!Number.isSafeInteger(totalVolumeUnits)||!Number.isSafeInteger(totalQuantity))throw Error('Total da compra acima do limite.');

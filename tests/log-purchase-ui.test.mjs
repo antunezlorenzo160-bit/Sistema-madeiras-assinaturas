@@ -38,3 +38,9 @@ test('log purchase confirmation requires condition and cash payment includes the
  const s=setup();s.c.logAddV756();s.nodes.lpPayModeV757.value='';await s.c.logConfirmV756();assert.equal(s.calls.length,0);assert.match(s.nodes.lpStatusV756.textContent,/condição/);
  s.nodes.lpPayModeV757.value='cash';s.nodes.lpFreightV756.value='100';await s.c.logConfirmV756();const raw=JSON.parse(s.calls[0].options.body).purchase;assert.equal(raw.payment.mode,'cash');assert.equal(raw.payment.paidCents,normalizeLogPurchaseV756(raw).totalCents);assert.equal(raw.payment.dueDate,null);
 });
+
+test('purchase selector freezes formula per line and groups only matching methods',()=>{
+ const s=setup();s.c.navigator.onLine=false;s.nodes.lpLengthV756.value='6';s.nodes.lpQuantityV756.value='1';s.nodes.lpFormulaV786.value='diametro_quadrado';s.c.logAddV756();
+ assert.equal(saved(s).lines[0].formula,'diametro_quadrado');assert.match(s.nodes.lpLinesV756.innerHTML,/D² × comprimento/);assert.match(s.nodes.lpLinesV756.innerHTML,/0.5400/);
+ s.nodes.lpDiameterV756.value='30';s.nodes.lpFormulaV786.value='cilindrica';s.c.logAddV756();assert.equal(saved(s).lines.length,2);assert.equal(saved(s).lines[0].formula,'diametro_quadrado');assert.equal(saved(s).lines[1].formula,'cilindrica');assert.equal(s.calls.length,0);
+});

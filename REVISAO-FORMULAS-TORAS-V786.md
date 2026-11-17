@@ -1,0 +1,9 @@
+## Seleção de fórmula na cubagem e compras de toras V786 — 17/11
+
+Usuário autorizou campo para selecionar fórmulas após comparar30cm×6m: circularπD²/4×C=0,4241m³ e D²×C semπ=0,5400m³. Seletor adicionado na cubagem/mão de obra e compras de toras, com padrão circular. Cada linha nova guarda formula, e o agrupamento inclui o método: não mistura volumes de métodos diferentes. Trocar seleção afeta apenas o próximo lançamento/preview. Linhas legadas sem formula continuam circulares, com expressão aritmética original preservada.
+
+Lista usa identificação curta Circular ou D²×C por linha, preview mostra método completo, texto copiado identifica fórmula e PDF inclui métodos presentes e identificação por linha. Preço de mão de obra usa volume do método salvo da linha. Compra usa método no draft, total, histórico e receipt; normalizador servidor valida enum e recalcula volume/centavos. Formato normalizado de linhas antigas sem formula permanece sem nova propriedade para preservar assinaturas/retry de compras antigas. Nada recalcula compra já confirmada ou move estoque; sem acesso a dados privados reais.
+
+Compatibilidade offline: app importa toras.mjs separado. Se um cache antigo circular-only for usado com novo formulário de compra, método D²×C é recusado com orientação atualizar online antes de confirmar, em vez de cobrar silenciosamente outro volume. Payload pendente permanece imutável. Não mudou service worker/cache nem pediu limpeza de dados.
+
+Validação:5suítes passaram (fórmulas, sincronização toras, teclado, compra servidor e UI), build38scripts e módulos sintaticamente válidos. Casos30×6 e quantidade2, fórmula inválida, legado exato, agrupamento separado, seletor UI/draft congelado, receipt financeiro calculado no servidor, retry sem duplicação e conflito se mudar método depois de confirmar. Sem navegador/Android/PDF nativo; somente prévia12, produção inalterada.

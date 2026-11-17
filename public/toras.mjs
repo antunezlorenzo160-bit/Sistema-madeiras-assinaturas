@@ -1,9 +1,15 @@
-// Cubagem cilíndrica pelo diâmetro da ponta fina, sem arredondamento intermediário.
-export function volumeToras(diametroCm, comprimentoM, quantidade = 1) {
+// Each saved line keeps its chosen method. Legacy lines remain cylindrical.
+export function formulaTorasV786(formula='cilindrica'){
+ if(!['cilindrica','diametro_quadrado'].includes(formula))throw new RangeError('Selecione uma fórmula de cubagem válida.');
+ return formula;
+}
+export function nomeFormulaTorasV786(formula){return formulaTorasV786(formula)==='diametro_quadrado'?'D² × comprimento (sem π)':'Circular (π × D² ÷ 4 × comprimento)';}
+export function volumeToras(diametroCm, comprimentoM, quantidade = 1, formula = 'cilindrica') {
+  formula=formulaTorasV786(formula);
   if (![diametroCm, comprimentoM, quantidade].every(v => typeof v === 'number' && Number.isFinite(v) && v > 0) || !Number.isSafeInteger(quantidade)) {
     throw new RangeError('Informe diâmetro e comprimento positivos e quantidade inteira de toras.');
   }
-  const unitario = Math.PI * (diametroCm / 100) ** 2 / 4 * comprimentoM;
+  const unitario = formula==='cilindrica'?Math.PI * (diametroCm / 100) ** 2 / 4 * comprimentoM:(diametroCm / 100) ** 2 * comprimentoM;
   const total = unitario * quantidade;
   if (!Number.isFinite(total) || unitario === 0) throw new RangeError('Medidas fora do limite de cálculo.');
   return { unitario, total };
@@ -25,12 +31,12 @@ export function valorMaoObraToras(volume, preco) {
 export function agruparToras(linhas) {
   const grupos = new Map();
   for (const linha of linhas) {
-    volumeToras(linha.diametro, linha.comprimento, linha.quantidade);
-    const chave = JSON.stringify([chaveEspecieToras(linha.especie), linha.diametro, linha.comprimento, linha.precoMaoObra ?? null]);
+    volumeToras(linha.diametro, linha.comprimento, linha.quantidade, linha.formula);
+    const chave = JSON.stringify([chaveEspecieToras(linha.especie), linha.diametro, linha.comprimento, linha.precoMaoObra ?? null, formulaTorasV786(linha.formula)]);
     const anterior = grupos.get(chave);
     if (anterior) {
       const quantidade = anterior.quantidade + linha.quantidade;
-      volumeToras(linha.diametro, linha.comprimento, quantidade);
+      volumeToras(linha.diametro, linha.comprimento, quantidade, linha.formula);
       anterior.quantidade = quantidade; anterior.ids.push(linha.id);
     } else grupos.set(chave, { ...linha, ids: [linha.id] });
   }
@@ -70,7 +76,7 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
   dialog.setAttribute('aria-labelledby', 'tituloCubagemToras');
   dialog.style.cssText = 'box-sizing:border-box;width:min(680px,96vw);max-height:92dvh;overflow:auto;padding:18px;border:1px solid #888;border-radius:14px;background:var(--card,#fff);color:var(--text,#111)';
   dialog.innerHTML = `<div class="toras-cabecalho"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><h2 id="tituloCubagemToras">Cubagem de toras</h2><button type="button" class="btn btn-secondary" data-fechar aria-label="Fechar cubagem de toras">Fechar</button></div>
-    <p class="toras-descricao">Diâmetro + comprimento. Volume cilíndrico, sem desconto de casca.</p></div><div class="toras-layout"><section class="toras-calculo" aria-label="Cálculo da cubagem">
+    <p class="toras-descricao">Escolha a fórmula para cada lançamento. Diâmetro informado, sem desconto de casca.</p></div><div class="toras-layout"><section class="toras-calculo" aria-label="Cálculo da cubagem">
     <details id="cadastroPrecosToras"><summary>Cadastro de mão de obra por m³</summary>
       <form id="formPrecoToras">
         <label for="toraPrecoBase">Preço base para todas as espécies (R$/m³)</label><input id="toraPrecoBase" type="number" min="0" step="0.01" inputmode="decimal" required>
@@ -82,6 +88,7 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
       <p id="toraPrecoStatus" role="status">Carregando preços…</p><div id="toraPrecosLista"></div>
     </details>
     <form id="formToras">
+      <label for="toraFormulaV786">Fórmula da cubagem</label><select id="toraFormulaV786"><option value="cilindrica">Circular — π × D² ÷ 4 × comprimento</option><option value="diametro_quadrado">D² × comprimento — sem π</option></select>
       <div class="toras-identificacao"><div><label for="toraMaoObra">Mão de obra (opcional)</label><input id="toraMaoObra" maxlength="100" autocomplete="off"></div>
       <div><label for="toraCliente">Nome do cliente (opcional)</label><input id="toraCliente" maxlength="100" autocomplete="name"></div>
       <div class="toras-especie-campo"><label for="toraEspecie">Espécie / identificação (opcional)</label><div class="tora-especie-tarifa"><input id="toraEspecie" maxlength="100" autocomplete="off"><span id="toraTarifa" role="status" aria-live="polite" aria-label="Mão de obra por metro cúbico">— /m³</span></div></div></div>
@@ -96,7 +103,7 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
     </form>
     </section><section class="toras-planilha" aria-label="Planilha da cubagem"><p id="toraAviso" role="status">Carregando lista de cubagem…</p>
     <div class="export-actions"><button type="button" class="btn btn-secondary" data-copiar>Copiar lista</button><button type="button" class="btn btn-primary" data-pdf>Gerar PDF</button><button type="button" class="btn btn-secondary" data-limpar>Limpar lista</button></div>
-    <div id="torasExport"><h3>Resumo da cubagem de toras</h3><p>Método: cilindro pelo diâmetro, sem desconto de casca.</p><p>Volume = π × (diâmetro em metros)² ÷ 4 × comprimento × quantidade.</p><div id="torasIdentificacao"></div><div id="torasLinhas"></div><p id="torasTotal"></p></div></section></div>`;
+    <div id="torasExport"><h3>Resumo da cubagem de toras</h3><p id="torasMetodoV786"></p><p>Diâmetro em metros; volume por tora multiplicado pela quantidade. Sem desconto de casca.</p><div id="torasIdentificacao"></div><div id="torasLinhas"></div><p id="torasTotal"></p></div></section></div>`;
   doc.body.appendChild(dialog);
   montarCompras?.({dialog,doc});
   const el = id => dialog.querySelector('#' + id);
@@ -115,7 +122,7 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
     dialog.style.setProperty('--toras-fundo-solido', textoClaro ? '#0b1912' : '#ffffff');
     const fonte = ['font-family', 'font-size', 'font-weight', 'line-height', 'color'];
     copiarEstilo(card, dialog, [...fonte, 'background-color', 'background-image', 'border-color', 'border-style', 'border-width', 'border-radius', 'box-shadow']);
-    dialog.querySelectorAll('input:not([type=checkbox])').forEach(input => {
+    dialog.querySelectorAll('input:not([type=checkbox]),select').forEach(input => {
       copiarEstilo(doc.getElementById('largura'), input, [...fonte, 'background-color', 'background-image', 'border-color', 'border-style', 'border-width', 'border-radius', 'padding']);
       input.style.width = '100%'; input.style.boxSizing = 'border-box';
     });
@@ -134,7 +141,7 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
     });
   }
   const estiloToras = doc.createElement('style');
-  estiloToras.textContent = '@media print{#torasExport .toras-tabela-wrap{overflow:visible!important}#torasExport tr{break-inside:avoid}}#cubagemToras .export-actions{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}#cubagemToras .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}#cubagemToras input{min-width:0}#cubagemToras::backdrop{background:var(--toras-fundo-solido,#0b1912)}@media screen{#cubagemToras{position:fixed!important;inset:0!important;margin:0!important;width:100%!important;max-width:none!important;height:100dvh!important;max-height:100dvh!important;border:0!important;border-radius:0!important;overflow-y:auto!important;overscroll-behavior:contain}}@media(max-width:600px){#cubagemToras .grid3{grid-template-columns:1fr}}';
+  estiloToras.textContent = '@media print{#torasExport .toras-tabela-wrap{overflow:visible!important}#torasExport tr{break-inside:avoid}}#cubagemToras .export-actions{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}#cubagemToras .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}#cubagemToras input,#cubagemToras select{min-width:0}#cubagemToras::backdrop{background:var(--toras-fundo-solido,#0b1912)}@media screen{#cubagemToras{position:fixed!important;inset:0!important;margin:0!important;width:100%!important;max-width:none!important;height:100dvh!important;max-height:100dvh!important;border:0!important;border-radius:0!important;overflow-y:auto!important;overscroll-behavior:contain}}@media(max-width:600px){#cubagemToras .grid3{grid-template-columns:1fr}}';
 
   estiloToras.textContent += `
     @media screen and (max-width:600px){
@@ -162,7 +169,7 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
       #cubagemToras .toras-especie-campo{grid-column:1/-1}
       #cubagemToras .grid3{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px}
       #cubagemToras label{font-size:13px!important;line-height:1.25!important;margin:6px 0 3px!important}
-      #cubagemToras input:not([type=checkbox]){font-size:16px!important;line-height:1.25!important;height:38px!important;min-height:38px!important;padding:7px 9px!important}
+      #cubagemToras input:not([type=checkbox]),#cubagemToras select{font-size:16px!important;line-height:1.25!important;height:38px!important;min-height:38px!important;padding:7px 9px!important}
       #cubagemToras .toras-cobrar{display:flex!important;align-items:center;gap:7px;min-height:30px;margin:6px 0!important}
       #cubagemToras .toras-cobrar input{flex:0 0 auto;margin:0!important}
       #cubagemToras #toraTarifa:empty{display:none}
@@ -211,7 +218,7 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
   try {
     const salvas = JSON.parse(storage.getItem(key) || '[]');
     if (Array.isArray(salvas)) linhas = salvas.filter(l => {
-      try { volumeToras(l.diametro, l.comprimento, l.quantidade); return typeof l.especie === 'string'; } catch { return false; }
+      try { volumeToras(l.diametro, l.comprimento, l.quantidade, l.formula); return typeof l.especie === 'string'; } catch { return false; }
     });
   } catch { el('toraAviso').textContent = 'Não foi possível recuperar a lista deste dispositivo.'; }
   linhas = linhas.map(l => l.id ? l : ({...l, id:doc.defaultView.crypto.randomUUID(), migrar:true}));
@@ -328,6 +335,7 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
     tabela.className = 'toras-resumo-tabela';
     tabela.setAttribute('aria-label', 'Resumo dos lançamentos de toras');
     const grupos = agruparToras(linhas);
+    el('torasMetodoV786').textContent='Método(s): '+[...new Set(grupos.map(l=>nomeFormulaTorasV786(l.formula)))].join(' • ');
     const comValores = grupos.some(l => typeof l.precoMaoObra === 'number');
     const cabecalho = tabela.createTHead().insertRow();
     for (const [indice, texto] of ['Espécie', 'Qtd.', 'Diâmetro (cm)', 'Comp. (m)', 'm³/tora', 'm³ total', ...(comValores ? ['R$/m³', 'Valor (R$)'] : []), 'Ação'].entries()) {
@@ -342,12 +350,12 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
     const corpo = tabela.createTBody(); wrap.appendChild(tabela); host.appendChild(wrap);
     let total = 0, quantidade = 0, valorTotal = 0;
     grupos.forEach((l, indice) => {
-      const { unitario, total: volume } = volumeToras(l.diametro, l.comprimento, l.quantidade);
+      const { unitario, total: volume } = volumeToras(l.diametro, l.comprimento, l.quantidade, l.formula);
       total += volume; quantidade += l.quantidade;
       const tr = doc.createElement('tr');
       const valor = typeof l.precoMaoObra === 'number' ? valorMaoObraToras(volume, l.precoMaoObra) : null;
       if (valor !== null) valorTotal += Math.round(valor * 100);
-      const valores = [l.especie || 'Espécie não informada', String(l.quantidade), fmt(l.diametro, 2), fmt(l.comprimento, 2), fmt(unitario), fmt(volume), ...(comValores ? [valor === null ? '—' : fmt(l.precoMaoObra, 2), valor === null ? '—' : fmt(valor, 2)] : [])];
+      const valores = [(l.especie || 'Espécie não informada')+' · '+(formulaTorasV786(l.formula)==='cilindrica'?'Circular':'D² × C'), String(l.quantidade), fmt(l.diametro, 2), fmt(l.comprimento, 2), fmt(unitario), fmt(volume), ...(comValores ? [valor === null ? '—' : fmt(l.precoMaoObra, 2), valor === null ? '—' : fmt(valor, 2)] : [])];
       valores.forEach((valor, coluna) => {
         const td = doc.createElement('td'); td.textContent = valor;
         td.dataset.label = ['Espécie', 'Qtd.', 'Diâm.cm', 'Comp.m', 'm³/tora', 'm³ total', 'R$/m³', 'Valor R$'][coluna];
@@ -368,21 +376,22 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
     const preco = precoMaoObraToras(precos, el('toraEspecie').value);
     el('toraTarifa').textContent = precosProntos && preco !== null ? moeda(preco) + '/m³' : '— /m³';
     el('toraTarifa').title = !precosProntos ? 'Aguardando os preços da empresa.' : preco === null ? 'Cadastre um preço base ou específico para esta espécie.' : 'Mão de obra por metro cúbico';
-    try { const v = volumeToras(...ler()); el('toraPreview').textContent = 'Por tora: ' + fmt(v.unitario) + ' m³ • Total: ' + fmt(v.total) + ' m³' + (el('toraCobrar').checked && preco !== null ? ' • Mão de obra: ' + moeda(valorMaoObraToras(v.total, preco)) : ''); }
+    try { const v = volumeToras(...ler(),el('toraFormulaV786').value); el('toraPreview').textContent = nomeFormulaTorasV786(el('toraFormulaV786').value)+' • Por tora: ' + fmt(v.unitario) + ' m³ • Total: ' + fmt(v.total) + ' m³' + (el('toraCobrar').checked && preco !== null ? ' • Mão de obra: ' + moeda(valorMaoObraToras(v.total, preco)) : ''); }
     catch { el('toraPreview').textContent = 'Informe diâmetro e comprimento positivos e quantidade inteira.'; }
   }
   instalarAtalhosToras(el('formToras'), doc.defaultView);
   el('formToras').addEventListener('input', preview);
+  el('toraFormulaV786').addEventListener('change',preview);
   el('formToras').addEventListener('submit', event => {
     event.preventDefault();
     try {
-      const [diametro, comprimento, quantidade] = ler(); volumeToras(diametro, comprimento, quantidade);
-      const item = { id:doc.defaultView.crypto.randomUUID(), migrar:true, especie: el('toraEspecie').value.trim(), diametro, comprimento, quantidade };
+      const [diametro, comprimento, quantidade] = ler(),formula=formulaTorasV786(el('toraFormulaV786').value); volumeToras(diametro, comprimento, quantidade, formula);
+      const item = { id:doc.defaultView.crypto.randomUUID(), migrar:true, especie: el('toraEspecie').value.trim(), diametro, comprimento, quantidade, formula };
       if (el('toraCobrar').checked) {
         if (!precosProntos) throw Error('Aguarde a confirmação dos preços da empresa.');
         const preco = precoMaoObraToras(precos, item.especie);
         if (preco === null) throw Error('Cadastre o preço da mão de obra antes de lançar.');
-        valorMaoObraToras(volumeToras(diametro, comprimento, quantidade).total, preco);
+        valorMaoObraToras(volumeToras(diametro, comprimento, quantidade, formula).total, preco);
         item.precoMaoObra = preco;
       }
       agruparToras([...linhas, item]);
@@ -400,8 +409,8 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
     const titulo = doc.createElement('h3'); titulo.textContent = 'Cubagem de toras'; resumo.appendChild(titulo);
     preencherIdentificacao(resumo);
     for (const l of agruparToras(linhas)) {
-      const h = doc.createElement('h4'); h.textContent = l.especie || 'Espécie não informada'; resumo.appendChild(h);
-      const v = volumeToras(l.diametro, l.comprimento, l.quantidade);
+      const h = doc.createElement('h4'); h.textContent = (l.especie || 'Espécie não informada')+' · '+nomeFormulaTorasV786(l.formula); resumo.appendChild(h);
+      const v = volumeToras(l.diametro, l.comprimento, l.quantidade, l.formula);
       const tabela = doc.createElement('table');
       for (const valores of [['Qtd', 'D.cm', 'C.m', 'm³/tora', 'm³ total'], [String(l.quantidade), fmt(l.diametro, 2), fmt(l.comprimento, 2), fmt(v.unitario), fmt(v.total)]]) {
         const tr = tabela.insertRow(); for (const valor of valores) tr.insertCell().textContent = valor;
@@ -432,7 +441,7 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
     const parar = observarLista(estado => {
       const antigas = linhas.filter(l => l.migrar);
       const recebidas = Array.isArray(estado.linhas) ? estado.linhas.filter(l => {
-        try { volumeToras(l.diametro, l.comprimento, l.quantidade); return typeof l.especie === 'string'; } catch { return false; }
+        try { volumeToras(l.diametro, l.comprimento, l.quantidade, l.formula); return typeof l.especie === 'string'; } catch { return false; }
       }) : [];
       const ids = new Set(recebidas.map(l => l.id));
       if (!(estado.offline && !estado.conhecido)) linhas = [...recebidas, ...antigas.filter(l => !ids.has(l.id))];

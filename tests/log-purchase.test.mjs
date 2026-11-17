@@ -40,3 +40,12 @@ test('owner/company/verified email/billing checked again within transaction; mal
 test('cash log purchase records one payment and cancellation preserves the payment evidence',async()=>{
  const s=setup(),raw=input({payment:{mode:'cash',paidDate:'2026-11-14'}}),result=await confirmLogPurchase(s.db,s.identity,raw,now),path=financeCollectionPath('tenant')+'/'+result.receipt.entryId;assert.equal(s.records.get(path).settlement.payments[0].amountCents,result.receipt.totalCents);await cancelLogPurchase(s.db,s.identity,{companyId:'tenant',id,revision:1},now+1);assert.equal(s.records.get(path).settlement.payments[0].amountCents,result.receipt.totalCents);
 });
+
+test('selected purchase formula is recomputed server-side, stored in receipt and cannot change on an idempotent retry',async()=>{
+ const square=line({diametro:30,comprimento:6,quantidade:1,formula:'diametro_quadrado',unitCents:100000}),raw=input({lines:[square],freightCents:0,otherCents:0});
+ const normalized=normalizeLogPurchaseV756(raw);assert.equal(normalized.totalVolume,0.54);assert.equal(normalized.totalCents,54000);assert.equal(normalized.lines[0].formula,'diametro_quadrado');
+ const s=setup(),first=await confirmLogPurchase(s.db,s.identity,raw,now);assert.equal(first.receipt.lines[0].formula,'diametro_quadrado');assert.equal(first.receipt.totalCents,54000);assert((await confirmLogPurchase(s.db,s.identity,raw,now)).repeated);assert.equal(s.writes.length,3);
+ await assert.rejects(confirmLogPurchase(s.db,s.identity,{...raw,lines:[{...square,formula:'cilindrica'}]},now),/outros valores/);
+ const alternate={...square,id:'a2d00244-a75c-44a4-aa30-bd78176a744d',formula:'cilindrica'};assert.equal(groupLogPurchaseLinesV756([square,alternate]).length,2);
+ const old=normalizeLogPurchaseV756(input());assert(!Object.hasOwn(old.lines[0],'formula'));assert.throws(()=>normalizeLogPurchaseV756({...raw,lines:[{...square,formula:'unknown'}]}));
+});
