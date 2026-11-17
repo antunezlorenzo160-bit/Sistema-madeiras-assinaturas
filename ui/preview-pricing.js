@@ -8,34 +8,47 @@ function attachPriceV710(item,others=[]){
  const pair=catalogPricePair(item,normalized);
  return {...item,autoPriceV1:{...pair,policy:existing?.policy||JSON.parse(JSON.stringify(pricePolicyV710))}};
 }
+function samePricedRowV782(previous,next){
+ if(previous===next)return true;
+ const keys=Object.keys(next);if(keys.length!==Object.keys(previous).length)return false;
+ return keys.every(key=>Object.is(previous[key],next[key])||(key==='autoPriceV1'&&JSON.stringify(previous[key])===JSON.stringify(next[key])));
+}
 function updatePricedRowsV710(items,collectionName,budget=false,previous=items){
  const priced=applyDocumentPrices(items).map(i=>i.autoPriceV1&&!i.autoPriceV1.locked?(budget?aplicarCobrancaOrcamento(i):(i.tipoMedida==='linear'?cobrarServicosLinear(i):i.servicePricingV727===true?priceLoadServices(i):{...i,valor:Number(i.volume||0)*Number(i.preco||0)})):i);
+ let summaryIndex=null,changed=false;
  for(let n=0;n<items.length;n++){
   const old=previous[n],next=priced[n];
-  if(old.preco!==next.preco||old.valor!==next.valor||old.priceTierV1!==next.priceTierV1||old.priceWarningV1!==next.priceWarningV1||JSON.stringify(old.autoPriceV1)!==JSON.stringify(next.autoPriceV1)){
-   enfileirarOffline(collectionName,next.id,next,'set');
-   const idx=lancamentos.findIndex(x=>x.id===next.id);if(idx>=0)lancamentos[idx]={...lancamentos[idx],...next};
-  }
+  if(samePricedRowV782(old,next)){priced[n]=old;continue;}
+  changed=true;
+  const send=old.preco!==next.preco||old.valor!==next.valor||old.priceTierV1!==next.priceTierV1||old.priceWarningV1!==next.priceWarningV1||JSON.stringify(old.autoPriceV1)!==JSON.stringify(next.autoPriceV1);
+  if(!send)continue;
+  enfileirarOffline(collectionName,next.id,next,'set');
+  if(!summaryIndex){summaryIndex=new Map();for(let index=0;index<lancamentos.length;index++)if(!summaryIndex.has(lancamentos[index].id))summaryIndex.set(lancamentos[index].id,index);}
+  const index=summaryIndex.get(next.id);if(index!==undefined)lancamentos[index]={...lancamentos[index],...next};
  }
- return priced;
+ return changed?priced:previous;
 }
 function repriceBudgetV710(checkpoint=false){
  if(lotePacotesEmCurso&&!checkpoint)return;
  if(!orcamento.some(i=>i.autoPriceV1&&!i.autoPriceV1.locked))return;
- orcamento=updatePricedRowsV710(orcamento,COL.orcamento,true);
- window.__v456Local.setItem(STORAGE.orcamento,JSON.stringify(orcamento));
+ const next=updatePricedRowsV710(orcamento,COL.orcamento,true);if(next===orcamento)return;
+ orcamento=next;window.__v456Local.setItem(STORAGE.orcamento,JSON.stringify(orcamento));
 }
 function repriceLoadsV710(checkpoint=false){
  if(lotePacotesEmCurso&&!checkpoint)return;
  if(parent.__smEmployeeMember?.()?.papel!=='admin')return;
  if(typeof carregamentos==='undefined')return;
  adoptCurrentLoadPricingV730();
- const groups=new Map();
- for(const i of carregamentos){if(!i.autoPriceV1||i.cargaStatus!=='montagem'||i.cargaBaixadaEm||i.autoPriceV1.locked)continue;const id=String(i.grupoCargaId||'');if(!groups.has(id))groups.set(id,[]);groups.get(id).push(i);}
- for(const [id] of groups){const all=carregamentos.filter(i=>String(i.grupoCargaId||'')===id);if(all.some(i=>i.cargaStatus!=='montagem'||!i.autoPriceV1))continue;
-  const changed=updatePricedRowsV710(all,COL.cargas);const map=new Map(changed.map(i=>[i.id,i]));carregamentos=carregamentos.map(i=>map.get(i.id)||i);
+ const groups=new Map(),changed=new Map();
+ for(const row of carregamentos){const key=String(row.grupoCargaId||'');if(!groups.has(key))groups.set(key,[]);groups.get(key).push(row);}
+ for(const items of groups.values()){
+  if(items.some(row=>row.cargaStatus!=='montagem'||row.cargaBaixadaEm||!row.autoPriceV1)||!items.some(row=>!row.autoPriceV1.locked))continue;
+  const next=updatePricedRowsV710(items,COL.cargas);if(next===items)continue;
+  for(let index=0;index<items.length;index++)if(next[index]!==items[index])changed.set(next[index].id,next[index]);
  }
- if(groups.size){window.__v456Local.setItem('carregamentos_lancamentos_v1',JSON.stringify(carregamentos));window.__v456Local.setItem(STORAGE.lancamentos,JSON.stringify(lancamentos));}
+ if(!changed.size)return;
+ carregamentos=carregamentos.map(row=>changed.get(row.id)||row);
+ window.__v456Local.setItem('carregamentos_lancamentos_v1',JSON.stringify(carregamentos));window.__v456Local.setItem(STORAGE.lancamentos,JSON.stringify(lancamentos));
 }
 async function pricePolicyRequestV710(input){
  const user=authV456.currentUser;if(!user)throw Error('Entre com sua conta.');

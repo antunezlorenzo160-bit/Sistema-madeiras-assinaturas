@@ -44,7 +44,7 @@ test('budget measurement separates excluded and legacy active items without more
 test('metadata-only write confirmation refreshes cached snapshots and clears the pending guard',()=>{
   const callbacks=[],pending=new Set(),snapshots=new Map();let scheduled=0;
   const collections=[['madeiras','sm2_madeiras'],['est1','sm2_estoque1']];
-  const context=vm.createContext({confirmacoesPendentesV700:pending,dadosEscutadosV428:snapshots,
+  const context=vm.createContext({acessoPlanoAtual:()=>({read:true}),parent:{__smEmployeeCollectionCan:()=>true},confirmacoesPendentesV700:pending,dadosEscutadosV428:snapshots,
     offlineOps:()=>[],observadoresBloqueadosV429:false,conexaoOnline:()=>true,document:{hidden:false},
     cancelamentosV428:[],sessaoSyncV428:0,telemetriaLocalV429:{aberturas:0,eventosServidor:0,documentosPrimeiraResposta:0},
     atualizarStatusSync(){},setBootStep(){},agendarAplicacaoV428(){scheduled++;},falhaObservadorV428(){assert.fail('unexpected failure');},
@@ -66,7 +66,7 @@ test('metadata-only write confirmation refreshes cached snapshots and clears the
 });
 test('flushing one wood edit never requests the full wood catalog again',async()=>{
   let queue=[{nome:'sm2_madeiras',id:'wood-1',obj:{nome:'Pinus'},chave:'sm2_madeiras|wood-1',revisao:'one'}],writes=0,reads=0,scheduled=0;
-  const context=vm.createContext({lotePacotesEmCurso:false,conexaoOnline:()=>true,offlineSyncPromiseV396:null,
+  const context=vm.createContext({acessoPlanoAtual:()=>({write:true}),parent:{__smEmployeeCollectionCan:()=>true},window:{__v456Local:{flush:async()=>{}}},lotePacotesEmCurso:false,conexaoOnline:()=>true,offlineSyncPromiseV396:null,
     offlineOps:()=>queue,salvarOfflineOps:next=>{queue=next;},setDoc:async()=>{writes++;},deleteDoc:async()=>{},
     doc:()=>({}),db:{},COL:{madeiras:'sm2_madeiras'},erroCadastroSyncV457:'',atualizarPendenciasCadastroV457(){},
     agendarAplicacaoV428(){scheduled++;},getDocsFromServer:async()=>{reads++;throw Error('Full read forbidden');},console});

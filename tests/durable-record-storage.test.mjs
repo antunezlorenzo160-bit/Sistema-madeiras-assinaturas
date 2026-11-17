@@ -53,3 +53,10 @@ test('built app waits for storage before recovery/hydration and keeps recovery j
  store.fail=true;await assert.rejects(journal.commit([['carregamentos_lancamentos_v1',raw]]),/disk failed/);assert(recovery);assert.equal(adapter.getItem('carregamentos_lancamentos_v1'),raw);
  store.fail=false;await journal.recover();assert.equal(recovery,null);assert.equal(store.data.get('a:').values.carregamentos_lancamentos_v1,raw);
 });
+
+test('repeated unchanged saves and clean flushes perform no additional disk transaction',async()=>{
+ const native=local(),store=disk();let writes=0;const write=store.write.bind(store);store.write=async(...args)=>{writes++;return write(...args);};
+ const adapter=await createRecordStorageV779(options(native,store,{isBatching:()=>true}));adapter.setItem('carregamentos_lancamentos_v1',raw);await adapter.flush();const baseline=writes;
+ for(let i=0;i<20;i++){adapter.setItem('carregamentos_lancamentos_v1',raw);adapter.removeItem('movimentos_db_v1');await adapter.flush();}
+ assert.equal(writes,baseline);assert.equal(adapter.pending,false);assert.equal(adapter.getItem('carregamentos_lancamentos_v1'),raw);
+});

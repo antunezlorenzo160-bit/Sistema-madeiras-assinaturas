@@ -47,3 +47,14 @@ test('preview load repricing retains service charges at wholesale and preserves 
 test('legacy catalog without a thickness table still supplies its registered wholesale price',()=>{
  assert.deepEqual(catalogPricePair({tipoMedida:'m3',preco:2500,espessura:5},{preco:2500,precoAtacado:2200}),{retail:2500,wholesale:2200});
 });
+
+test('repeated rendering of6000unchanged load rows performs no persistence or queue writes, then a threshold change updates every row',async()=>{
+ const {readFileSync}=await import('node:fs'),vm=await import('node:vm');let persisted=0;const writes=[];
+ const c={lotePacotesEmCurso:false,setTimeout(){},normalizePricePolicy,applyDocumentPrices,window:{__v456Local:{getItem:()=>null,setItem(){persisted++;}}},parent:{__smEmployeeMember:()=>({papel:'admin'})},enfileirarOffline:(...args)=>writes.push(args),lancamentos:[],COL:{cargas:'loads'},STORAGE:{lancamentos:'summary'}};
+ vm.createContext(c);vm.runInContext(readFileSync(new URL('../ui/preview-pricing.js',import.meta.url),'utf8'),c);
+ c.carregamentos=Array.from({length:6000},(_,index)=>({id:'p'+index,grupoCargaId:'g'+Math.floor(index/100),tipoMedida:'m2',cargaStatus:'montagem',volume:1,preco:100,valor:100,priceTierV1:'varejo',priceWarningV1:'',autoPriceV1:{retail:100,wholesale:80,policy:{enabled:true,limits:{m2:100}}}}));c.lancamentos=c.carregamentos.slice();
+ const first=c.carregamentos[0];for(let i=0;i<3;i++)c.repriceLoadsV710();assert.equal(persisted,0);assert.equal(writes.length,0);assert.equal(c.carregamentos[0],first);
+ for(const row of c.carregamentos)row.autoPriceV1.policy.limits.m2=99;
+ c.repriceLoadsV710();assert.equal(writes.length,6000);assert.equal(persisted,2);assert(c.carregamentos.every(row=>row.preco===80&&row.valor===80));assert(c.lancamentos.every(row=>row.preco===80));
+ c.repriceLoadsV710();assert.equal(writes.length,6000);assert.equal(persisted,2);
+});

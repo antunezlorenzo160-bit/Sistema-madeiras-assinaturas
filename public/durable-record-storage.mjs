@@ -58,6 +58,7 @@ export async function createRecordStorageV779({native,base,prefix,store,decode=v
  let revision=0,persisted=0,inflight=null,error=null;const dirty=new Map();
  function flush(){
   if(inflight)return inflight;
+  if(persisted===revision)return Promise.resolve();
   inflight=(async()=>{
    while(persisted<revision){const target=revision,snapshot={version:1,values:Object.fromEntries([...dirty].map(([key,entry])=>[key,entry.value]))};await store.write(prefix,snapshot);for(const [key,entry]of dirty)if(entry.revision<=target)dirty.delete(key);persisted=target;}
    error=null;onSaved();
@@ -68,8 +69,8 @@ export async function createRecordStorageV779({native,base,prefix,store,decode=v
  function names(){return [...new Set([...Object.keys(values),...Array.from({length:base.length},(_,index)=>base.key(index)).filter(Boolean)])];}
  return Object.freeze({
   getItem:key=>managed.has(String(key))?project(String(key),values[String(key)]??null):base.getItem(key),
-  setItem(key,value){key=String(key);if(!managed.has(key)){base.setItem(key,value);return;}values[key]=String(value);revision++;dirty.set(key,{revision,value:values[key]});schedule();},
-  removeItem(key){key=String(key);if(!managed.has(key)){base.removeItem(key);return;}delete values[key];revision++;dirty.set(key,{revision,value:null});schedule();},
+  setItem(key,value){key=String(key);if(!managed.has(key)){base.setItem(key,value);return;}value=String(value);if(Object.hasOwn(values,key)&&values[key]===value)return;values[key]=value;revision++;dirty.set(key,{revision,value:values[key]});schedule();},
+  removeItem(key){key=String(key);if(!managed.has(key)){base.removeItem(key);return;}if(!Object.hasOwn(values,key))return;delete values[key];revision++;dirty.set(key,{revision,value:null});schedule();},
   clear(){for(const key of names())this.removeItem(key);},key:index=>names()[index]??null,get length(){return names().length;},
   get durable(){return base.durable;},flush,get pending(){return persisted<revision;},get error(){return error;}
  });
