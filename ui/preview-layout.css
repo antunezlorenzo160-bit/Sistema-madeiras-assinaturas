@@ -209,3 +209,7 @@
  body.custom-print #printAreaCustom .order-document-pages-v772 table.compact-fixed-table-v712[data-columns="5"] :is(th,td):nth-child(5){width:22%!important;text-align:right!important}
  body.custom-print #printAreaCustom .order-document-order-v767>.order-document-value-v767{break-inside:avoid!important}
 }
+
+/* Preview reminder only on the initial screen. */
+.preview-notice-v783{display:none}
+@media screen{body:has(#inicio.tab.active)>.preview-notice-v783{display:block}}

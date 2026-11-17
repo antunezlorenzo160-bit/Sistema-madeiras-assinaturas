@@ -117,7 +117,7 @@ export function applyPendingPreview(html){
  app=app.replace('<label>Frete (R$)<input data-fin-campo="frete"','<label>Frete cobrado do cliente (R$)<input data-fin-campo="frete"');
  app=app.replace('<label>Outras despesas (R$)<input data-fin-campo="outras"','<label>Outros valores cobrados do cliente (R$)<input data-fin-campo="outras"');
  replace(' document.body.appendChild(area);',' compactPrintClone(c,{detailed:window.__v456Local.getItem("compact_pdf_details_v712")==="true"});\n document.body.appendChild(area);');
- app=app.replace(/<body([^>]*)>/, '<body$1><aside class="no-print" style="padding:10px;background:#fff0ca;color:#493b19;font:14px system-ui">Prévia para testes. Use documentos de teste e preserve os registros da empresa.</aside>');
+ app=app.replace(/<body([^>]*)>/, '<body$1><aside class="no-print preview-notice-v783" style="padding:10px;background:#fff0ca;color:#493b19;font:14px system-ui">Prévia para testes. Use documentos de teste e preserve os registros da empresa.</aside>');
  replace("return `<section class=\"v585-subtotais-especies\"><h3>Totais físicos e subtotal por espécie</h3><div class=\"v585-subtotais-grade\">${cards}</div></section>`;","return `<details class=\"v585-subtotais-especies v714-subtotais-recolher\"><summary>Totais físicos e subtotal por espécie</summary><div class=\"v585-subtotais-grade\">${cards}</div></details>`;");
  app=app.replace('</head>','<style id="preview-layout-v710">'+read('ui/preview-layout.css')+'\n'+read('ui/stock-charts.css')+'\n'+read('ui/reports.css')+'\n'+read('ui/load-transport.css')+'\n'+read('ui/stock-purchase.css')+'</style></head>');
  return applyDeliveryReceiptOuterV765(html.slice(0,start)+JSON.stringify(app).replaceAll('</','<\\/')+html.slice(end),read('ui/delivery-receipt-root.js'));
