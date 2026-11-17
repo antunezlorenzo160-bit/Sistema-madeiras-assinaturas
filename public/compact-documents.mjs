@@ -5,18 +5,31 @@ export function compactPrintClone(root,options={}){
  root.dataset.compactV710='1';root.classList.add('compact-document-v710');
  const body=root.querySelector('#tbLancamentos');
  if(body){
-  const groups=[];let group=null,header=[];
+  const groups=[];let group=null,header=[],blockTitle='';
   for(const row of [...body.rows]){
-   if(row.classList.contains('grupo-especie-titulo')){
-    const name=row.textContent.trim();
-    group=groups.find(g=>g.name===name);if(!group){group={name,rows:[],totals:[],header:[]};groups.push(group);}continue;
+   if(row.classList.contains('grupo-especie-titulo')){blockTitle=row.textContent.trim();group=null;continue;}
+   if(row.classList.contains('grupo-especie-head')){
+    header=[...row.cells].filter(c=>!c.classList.contains('resumo-coluna-espacadora')).map(c=>c.textContent.trim());
+    const species=blockTitle.split(/\s*[—–]\s*Esp\.|\s*[•·—–]\s*Comp\./)[0].trim(),key=JSON.stringify([species,header]);
+    group=groups.find(g=>g.key===key);
+    if(!group){group={key,species,name:species,rows:[],totals:[],header,totalsHeading:'Totais por espécie, espessura e comprimento'};groups.push(group);}continue;
    }
-   if(row.classList.contains('grupo-especie-head')){header=[...row.cells].filter(c=>!c.classList.contains('resumo-coluna-espacadora')).map(c=>c.textContent.trim());if(group)group.header=header;continue;}
-   if(row.classList.contains('resumo-total-espessura')){if(group){const text=row.textContent.trim();group.totals.push(text);const total=text.match(/([\d.,]+)\s*(m³|m²|m)\s*$/);if(total){const footer={label:total[2]==='m³'?'Volume total da espessura':total[2]==='m²'?'Área total':'Metros lineares',value:total[1]+' '+total[2]};if(group.footer)group.extraFooter=footer;else group.footer=footer;}}continue;}
-   if(row.classList.contains('resumo-total-bloco-v597')){if(group){const total=row.textContent.trim().match(/([\d.,]+)\s*(m³|m²|m)\s*$/),length=group.name.match(/Comp\.\s*(.+)$/)?.[1];if(total)group.footer={label:length?'Subtotal — '+length:total[2]==='m³'?'Volume total':total[2]==='m²'?'Área total':'Metros lineares',value:total[1]+' '+total[2]};}continue;}
+   if(row.classList.contains('resumo-total-espessura')){if(group)group.totals.push(row.textContent.trim().replace('Volume total por espessura','Total da espessura'));continue;}
+   if(row.classList.contains('resumo-total-bloco-v597')){
+    if(group){const total=row.textContent.trim().match(/([\d.,]+)\s*(m³|m²|m)\s*$/),length=blockTitle.match(/Comp\.\s*(.+)$/)?.[1],thickness=blockTitle.match(/Esp\.\s*([\d.,]+)\s*cm/)?.[1];
+     if(total){const dimensions=[thickness?thickness+' cm':'',length||''].filter(Boolean).join(' × ');group.totals.push(group.species+(dimensions?' — '+dimensions:'')+': '+total[1]+' '+total[2]);}
+    }continue;
+   }
    if(!group||!row.classList.contains('linha-excluir-pecas'))continue;
    const cells=[...row.cells].filter(c=>!c.classList.contains('resumo-coluna-espacadora'));
    group.rows.push(cells.map(c=>c.textContent.trim()));
+  }
+  // Species cards already hold the full-precision source aggregate as formatted
+  // by the calculator. Reuse it instead of summing rounded printed subtotals.
+  for(const stat of root.querySelectorAll('#resumoPorEspecieCalcV581 .stat')){
+   const species=stat.querySelector('small')?.textContent.trim(),values=stat.querySelector('strong')?.textContent.match(/[\d.,]+\s*m(?:³|²)?(?=\s|$|·)/g);
+   const target=[...groups].reverse().find(g=>g.species===species);
+   if(target&&values?.length)target.totals.push(species+' — Total da espécie: '+values.join(' · '));
   }
   if(groups.some(g=>g.rows.length)){
    const columns=renderCompactPages(root.ownerDocument,groups);
@@ -96,7 +109,7 @@ export function renderCompactPages(doc,groups,capacity=44){
   pages.append(sheet);
  }
  const totals=groups.flatMap(g=>g.totals||[]);
- if(totals.length){const foot=doc.createElement('div');foot.className='compact-species-totals-v712';const heading=doc.createElement('h3');heading.textContent='Totais por espécie e espessura';foot.append(heading);for(const text of totals){const p=doc.createElement('p');p.textContent=text;foot.append(p);}pages.append(foot);}
+ if(totals.length){const foot=doc.createElement('div');foot.className='compact-species-totals-v712'+(groups.some(g=>g.totalsHeading)?' compact-calculator-totals-v787':'');const heading=doc.createElement('h3');heading.textContent=groups.find(g=>g.totalsHeading)?.totalsHeading||'Totais por espécie e espessura';foot.append(heading);for(const text of totals){const p=doc.createElement('p');p.textContent=text;foot.append(p);}pages.append(foot);}
  return pages;
 }
 

@@ -218,3 +218,8 @@
  body.custom-print #printAreaCustom .compact-document-v710 table.compact-fixed-table-v712[data-columns] .compact-group-total-v784>td:nth-child(n){width:auto!important;font-weight:700!important;border-top:.25mm solid #526354!important;padding-top:1mm!important;white-space:normal!important}
  body.custom-print #printAreaCustom .compact-document-v710 table.compact-fixed-table-v712[data-columns] .compact-group-total-v784>td:last-child{white-space:nowrap!important;text-align:right!important}
 }
+
+@media print{
+ body.custom-print #printAreaCustom .compact-calculator-totals-v787{break-inside:auto!important}
+ body.custom-print #printAreaCustom .compact-calculator-totals-v787 p{break-inside:avoid!important}
+}
