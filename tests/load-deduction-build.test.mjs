@@ -68,3 +68,14 @@ test('quota failure preserves stock and exposes the actual stage and reason',asy
  const {context:c,item,alerts}=setupExecutor({storageFailure:true});await c.executarBaixaConferidaCargaV390('group',[item]);
  assert.equal(c.estoque1Lancamentos[0].quantidade,20);assert(alerts.some(m=>m.includes('QuotaExceededError')&&m.includes('Etapa: gravação do item')));
 });
+
+test('46 pieces of 20x20x5.5m scan each stock identity once, preserve source rows, movements and restart/idempotency',async()=>{
+ const {context:c,storage}=setup();const row={id:'load46',grupoCargaId:'g',madeiraId:'wood',madeira:'Garapeira',tipoMedida:'m3',largura:20,espessura:20,comprimento:5.5,quantidade:46,volume:10.12,cargaFluxoV388:true,cargaStatus:'concluido',cargaBaixadaEm:123};
+ const original=Array.from({length:5000},(_,index)=>({...row,id:'stock'+index,quantidade:1,volume:0.22,cargaBaixadaEm:undefined}));c.estoque1Lancamentos=original;c.estoque2Lancamentos=[{id:'unrelated',madeiraId:'other',quantidade:1,volume:1}];c.carregamentos=[{...row,cargaStatus:'aguardando_conferencia',cargaBaixadaEm:undefined}];c.lancamentos=[];
+ const before=JSON.stringify(original),other=c.estoque2Lancamentos[0];let comparisons=0;c.mesmaBitolaCarga=(a,b)=>{comparisons++;return a.madeiraId===b.madeiraId;};
+ await c.salvarCargaComBaixa(row,'estoque1','Carga');assert(comparisons<=5000);assert.equal(c.estoque1Lancamentos.length,4954);assert.equal(JSON.stringify(original),before);assert.equal(c.estoque1Lancamentos[0],original[46]);assert.equal(c.estoque2Lancamentos[0],other);assert.equal(c.movimentos.length,46);assert(Math.abs(c.movimentos.reduce((sum,r)=>sum+r.volume,0)-10.12)<1e-9);assert.equal(JSON.parse(storage.getItem('carregamentos_lancamentos_v1'))[0].quantidade,46);
+ await c.salvarCargaComBaixa(row,'estoque1','Carga');assert.equal(c.estoque1Lancamentos.length,4954);assert.equal(c.movimentos.length,46);
+});
+test('group deduction keeps durable item checkpoints without broadcasting or starting a sender after every item',async()=>{
+ const {context:c,item,storage}=setup();let sends=0,broadcasts=0;c.cargaMutationDepthV396=1;c.sincronizarOfflineOps=async()=>{sends++;};c.window.__smSyncSummaryTabsV606=()=>{broadcasts++;};await c.salvarCargaComBaixa({...item,cargaStatus:'concluido',cargaBaixadaEm:123},'estoque1','Carga');assert.equal(sends,0);assert.equal(broadcasts,0);assert.equal(JSON.parse(storage.getItem('carregamentos_lancamentos_v1')).length,1);assert(JSON.parse(storage.getItem('queue')).some(row=>row.nome==='loads'));
+});

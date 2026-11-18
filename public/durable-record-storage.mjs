@@ -65,7 +65,10 @@ export async function createRecordStorageV779({native,base,prefix,store,decode=v
   })().catch(failure=>{error=failure;onError(failure);throw failure;}).finally(()=>{inflight=null;if(!error&&persisted<revision&&!isBatching())flush().catch(()=>{});});
   return inflight;
  }
- const schedule=()=>{if(!isBatching())flush().catch(()=>{});};
+ // Coalesce synchronous updates (e.g. all journal projections) into one disk write.
+ // Explicit flush still starts immediately and is awaited by critical operations.
+ let scheduledV796=false;
+ const schedule=()=>{if(isBatching()||scheduledV796)return;scheduledV796=true;Promise.resolve().then(()=>{scheduledV796=false;if(!isBatching())flush().catch(()=>{});});};
  function names(){return [...new Set([...Object.keys(values),...Array.from({length:base.length},(_,index)=>base.key(index)).filter(Boolean)])];}
  return Object.freeze({
   getItem:key=>managed.has(String(key))?project(String(key),values[String(key)]??null):base.getItem(key),

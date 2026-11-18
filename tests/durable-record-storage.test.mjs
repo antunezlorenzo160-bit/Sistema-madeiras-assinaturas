@@ -60,3 +60,12 @@ test('repeated unchanged saves and clean flushes perform no additional disk tran
  for(let i=0;i<20;i++){adapter.setItem('carregamentos_lancamentos_v1',raw);adapter.removeItem('movimentos_db_v1');await adapter.flush();}
  assert.equal(writes,baseline);assert.equal(adapter.pending,false);assert.equal(adapter.getItem('carregamentos_lancamentos_v1'),raw);
 });
+
+test('synchronous deduction projections use one durable transaction and explicit flush still acknowledges all six lists',async()=>{
+ const native=local(),store=disk();let writes=0;const write=store.write.bind(store);store.write=async(...args)=>{writes++;return write(...args);};
+ const adapter=await createRecordStorageV779(options(native,store));const initial=writes;
+ const keys=['estoque1_lancamentos_v1','estoque2_lancamentos_v1','carregamentos_lancamentos_v1','lancamentos_db_v1','movimentos_db_v1','sm_offline_ops_v1'];
+ for(const [index,key]of keys.entries())adapter.setItem(key,JSON.stringify([{id:index}]));
+ await adapter.flush();assert.equal(writes,initial+1);assert.equal(adapter.pending,false);
+ const reboot=await createRecordStorageV779(options(native,store));for(const [index,key]of keys.entries())assert.equal(reboot.getItem(key),JSON.stringify([{id:index}]));
+});
