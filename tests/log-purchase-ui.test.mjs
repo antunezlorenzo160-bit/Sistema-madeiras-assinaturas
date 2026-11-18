@@ -44,3 +44,19 @@ test('purchase selector freezes formula per line and groups only matching method
  assert.equal(saved(s).lines[0].formula,'diametro_quadrado');assert.match(s.nodes.lpLinesV756.innerHTML,/D² × comprimento/);assert.match(s.nodes.lpLinesV756.innerHTML,/0.5400/);
  s.nodes.lpDiameterV756.value='30';s.nodes.lpFormulaV786.value='cilindrica';s.c.logAddV756();assert.equal(saved(s).lines.length,2);assert.equal(saved(s).lines[0].formula,'diametro_quadrado');assert.equal(saved(s).lines[1].formula,'cilindrica');assert.equal(s.calls.length,0);
 });
+
+test('opening history leaves diameter/length/quantity and formula editable and permits adding a line before the read finishes',async()=>{
+ const s=setup();const inputs=['lpSpeciesV756','lpDiameterV756','lpLengthV756','lpQuantityV756','lpUnitV756','lpFormulaV786'].map(id=>s.nodes[id]);s.nodes.lpDraftV756.querySelectorAll=()=>inputs;
+ let finish;s.setSend(async()=>new Promise(resolve=>finish=resolve));const history=s.c.logHistoryLoadV756();await new Promise(resolve=>setImmediate(resolve));assert(finish);assert(inputs.every(input=>input.disabled===false));assert(s.nodes.lpHistoryLoadV756.disabled);assert.match(s.nodes.lpStatusV756.textContent,/já pode preencher/);
+ s.nodes.lpFormulaV786.value='diametro_quadrado';s.nodes.lpLengthV756.value='6';s.nodes.lpQuantityV756.value='1';s.c.logAddV756();assert.equal(saved(s).lines.length,1);assert.equal(saved(s).lines[0].formula,'diametro_quadrado');assert.equal(saved(s).lines[0].quantidade,1);assert(inputs.every(input=>!input.disabled));
+ finish({ok:true,json:async()=>({empresaId:'tenant',canWrite:true,receipts:[]})});await history;assert(inputs.every(input=>!input.disabled));assert(!s.nodes.lpHistoryLoadV756.disabled);assert.equal(saved(s).lines[0].formula,'diametro_quadrado');
+});
+test('a late history response cannot erase a purchase confirmed while its read was pending',async()=>{
+ const s=setup();s.c.logAddV756();let finishHistory;s.setSend(async(url,options)=>{if(options.method==='GET')return new Promise(resolve=>finishHistory=resolve);const purchase=JSON.parse(options.body).purchase;return {ok:true,json:async()=>({receipt:{...normalizeLogPurchaseV756(purchase),status:'active',revision:1}})};});
+ const history=s.c.logHistoryLoadV756();await new Promise(resolve=>setImmediate(resolve));await s.c.logConfirmV756();assert(saved(s).confirmed);const html=s.nodes.lpHistoryV756.innerHTML,status=s.nodes.lpStatusV756.textContent;
+ finishHistory({ok:true,json:async()=>({empresaId:'tenant',canWrite:true,receipts:[]})});await history;assert.equal(s.nodes.lpHistoryV756.innerHTML,html);assert.equal(s.nodes.lpStatusV756.textContent,status);assert.match(s.nodes.lpDraftStateV797.textContent,/Nova compra/);
+});
+test('history failure does not lock fields, while an uncertain purchase remains immutable during history loading',async()=>{
+ const s=setup();const formula=s.nodes.lpFormulaV786;s.nodes.lpDraftV756.querySelectorAll=()=>[formula,s.nodes.lpDiameterV756];await s.c.logHistoryLoadV756();assert.equal(formula.disabled,false);assert.match(s.nodes.lpStatusV756.textContent,/continua disponível/);
+ s.c.logAddV756();await s.c.logConfirmV756();assert(saved(s).pending);assert(formula.disabled);await s.c.logHistoryLoadV756();assert(formula.disabled);assert.match(s.nodes.lpDraftStateV797.textContent,/confirmação pendente/);assert(s.nodes.lpNewV756.disabled);
+});
