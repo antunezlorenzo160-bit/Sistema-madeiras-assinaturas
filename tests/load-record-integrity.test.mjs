@@ -26,3 +26,13 @@ test('generated guard runs before administrator bypass and only validates load p
  assert.throws(()=>context.employeeCheckLoadWrite(ref,{},'set'));context.employeeCheckLoadWrite(ref,null,'delete');context.employeeCheckLoadWrite({path:'empresas/company/dados/sm2_madeiras/registros/a'},{},'set');
  assert(built.includes("txt:'Registro incompleto'"));assert(built.includes('return incompleteLoadCardV791(gid,itens)'));
 });
+test('public selector follows modern and legacy list keys without relying on private renderer functions',async()=>{
+ const {loadRowsForGroupV793}=await import('../public/load-record-integrity.mjs');
+ const rows=[{id:'a',grupoCargaId:'g',volume:0.144},{id:'b',grupoCargaId:'other',volume:2},{id:'legacy',volume:1},null,{volume:3}];
+ const before=JSON.stringify(rows);assert.deepEqual(loadRowsForGroupV793(rows,'g'),[rows[0]]);assert.deepEqual(loadRowsForGroupV793(rows,'legado-legacy'),[rows[2]]);assert.deepEqual(loadRowsForGroupV793(rows,'legado-4'),[rows[4]]);assert.deepEqual(loadRowsForGroupV793(rows,'missing'),[]);assert.deepEqual(loadRowsForGroupV793(null,'g'),[]);assert.equal(JSON.stringify(rows),before);
+});
+test('copy diagnostic works from module scope when the private list helper is absent, preserving data',async()=>{
+ const {loadRowsForGroupV793}=await import('../public/load-record-integrity.mjs');const rows=[{id:'a',grupoCargaId:'g',volume:0.144}],before=JSON.stringify(rows),copied=[],alerts=[];
+ const c={window:{},employeeRequireLoadAdmin(){},carregamentos:rows,loadRowsForGroupV793,loadRecordDiagnosticV791,navigator:{clipboard:{writeText:async text=>copied.push(text)}},alert:text=>alerts.push(text)};
+ vm.createContext(c);vm.runInContext(readFileSync(new URL('../ui/load-record-integrity.js',import.meta.url),'utf8'),c);await c.copiarDiagnosticoCargaV791('g');assert.equal(JSON.parse(copied[0]).records[0].data.volume,0.144);assert.equal(JSON.stringify(rows),before);await c.copiarDiagnosticoCargaV791('missing');assert.equal(copied.length,1);assert.match(alerts.at(-1),/Não encontrei/);
+});

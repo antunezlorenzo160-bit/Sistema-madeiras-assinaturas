@@ -1,6 +1,7 @@
 async function copiarDiagnosticoCargaV791(gid){
  employeeRequireLoadAdmin();
- const rows=itensGrupoCargaV400(gid);
+ const rows=loadRowsForGroupV793(typeof carregamentos==='undefined'?[]:carregamentos,gid);
+ if(!rows.length){alert('Não encontrei os itens desta carga no aparelho. Volte à lista e abra o carregamento novamente.');return;}
  const report=loadRecordDiagnosticV791(rows);
  const text=JSON.stringify(report,null,2);
  try{await navigator.clipboard.writeText(text);alert('Diagnóstico copiado. Ele contém os campos técnicos e as medidas deste registro, sem senhas ou tokens.');}

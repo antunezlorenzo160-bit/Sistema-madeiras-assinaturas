@@ -12,3 +12,9 @@ export function loadRecordDiagnosticV791(rows){
  const fields=['id','grupoCargaId','tipoMedida','tipoCadastro','madeiraId','madeira','especie','produto','quantidade','volume','volumeReal','volumeGranel','volumeFechado','comprimento','largura','espessura','cargaStatus','cargaFluxoV388','cargaFechadaEm','cargaBaixadaEm','atualizadoEm','ocultoResumo','excluido','cargaArquivadaInconsistenteEm'];
  return {version:791,records:rows.map(row=>({incomplete:incompleteLoadRowV791(row),fieldNames:Object.keys(row).sort(),data:Object.fromEntries(fields.filter(key=>Object.hasOwn(row,key)).map(key=>[key,row[key]]))}))};
 }
+
+// Same grouping key as the load list, usable outside its private renderer scope.
+export function loadRowsForGroupV793(rows,gid){
+ const target=String(gid||'');
+ return (Array.isArray(rows)?rows:[]).filter((row,index)=>row&&typeof row==='object'&&String(row.grupoCargaId||('legado-'+String(row.id||index)))===target);
+}

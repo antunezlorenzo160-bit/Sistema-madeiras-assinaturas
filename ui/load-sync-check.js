@@ -1,7 +1,8 @@
 async function serverReadWithDeadlineV792(read){let timer;try{return await Promise.race([read(),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('O servidor não respondeu em 20 segundos.')),20000);})]);}finally{clearTimeout(timer);}}
 async function conferirEnvioCargaV792(gid){
  employeeRequireLoadAdmin();
- const rows=itensGrupoCargaV400(gid),ids=new Set(rows.map(row=>String(row.id)));
+ const rows=loadRowsForGroupV793(typeof carregamentos==='undefined'?[]:carregamentos,gid),ids=new Set(rows.map(row=>String(row.id)));
+ if(!rows.length){alert('Não encontrei os itens desta carga no aparelho. Volte à lista e abra o carregamento novamente.');return;}
  const queue=offlineOps(),pending=queue.filter(op=>op.nome===COL.cargas&&(ids.has(String(op.id))||String(op.obj?.grupoCargaId||'')===String(gid)));
  const locallyCompleted=rows.filter(row=>row.cargaBaixadaEm&&row.cargaStatus==='concluido').length;
  let panel=document.getElementById('loadSyncCheckV792');
