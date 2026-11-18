@@ -45,9 +45,10 @@ export function compactPrintClone(root,options={}){
  if(!body&&loadTables.length){
   const data=loadTables.map(table=>{
    const heads=[...table.tHead?.rows||[]];
-   return {title:heads.slice(0,-1).map(r=>r.textContent.trim()).join(' '),subtotal:table.querySelector('.v599-total-medida')?.textContent.trim()||'',headers:[...(heads.at(-1)?.cells||[])].map(c=>c.textContent.trim()),rows:[...table.tBodies].flatMap(b=>[...b.rows]).filter(r=>[...r.cells].every(c=>c.colSpan===1)).map(r=>[...r.cells].map(c=>c.textContent.trim()))};
+   return {physicalTotals:physicalPrintTotalsV789(table),title:heads.slice(0,-1).map(r=>r.textContent.trim()).join(' '),subtotal:table.querySelector('.v599-total-medida')?.textContent.trim()||'',headers:[...(heads.at(-1)?.cells||[])].map(c=>c.textContent.trim()),rows:[...table.tBodies].flatMap(b=>[...b.rows]).filter(r=>[...r.cells].every(c=>c.colSpan===1)).map(r=>[...r.cells].map(c=>c.textContent.trim()))};
   });
-  const groups=projectCompactLoadGroups(compactLoadGroups(data),options.detailed===true);
+  const isRomaneio=root.classList.contains?.('v418-romaneio-documento')||!!root.querySelector('.v418-romaneio-documento');
+  const groups=projectCompactLoadGroups(compactLoadGroups(data,{lengthTotals:isRomaneio}),options.detailed===true);
   const columns=renderCompactPages(root.ownerDocument,groups,options.detailed?30:44);
   const first=loadTables[0].closest('.v401-carga-grupo')||loadTables[0];first.before(columns);
   for(const table of loadTables){const wrapper=table.closest('.v401-carga-grupo');if(wrapper&&wrapper.children.length===1)wrapper.remove();else table.remove();}
@@ -182,4 +183,8 @@ export function simplifyCalculatorCloneV788(root){
  root.querySelector('#summaryFooterV718')?.remove();
  root.querySelector('#resumoEspeciesCalcV581')?.remove();
  for(const stats of root.querySelectorAll('.stats'))stats.remove();
+}
+
+function physicalPrintTotalsV789(table){
+ try{const totals=JSON.parse(table.dataset?.physicalTotalsV789||'null');return totals&&['m3','m2','ml'].every(key=>typeof totals[key]==='number'&&Number.isFinite(totals[key])&&totals[key]>=0)?totals:null;}catch{return null;}
 }

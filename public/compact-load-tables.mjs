@@ -1,12 +1,22 @@
 // Normalize only the presentation of already calculated cells; never sum rounded rows.
-export function compactLoadGroups(tables){
+export function compactLoadGroups(tables,options={}){
  const groups=[];
  for(const input of tables){
   const title=String(input.title||'Itens').replace(/\s*[—–•·-]\s*Comp\..*$/i,'').trim();
   const original=input.headers.map(x=>String(x).trim());
   const key=JSON.stringify([title,original]);let group=groups.find(g=>g.key===key);
-  if(!group){group={key,title,headers:original.slice(),rows:[],subtotals:[]};groups.push(group);}
+  if(!group){group={key,title,headers:original.slice(),rows:[],subtotals:[],physicalTotals:[],lengthTotals:new Map()};groups.push(group);}
   if(input.subtotal)group.subtotals.push(String(input.subtotal));
+  const physical=input.physicalTotals&&['m3','m2','ml'].every(key=>typeof input.physicalTotals[key]==='number'&&Number.isFinite(input.physicalTotals[key])&&input.physicalTotals[key]>=0)?input.physicalTotals:null;
+  group.physicalTotals.push(physical);
+  if(options.lengthTotals&&input.subtotal){
+   const length=String(input.title||'').match(/Comp\.\s*([\d.,]+)\s*m/i)?.[1],value=String(input.subtotal).match(/([\d.,]+)\s*(m³|m²|m)(?=\s|$)/);
+   if(length&&value){
+    const unit=value[2],field=unit==='m³'?'m3':unit==='m²'?'m2':'ml',precise=physical?.[field];
+    const amount=typeof precise==='number'&&Number.isFinite(precise)&&precise>=0?precise:Number(value[1].replace(/\./g,'').replace(',','.'));
+    const key=length+'|'+unit,previous=group.lengthTotals.get(key)||{length,unit,value:0};previous.value+=amount;group.lengthTotals.set(key,previous);
+   }
+  }
   for(const values of input.rows){
    if(values.length!==original.length)throw Error('Colunas incompatíveis no romaneio.');
    const row=values.map(x=>String(x).trim());
@@ -29,6 +39,9 @@ export function compactLoadGroups(tables){
  for(const g of groups){
   const qty=g.rows.reduce((n,row)=>n+(Number(String(row[0]).replace(/[^0-9.,]/g,'').replace(/\./g,'').replace(',','.'))||0),0);
   const units={};for(const text of g.subtotals){const match=text.match(/([0-9][0-9.,]*)\s*(m³|m²|m)/);if(match){const n=Number(match[1].replace(/\./g,'').replace(',','.'));units[match[2]]=(units[match[2]]||0)+n;}}
+  if(g.physicalTotals.length&&g.physicalTotals.every(Boolean)){
+   for(const unit of Object.keys(units)){const field=unit==='m³'?'m3':unit==='m²'?'m2':'ml';units[unit]=g.physicalTotals.reduce((sum,totals)=>sum+totals[field],0);}
+  }
   const volume=Object.entries(units).map(([u,n])=>n.toLocaleString('pt-BR',{minimumFractionDigits:u==='m³'?4:2,maximumFractionDigits:u==='m³'?4:2})+' '+u).join(' · ');
   const extras=[];
   for(const [label,unit,places,text] of [['m² face','m²',4,'Área de face'],['m linear','m',2,'Metros lineares'],['Peso kg','kg',1,'Peso']]){
@@ -45,6 +58,10 @@ export function compactLoadGroups(tables){
    if(cents.every(n=>n!==null&&Number.isFinite(n)))extras.push('Valor dos produtos: R$ '+(cents.reduce((a,b)=>a+b,0)/100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}));
   }
   g.totals=[g.title+': '+qty.toLocaleString('pt-BR')+' pç'+(volume?' · '+volume:'')+(extras.length?' · '+extras.join(' · '):'')];
+  if(options.lengthTotals&&g.lengthTotals.size){
+   const lengths=[...g.lengthTotals.values()].map(part=>g.title+' — Comp. '+part.length+' m: '+part.value.toLocaleString('pt-BR',{minimumFractionDigits:part.unit==='m³'?4:2,maximumFractionDigits:part.unit==='m³'?4:2})+' '+part.unit);
+   g.totals=[...lengths,...g.totals];g.totalsHeading='Totais por espécie, espessura e comprimento';
+  }
  }
  return groups;
 }
