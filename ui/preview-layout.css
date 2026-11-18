@@ -223,3 +223,5 @@
  body.custom-print #printAreaCustom .compact-calculator-totals-v787{break-inside:auto!important}
  body.custom-print #printAreaCustom .compact-calculator-totals-v787 p{break-inside:avoid!important}
 }
+
+@media print{body.custom-print #printAreaCustom .compact-summary-meta-v788{font-size:7.5pt!important;line-height:1.1!important;margin:1mm 0!important}}

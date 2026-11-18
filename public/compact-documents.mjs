@@ -3,6 +3,7 @@ import {compactLoadGroups,projectCompactLoadGroups,paginateCompactGroups,samePri
 export function compactPrintClone(root,options={}){
  if(root.dataset.compactV710)return root;
  root.dataset.compactV710='1';root.classList.add('compact-document-v710');
+ for(const notice of root.querySelectorAll('.price-notice-v710'))notice.remove();
  const body=root.querySelector('#tbLancamentos');
  if(body){
   const groups=[];let group=null,header=[],blockTitle='';
@@ -29,11 +30,14 @@ export function compactPrintClone(root,options={}){
   for(const stat of root.querySelectorAll('#resumoPorEspecieCalcV581 .stat')){
    const species=stat.querySelector('small')?.textContent.trim(),values=stat.querySelector('strong')?.textContent.match(/[\d.,]+\s*m(?:³|²)?(?=\s|$|·)/g);
    const target=[...groups].reverse().find(g=>g.species===species);
-   if(target&&values?.length)target.totals.push(species+' — Total da espécie: '+values.join(' · '));
+   if(target&&values?.length){target.speciesVolume=values.join(' · ');target.totals.push(species+' — Total da espécie: '+values.join(' · '));}
   }
+  const legacyTotals=[...root.querySelectorAll('#summaryFooterV718 p')].map(node=>node.textContent.trim());
+  simplifyCalculatorTotalsV788(groups,legacyTotals);
   if(groups.some(g=>g.rows.length)){
-   const columns=renderCompactPages(root.ownerDocument,groups);
+   const columns=renderCompactPages(root.ownerDocument,groups,44,true);
    const outer=body.closest('.table-wrap')||body.closest('table');outer.replaceWith(columns);
+   simplifyCalculatorCloneV788(root);
   }
  }
  // Keep load documents tabular, grouped by species/thickness across lengths.
@@ -80,10 +84,14 @@ export function compactPrintClone(root,options={}){
  return root;
 }
 
-export function renderCompactPages(doc,groups,capacity=44){
+export function renderCompactPages(doc,groups,capacity=44,balance=false){
  const pages=doc.createElement('div');pages.className='compact-pages-v712';
  const wide=groups.some(g=>(g.headers||g.header).length>7||(g.headers||g.header).includes('Preço un.'));
  if(wide)capacity=Math.min(capacity,32);
+ if(balance&&!wide&&paginateCompactGroups(groups,capacity,2).length===1){
+  const minimum=Math.max(4,Math.ceil(groups.reduce((sum,g)=>sum+g.rows.length,0)/2));
+  for(let candidate=minimum;candidate<capacity;candidate++)if(paginateCompactGroups(groups,candidate,2).length===1){capacity=candidate;break;}
+ }
  for(const columns of paginateCompactGroups(groups,capacity,wide?1:2)){
   const sheet=doc.createElement('div');sheet.className='compact-sheet-v712'+(wide?' compact-sheet-wide-v715':'');
   for(const fragments of columns){const col=doc.createElement('div');col.className='compact-column-v712';
@@ -141,4 +149,37 @@ export function simplifyOrderPrintV773(root){
   if(adjustments.every(isZero))summary.remove();
   else{rows[4].remove();for(const row of adjustments)if(isZero(row))row.remove();}
  }
+}
+
+function metricKeyV788(text){const found=String(text).match(/([\d.,]+)\s*(m³|m²|m)(?=\s|$|·)/);return found?Number(found[1].replace(/\./g,'').replace(',','.'))+'|'+found[2]:null;}
+export function simplifyCalculatorTotalsV788(groups,legacyTotals){
+ for(const species of new Set(groups.map(g=>g.species))){
+  const related=groups.filter(g=>g.species===species),target=related.at(-1);
+  const physical=legacyTotals.filter(text=>text.startsWith(species+':')||text.startsWith(species+' — ')).map(text=>{
+   const split=text.indexOf(':'),title=text.slice(0,split),parts=text.slice(split+1).split(' · ').map(p=>p.trim());
+   const volume=parts.find(p=>/^[\d.,]+\s*m(?:³|²)?$/.test(p)),key=metricKeyV788(volume);
+   const details=[...new Set(parts.filter(p=>p!==volume&&!/não informado/i.test(p)&&!(/^(Área de face|Metros lineares):/.test(p)&&metricKeyV788(p)===key)))];
+   return {title,volume,key,details};
+  }).filter(row=>row.volume);
+  if(!physical.length){for(const g of related)g.totals=[...new Set(g.totals)];continue;}
+  for(const g of related)g.totals=g.totals.filter(text=>!text.includes('Total da espessura')&&!text.includes('Total da espécie'));
+  for(const row of physical){
+   const entries=related.flatMap(g=>g.totals.map((text,index)=>({g,text,index}))),same=entries.filter(entry=>{const thickness=row.title.match(/Esp\.\s*([\d.,]+)\s*cm/)?.[1],entryThickness=entry.text.match(/—\s*([\d.,]+)\s*cm\s*×/)?.[1];return metricKeyV788(entry.text)===row.key&&(!thickness||entryThickness===thickness);});
+   if(same.length===1)same[0].g.totals[same[0].index]+=(row.details.length?' · '+row.details.join(' · '):'');
+   else target.totals.push(row.title+': '+row.volume+(row.details.length?' · '+row.details.join(' · '):''));
+  }
+  if(physical.length>1&&target.speciesVolume)target.totals.push(species+' — Total da espécie: '+target.speciesVolume);
+ }
+ for(const group of groups)group.totalsHeading='Totais';
+}
+export function simplifyCalculatorCloneV788(root){
+ for(const heading of root.querySelectorAll('h2,h3'))if(heading.textContent.trim()==='Resumo dos lançamentos'&&!heading.closest?.('.compact-group-v710'))heading.remove();
+ const first=root.querySelector('.stats');
+ if(first){
+  const descriptions=[...first.querySelectorAll('.stat')].map(stat=>({label:stat.querySelector('small')?.textContent.trim(),value:stat.querySelector('strong')?.textContent.trim()})).filter(stat=>stat.label&&stat.value&&!/volume|área/i.test(stat.label));
+  if(descriptions.length){const text=root.ownerDocument.createElement('p');text.className='compact-summary-meta-v788';text.textContent=descriptions.map(stat=>stat.label+': '+stat.value).join(' · ');first.before(text);}
+ }
+ root.querySelector('#summaryFooterV718')?.remove();
+ root.querySelector('#resumoEspeciesCalcV581')?.remove();
+ for(const stats of root.querySelectorAll('.stats'))stats.remove();
 }
