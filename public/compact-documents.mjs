@@ -177,7 +177,7 @@ export function simplifyCalculatorCloneV788(root){
  for(const heading of root.querySelectorAll('h2,h3'))if(heading.textContent.trim()==='Resumo dos lançamentos'&&!heading.closest?.('.compact-group-v710'))heading.remove();
  const first=root.querySelector('.stats');
  if(first){
-  const descriptions=[...first.querySelectorAll('.stat')].map(stat=>({label:stat.querySelector('small')?.textContent.trim(),value:stat.querySelector('strong')?.textContent.trim()})).filter(stat=>stat.label&&stat.value&&!/volume|área/i.test(stat.label));
+  const descriptions=[...first.querySelectorAll('.stat')].map(stat=>({label:stat.querySelector('small')?.textContent.trim(),value:stat.querySelector('strong')?.textContent.trim()})).filter(stat=>stat.label&&stat.value&&!/volume|área|valor|preço/i.test(stat.label)&&!stat.value.includes('R$'));
   if(descriptions.length){const text=root.ownerDocument.createElement('p');text.className='compact-summary-meta-v788';text.textContent=descriptions.map(stat=>stat.label+': '+stat.value).join(' · ');first.before(text);}
  }
  root.querySelector('#summaryFooterV718')?.remove();

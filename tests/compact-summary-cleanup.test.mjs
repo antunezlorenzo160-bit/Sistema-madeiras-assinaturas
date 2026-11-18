@@ -12,7 +12,7 @@ test('several thicknesses retain distinct totals and full species aggregate with
 });
 test('calculator clone removes duplicate title, old footer, species cards and statistic boxes but retains unique counts in one short line',()=>{
  const node=text=>({textContent:text,removed:false,remove(){this.removed=true;}}),title=node('Resumo dos lançamentos'),species=node('Garapeira'),old=node('old totals'),cards=node('cards');let meta;
- const stats=Object.assign(node(),{before:node=>meta=node,querySelectorAll:()=>[['Lançamentos / unidades','36'],['Volume total','10,5850 m³ · 96,00 m'],['Tipos de lançamento','19']].map(([label,value])=>({querySelector:selector=>({textContent:selector==='small'?label:value})}))});
+ const stats=Object.assign(node(),{before:node=>meta=node,querySelectorAll:()=>[['Lançamentos / unidades','36'],['Volume total','10,5850 m³ · 96,00 m'],['Valor total','R$ 15.000,00'],['Tipos de lançamento','19']].map(([label,value])=>({querySelector:selector=>({textContent:selector==='small'?label:value})}))});
  const root={ownerDocument:{createElement:()=>({})},querySelector:selector=>selector==='.stats'?stats:selector==='#summaryFooterV718'?old:selector==='#resumoEspeciesCalcV581'?cards:null,querySelectorAll:selector=>selector==='h2,h3'?[title,species]:selector==='.stats'?[stats]:[]};
  simplifyCalculatorCloneV788(root);assert(title.removed);assert(!species.removed);assert(old.removed);assert(cards.removed);assert(stats.removed);assert.equal(meta.textContent,'Lançamentos / unidades: 36 · Tipos de lançamento: 19');
 });
