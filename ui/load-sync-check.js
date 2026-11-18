@@ -9,6 +9,8 @@ async function conferirEnvioCargaV792(gid){
  if(!panel){panel=document.createElement('section');panel.id='loadSyncCheckV792';panel.className='card';document.getElementById('v408-detalhe')?.prepend(panel);}
  panel.replaceChildren();const message=document.createElement('p');panel.append(message);
  const report={version:792,load:String(gid),local:loadRecordDiagnosticV791(rows),locallyCompleted,pendingLoadOperations:pending.length,totalPendingOperations:queue.length};
+ if(typeof summarizeOfflineQueueV794==='function')report.queueSummary=summarizeOfflineQueueV794(queue);
+ if(typeof offlineSyncProgressV794!=='undefined')report.syncProgress={...offlineSyncProgressV794};
  try{const failure=JSON.parse(window.__v456Local.getItem('sm_load_last_failure_v2')||'null');if(failure&&String(failure.group)===String(gid))report.lastLocalFailure={at:failure.at,stage:failure.stage,locallyCommitted:failure.locallyCommitted,error:failure.error};}catch{}
  message.textContent='Neste aparelho: '+rows.length+' registro(s), '+locallyCompleted+' com baixa registrada. Envios da carga pendentes: '+pending.length+'. Conferindo servidor…';
  try{
@@ -25,6 +27,7 @@ async function conferirEnvioCargaV792(gid){
   const matches=!partial&&different.length===0&&remote.length===rows.length;
   message.textContent='Neste aparelho: '+rows.length+' registro(s), '+locallyCompleted+' com baixa registrada. Envios da carga pendentes: '+pending.length+'. '+(partial?'Conferência parcial: carga com mais de 1.000 registros.':matches?'Os dados físicos e o status desta carga coincidem com o servidor.':'Servidor: '+remote.length+' registro(s). Há '+different.length+' registro(s) ausente(s) ou diferente(s) do aparelho.')+(queue.length?' Existem envios pendentes neste aparelho.':'')+' Não refaça a baixa para tentar sincronizar.';
  }catch(error){report.serverError=String(error?.code||error?.message||error).slice(0,150);message.textContent='Neste aparelho: '+rows.length+' registro(s), '+locallyCompleted+' com baixa registrada. Envios da carga pendentes: '+pending.length+'. Não foi possível confirmar no servidor: '+report.serverError+'. Não repita a baixa.';}
+ if(queue.length){const retry=document.createElement('button');retry.type='button';retry.className='btn btn-secondary';retry.textContent='Tentar enviar pendências';retry.onclick=async()=>{retry.disabled=true;retry.textContent='Enviando…';try{await window.tentarEnviarPendenciasV794?.();}finally{if(document.getElementById('loadSyncCheckV792')===panel)await conferirEnvioCargaV792(gid);}};panel.append(retry);}
  const copy=document.createElement('button');copy.type='button';copy.className='btn btn-secondary';copy.textContent='Copiar conferência';copy.onclick=async()=>{try{await navigator.clipboard.writeText(JSON.stringify(report,null,2));copy.textContent='Conferência copiada';}catch{const area=document.createElement('textarea');area.readOnly=true;area.value=JSON.stringify(report,null,2);panel.append(area);area.focus();area.select();}};panel.append(copy);
 }
 window.conferirEnvioCargaV792=conferirEnvioCargaV792;

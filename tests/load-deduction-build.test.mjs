@@ -1,3 +1,4 @@
+import {loadCompletionMessageV792} from '../public/offline-sync-state.mjs';
 import {isLinearTotalV744,linearRemainderV744} from '../public/linear-total.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -51,7 +52,7 @@ function setupExecutor({storageFailure=false,renderFailure=false}={}){
  const s=setup(),c=s.context,alerts=[];
  const html=applyLoadDeductionSafety(readFileSync(new URL('../public/index.html',import.meta.url),'utf8')),app=template(html);
  const start=app.indexOf('  const baixasEmCurso=new Set();'),end=app.indexOf('  async function ajusteRapidoEDarBaixaCargaV390',start);
- Object.assign(c,{salvarCargaComBaixaV387:c.salvarCargaComBaixa,nomeUsuarioCargaV388:()=> 'Owner',employeeLoadActor:()=>({uid:'owner'}),iniciarMutacaoCargaV396(){},finalizarMutacaoCargaV396(){},save(){},console:{error(){}},alert:m=>alerts.push(m),fecharModalAjusteRapidoV390(){},atualizarFluxoCargaV388(){if(renderFailure)throw Error('render failed');},setTimeout});
+ Object.assign(c,{loadCompletionMessageV792,salvarCargaComBaixaV387:c.salvarCargaComBaixa,nomeUsuarioCargaV388:()=> 'Owner',employeeLoadActor:()=>({uid:'owner'}),iniciarMutacaoCargaV396(){},finalizarMutacaoCargaV396(){},save(){},console:{error(){}},alert:m=>alerts.push(m),fecharModalAjusteRapidoV390(){},atualizarFluxoCargaV388(){if(renderFailure)throw Error('render failed');},setTimeout});
  if(storageFailure)c.window.__smLoadDeductionJournal.commit=()=>{throw Object.assign(Error('local storage full'),{name:'QuotaExceededError'});};
  vm.runInContext(app.slice(start,end),c);return {...s,alerts};
 }

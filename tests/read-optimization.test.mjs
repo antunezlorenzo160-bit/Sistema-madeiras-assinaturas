@@ -66,11 +66,11 @@ test('metadata-only write confirmation refreshes cached snapshots and clears the
 });
 test('flushing one wood edit never requests the full wood catalog again',async()=>{
   let queue=[{nome:'sm2_madeiras',id:'wood-1',obj:{nome:'Pinus'},chave:'sm2_madeiras|wood-1',revisao:'one'}],writes=0,reads=0,scheduled=0;
-  const context=vm.createContext({acessoPlanoAtual:()=>({write:true}),parent:{__smEmployeeCollectionCan:()=>true},window:{__v456Local:{flush:async()=>{}}},lotePacotesEmCurso:false,conexaoOnline:()=>true,offlineSyncPromiseV396:null,
-    offlineOps:()=>queue,salvarOfflineOps:next=>{queue=next;},setDoc:async()=>{writes++;},deleteDoc:async()=>{},
+  const context=vm.createContext({TextEncoder,setTimeout:fn=>fn(),atualizarStatusSync(){},marcarSyncErro:error=>{throw error;},acessoPlanoAtual:()=>({write:true}),parent:{__smEmployeeCollectionCan:()=>true},window:{__v456Local:{flush:async()=>{}}},lotePacotesEmCurso:false,conexaoOnline:()=>true,offlineSyncPromiseV396:null,
+    offlineOps:()=>queue,salvarOfflineOps:next=>{queue=next;},writeBatch:()=>({set(){writes++;},delete(){},commit:async()=>{}}),setDoc:async()=>{writes++;},deleteDoc:async()=>{},
     doc:()=>({}),db:{},COL:{madeiras:'sm2_madeiras'},erroCadastroSyncV457:'',atualizarPendenciasCadastroV457(){},
     agendarAplicacaoV428(){scheduled++;},getDocsFromServer:async()=>{reads++;throw Error('Full read forbidden');},console});
-  const a=app.indexOf('async function sincronizarOfflineOps(){'),b=app.indexOf("\nwindow.addEventListener('online'",a);
+  const a=app.includes('// OFFLINE_SYNC_BATCHES_V794')?app.indexOf('function offlineSyncBatchesV794('):app.indexOf('async function sincronizarOfflineOps(){'),b=app.indexOf("\nwindow.addEventListener('online'",a);
   assert(a>=0&&b>a);vm.runInContext(app.slice(a,b),context);
   await vm.runInContext('sincronizarOfflineOps()',context);
   assert.equal(queue.length,0);assert.equal(writes,1);assert.equal(reads,0);assert.equal(scheduled,1);

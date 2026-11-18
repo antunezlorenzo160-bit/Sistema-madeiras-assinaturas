@@ -1,3 +1,4 @@
+import {applyOfflineSyncBatchesV794} from './offline-sync-batches-build.mjs';
 import {applyLoadCompletionV792,applyOfflineSyncStateV792} from './load-completion-build.mjs';
 import {applyLoadRecordIntegrityV791} from './load-record-integrity-build.mjs';
 import {applyRomaneioTotalsV789} from './romaneio-totals-build.mjs';
@@ -108,6 +109,7 @@ export function applyPendingPreview(html){
  app=applyPacketBatchV777(app);
  app=applyOrderDocumentBuildV767(app);
  app=applyLinearTotalV744(app);
+ app=applyOfflineSyncBatchesV794(app);
  // Menu action icons are cloned into the sidebar along with their existing controls.
  const menuIconsV731={'Sair da conta':['🚪','Sair da conta'],'⚙ Configurações':['⚙','Configurações'],'Clientes':['👥','Clientes'],'Empresa':['🏢','Empresa'],'Madeiras':['🌳','Madeiras'],'Calculadora':['🧮','Calculadora'],'Orçamentos':['📝','Orçamentos'],'Pedidos':['📋','Pedidos'],'Estoque':['📦','Estoque'],'Movimentações':['🔄','Movimentações'],'Gráficos e relatórios':['📊','Gráficos e relatórios'],'Carregamentos':['🚚','Carregamentos']};
  const menuIconV731=icon=>'<i class="menu-acao-v731" aria-hidden="true">'+icon+'</i> ';

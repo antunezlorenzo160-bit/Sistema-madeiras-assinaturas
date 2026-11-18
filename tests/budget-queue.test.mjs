@@ -9,11 +9,11 @@ import {buildBudgetQueue} from '../scripts/build-budget-queue.mjs';
 const html=readFileSync(new URL('../public/index.html',import.meta.url),'utf8'),start=html.indexOf('const TEMPLATE=')+15;
 let end=start+1;for(;end<html.length;end++){if(html[end]==='\\'){end++;continue;}if(html[end]==='"'){end++;break;}}
 const app=JSON.parse(html.slice(start,end));
-const flush=app.slice(app.indexOf('async function sincronizarOfflineOps(){'),app.indexOf("\nwindow.addEventListener('online'",app.indexOf('async function sincronizarOfflineOps(){')));
+const flush=app.slice(app.includes('// OFFLINE_SYNC_BATCHES_V794')?app.indexOf('function offlineSyncBatchesV794('):app.indexOf('async function sincronizarOfflineOps(){'),app.indexOf("\nwindow.addEventListener('online'",app.indexOf('async function sincronizarOfflineOps(){')));
 const operation=(overrides={})=>({nome:'sm2_orcamento_itens',id:'piece',chave:'sm2_orcamento_itens|piece',revisao:'r1',modo:'set',obj:{quantidade:2},...overrides});
 function setup(ops,initial){
  let queue=ops,stored=initial,revision=0,writes=0,reads=0,scheduled=0,afterRead=()=>{},failure=false;
- const context=vm.createContext({empresaV456:'tenant',db:{},COL:{orcamento:'sm2_orcamento_itens',madeiras:'sm2_madeiras'},lotePacotesEmCurso:false,
+ const context=vm.createContext({TextEncoder,setTimeout:fn=>fn(),atualizarStatusSync(){},marcarSyncErro:error=>{throw error;},empresaV456:'tenant',db:{},COL:{orcamento:'sm2_orcamento_itens',madeiras:'sm2_madeiras'},lotePacotesEmCurso:false,
   acessoPlanoAtual:()=>({write:true}),employeeAssertWrite(){},exigirEscritaPlano(){},window:{__v456Local:{flush:async()=>{}}},conexaoOnline:()=>true,offlineSyncPromiseV396:null,offlineOps:()=>queue,salvarOfflineOps:next=>{queue=next;},
   doc:(db,nome,id)=>({path:`empresas/tenant/dados/${nome}/registros/${id}`}),
   agendarAplicacaoV428:()=>scheduled++,erroCadastroSyncV457:'',atualizarPendenciasCadastroV457(){},
