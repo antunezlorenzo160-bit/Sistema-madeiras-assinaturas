@@ -1,3 +1,4 @@
+import {applyLoadCompletionV792,applyOfflineSyncStateV792} from './load-completion-build.mjs';
 import {applyLoadRecordIntegrityV791} from './load-record-integrity-build.mjs';
 import {applyRomaneioTotalsV789} from './romaneio-totals-build.mjs';
 import {applyRuntimeEfficiencyV782} from './runtime-efficiency-build.mjs';
@@ -97,6 +98,8 @@ export function applyPendingPreview(html){
  const loadMenu='<button type="button" class="inicio-atalho-v464" data-inicio-destino="carregamentos">';
  replace(loadMenu,'<button type="button" class="inicio-atalho-v464" data-inicio-destino="relatorios"><strong>Gráficos e relatórios</strong><span>Indicadores e acompanhamento</span></button>'+loadMenu);
  replace("return 'R$ '+val.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:4})+unidadePrecoLinhaV399(i);", "return 'R$ '+val.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:4})+unidadePrecoLinhaV399(i)+(i.servicePricingV727===true&&Number(i.valorServicos)>0?' (com serviços)':'');");
+ app=applyOfflineSyncStateV792(app);
+ app=applyLoadCompletionV792(app);
  app=applyLoadRecordIntegrityV791(app);
  app=applyRomaneioTotalsV789(app);
  app=applyRuntimeEfficiencyV782(app);
