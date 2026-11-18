@@ -28,7 +28,5 @@ export function applyOfflineSyncStateV792(app){
   }`);
  replace("}catch(e){if(op.nome===COL.madeiras)erroCadastroSyncV457=String(e?.code||e?.message||e).slice(0,100);}","}catch(e){erroEnvioOfflineV792={key:op.chave,revision:String(op.revisao||op.criadoEm||0),code:String(e?.code||e?.name||'falha no envio').slice(0,80)};atualizarStatusSync('erro','Envio não confirmado: '+erroEnvioOfflineV792.code);if(op.nome===COL.madeiras)erroCadastroSyncV457=String(e?.code||e?.message||e).slice(0,100);}");
  replace('  })().finally(()=>{offlineSyncPromiseV396=null});',"  })().finally(()=>{offlineSyncPromiseV396=null;atualizarStatusSync('ok','Envios confirmados');});");
- const copyButton='<button type="button" class="btn btn-secondary" onclick="copiarCargaV392(\'${pid}\')">Copiar texto</button>';
- replace(copyButton,copyButton+'<button type="button" class="btn btn-secondary" data-load-sync-v792="${esc(gid)}" onclick="conferirEnvioCargaV792(this.dataset.loadSyncV792)">Conferir envio</button>');
  return app;
 }
