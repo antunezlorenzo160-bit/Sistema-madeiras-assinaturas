@@ -245,3 +245,14 @@
   position:static!important;top:auto!important;z-index:auto!important;
  }
 }
+
+/* V802: retained, measured sizes keep mobile history scroll stable offscreen. */
+@media screen and (max-width:760px){
+ body.historico-topo-v507 #historicoPlanilhasEstoque .comprimento-bloco.history-paint-v802{
+  content-visibility:auto;
+  contain-intrinsic-block-size:auto var(--history-content-height-v802);
+ }
+}
+@media print{
+ .history-paint-v802{content-visibility:visible!important;contain:none!important;contain-intrinsic-block-size:none!important}
+}
