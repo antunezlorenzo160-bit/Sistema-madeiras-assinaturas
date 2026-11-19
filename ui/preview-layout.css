@@ -238,3 +238,10 @@
   overscroll-behavior:auto!important;touch-action:pan-y pinch-zoom!important;
  }
 }
+
+/* V801: movement column labels scroll with their own rows, below the fixed filters. */
+@media screen and (max-width:760px){
+ body.historico-topo-v507 #historicoPlanilhasEstoque .historico-table th{
+  position:static!important;top:auto!important;z-index:auto!important;
+ }
+}
