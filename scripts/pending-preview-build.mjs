@@ -112,6 +112,8 @@ export function applyPendingPreview(html){
  app=applyLinearTotalV744(app);
  app=applyOfflineSyncBatchesV794(app);
  app=applyLoadDeductionEfficiencyV796(app);
+ // V798: measurement inputs do not request browser autofill or text correction.
+ app=app.replace(/<input\b(?=[^>]*\bid="(?:espessura|largura|comprimento|quantidade)")[^>]*>/g,tag=>tag.replace(/\s(?:autocomplete|autocorrect|autocapitalize|spellcheck)="[^"]*"/g,'').replace(/>$/,' autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">'));
  // Menu action icons are cloned into the sidebar along with their existing controls.
  const menuIconsV731={'Sair da conta':['🚪','Sair da conta'],'⚙ Configurações':['⚙','Configurações'],'Clientes':['👥','Clientes'],'Empresa':['🏢','Empresa'],'Madeiras':['🌳','Madeiras'],'Calculadora':['🧮','Calculadora'],'Orçamentos':['📝','Orçamentos'],'Pedidos':['📋','Pedidos'],'Estoque':['📦','Estoque'],'Movimentações':['🔄','Movimentações'],'Gráficos e relatórios':['📊','Gráficos e relatórios'],'Carregamentos':['🚚','Carregamentos']};
  const menuIconV731=icon=>'<i class="menu-acao-v731" aria-hidden="true">'+icon+'</i> ';
