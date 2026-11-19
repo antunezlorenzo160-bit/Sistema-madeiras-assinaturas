@@ -225,3 +225,16 @@
 }
 
 @media print{body.custom-print #printAreaCustom .compact-summary-meta-v788{font-size:7.5pt!important;line-height:1.1!important;margin:1mm 0!important}}
+
+/* V800: movement tables fit the mobile width; main owns the vertical scroll. */
+@media screen and (max-width:760px){
+ body.historico-topo-v507 #estoqueHistoricoPainel,
+ body.historico-topo-v507 #historicoEstoqueExport,
+ body.historico-topo-v507 #historicoPlanilhasEstoque{
+  height:auto!important;max-height:none!important;overflow:visible!important;
+ }
+ body.historico-topo-v507 #historicoPlanilhasEstoque .historico-table-wrap{
+  height:auto!important;max-height:none!important;overflow:visible!important;
+  overscroll-behavior:auto!important;touch-action:pan-y pinch-zoom!important;
+ }
+}
