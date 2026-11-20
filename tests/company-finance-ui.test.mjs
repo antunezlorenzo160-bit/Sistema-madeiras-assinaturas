@@ -107,3 +107,9 @@ test('a sale explains the species reference without calling it a new purchase or
  const s=setup(),row=automaticSale({costCents:130000,source:{...automaticSale().source,costMode:'average',automaticCostCents:130000,usesConferenceAverage:true,usesSpeciesReference:true}});
  s.setRequest(async()=>response({empresaId:'tenant',entries:[row],canWrite:true}));await s.c.financeLoadV722();assert.match(s.nodes.finSaleChecksV735.innerHTML,/referência de custo de outras medidas da mesma espécie e condição/);assert.match(s.nodes.finEntriesV722.innerHTML,/Não gerou outra compra/);assert.equal(vm.runInContext('financeRowsV722[0].costCents',s.c),130000);
 });
+
+test('log labour shows service and receipts without wood cost or manual sale editing',async()=>{
+ const s=setup(),row={id:'service',type:'sale',date:'2026-11-19',status:'active',description:'Mão de obra de toras',partner:'Cleber',amountCents:169646,costCents:0,source:{type:'log-labour',receiptId:'receipt',serviceCents:169646,woodCents:0,receivedCents:20000}},before=JSON.stringify(row);
+ s.setRequest(async()=>response({empresaId:'tenant',entries:[row],canWrite:true}));await s.c.financeLoadV722();
+ const html=s.nodes.finSaleChecksV735.innerHTML;assert.match(html,/Mão de obra de toras/);assert.match(html,/Valor do serviço/);assert.match(html,/Recebido[\s\S]*200,00/);assert.match(html,/Saldo a receber[\s\S]*1\.496,46/);assert.doesNotMatch(html,/Venda avulsa|Custo TOTAL|data-fin-edit|Total informado manualmente/);assert.match(s.nodes.finEntriesV722.innerHTML,/Serviço de mão de obra/);assert.match(s.nodes.finStatsV722.innerHTML,/Vendas e serviços do período/);assert.equal(JSON.stringify(row),before);
+});
