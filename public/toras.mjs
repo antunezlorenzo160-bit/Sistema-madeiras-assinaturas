@@ -67,7 +67,7 @@ export function instalarAtalhosToras(form, view) {
   }, true);
 }
 
-export function iniciarCubagemToras({ document: doc = document, storage, copiar, pdf, observarPrecos, salvarPrecos, observarLista, gravarLinha, salvarIdentificacao, montarCompras }) {
+export function iniciarCubagemToras({ document: doc = document, storage, copiar, pdf, observarPrecos, salvarPrecos, observarLista, gravarLinha, salvarIdentificacao, montarCompras, montarFinanceiro }) {
   const abrir = doc.getElementById('btnCubagemToras');
   if (!abrir || doc.getElementById('cubagemToras')) return;
   const dialog = doc.createElement('dialog');
@@ -222,6 +222,7 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
     });
   } catch { el('toraAviso').textContent = 'Não foi possível recuperar a lista deste dispositivo.'; }
   linhas = linhas.map(l => l.id ? l : ({...l, id:doc.defaultView.crypto.randomUUID(), migrar:true}));
+  const montarServicoFinanceiroV804=()=>montarFinanceiro?.({dialog,doc,getRows:()=>({lines:linhas.map(row=>({...row})),client:el('toraCliente').value,description:el('toraMaoObra').value})});
   const precosKey = 'cubagem_toras_precos_v1';
   let precos = {base:null, especies:[]}, precosProntos = !observarPrecos, salvandoPreco = false;
   try { const salvo = JSON.parse(storage.getItem(precosKey) || 'null'); if (salvo && Array.isArray(salvo.especies)) precos = salvo; } catch {}
@@ -400,7 +401,7 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
       el('toraDiametro').value = ''; preview(); el('toraDiametro').focus();
     } catch (e) { el('toraPreview').textContent = e.message; }
   });
-  abrir.addEventListener('click', () => { montarCompras?.({dialog,doc}); aplicarTema(); dialog.showModal(); dialog.scrollTop=0; dialog.querySelector('.toras-calculo').scrollTop=0; dialog.querySelector('.toras-planilha').scrollTop=0; el('toraDiametro').focus({preventScroll:true}); });
+  abrir.addEventListener('click', () => { montarCompras?.({dialog,doc}); montarServicoFinanceiroV804(); aplicarTema(); dialog.showModal(); dialog.scrollTop=0; dialog.querySelector('.toras-calculo').scrollTop=0; dialog.querySelector('.toras-planilha').scrollTop=0; el('toraDiametro').focus({preventScroll:true}); });
   dialog.querySelector('[data-fechar]').onclick = () => dialog.close();
   dialog.querySelector('[data-copiar]').onclick = async () => {
     if (!linhas.length) { el('toraAviso').textContent = 'Adicione uma tora à lista primeiro.'; return; }
@@ -435,6 +436,7 @@ export function iniciarCubagemToras({ document: doc = document, storage, copiar,
     if (linhas.length && doc.defaultView.confirm(observarLista ? 'Apagar esta lista de cubagem de toras da empresa em todos os dispositivos?' : 'Apagar a lista de cubagem de toras deste dispositivo?')) removerLinhas(linhas.map(l => l.id));
   };
   salvar(); render();
+  montarServicoFinanceiroV804();
   if (observarLista) {
     const migrando = new Set();
     let migrandoIdentificacao = false;

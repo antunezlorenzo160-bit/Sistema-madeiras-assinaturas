@@ -19,7 +19,7 @@ export function expectedMinimumProfit(costCents,points){
 }
 export function evaluateMinimumProfit(entry,rawPolicy){
  const policy=normalizeMinimumProfitPolicy(rawPolicy);if(policy.minimumBasisPoints===null)return {status:'disabled'};
- if(entry.type!=='sale'||!['active','pending-review'].includes(entry.status))return {status:'ignored'};
+ if(entry.source?.type==='log-labour'||entry.type!=='sale'||!['active','pending-review'].includes(entry.status))return {status:'ignored'};
  if(entry.status==='pending-review')return {status:'pending-review'};
  if(entry.costCents===null||entry.costCents===undefined)return {status:'pending-cost'};
  if(!Number.isSafeInteger(entry.amountCents)||entry.amountCents<0)throw Error('Venda inválida para avaliar o mínimo.');
@@ -32,7 +32,7 @@ export function evaluateMinimumProfit(entry,rawPolicy){
 }
 export function assessMinimumProfitPeriod(entries,total,rawPolicy){
  const policy=normalizeMinimumProfitPolicy(rawPolicy),result={enabled:policy.minimumBasisPoints!==null,saleCount:0,belowCount:0,pendingCount:0,requiredCents:0,periodBelow:null,shortfallCents:null,serviceCents:0};if(!result.enabled)return result;
- for(const entry of entries){const assessment=evaluateMinimumProfit(entry,policy);if(assessment.status==='disabled'||assessment.status==='ignored')continue;result.saleCount++;if(entry.source?.type==='load-sale'&&Number.isSafeInteger(entry.source.serviceCents))result.serviceCents+=entry.source.serviceCents;if(assessment.status.startsWith('pending-'))result.pendingCount++;else{result.requiredCents+=assessment.requiredCents;if(assessment.status==='below')result.belowCount++;}}
+ for(const entry of entries){if(entry.type==='sale'&&entry.status==='active'&&entry.source?.type==='log-labour'){if(!Number.isSafeInteger(entry.amountCents)||entry.amountCents<0||!Number.isSafeInteger(result.serviceCents+entry.amountCents))throw Error('Serviço inválido para conferir o mínimo da madeira.');result.serviceCents+=entry.amountCents;}const assessment=evaluateMinimumProfit(entry,policy);if(assessment.status==='disabled'||assessment.status==='ignored')continue;result.saleCount++;if(entry.source?.type==='load-sale'&&Number.isSafeInteger(entry.source.serviceCents))result.serviceCents+=entry.source.serviceCents;if(assessment.status.startsWith('pending-'))result.pendingCount++;else{result.requiredCents+=assessment.requiredCents;if(assessment.status==='below')result.belowCount++;}}
  if(!Number.isSafeInteger(result.requiredCents))throw Error('Limite de cálculo do mínimo atingido.');
  if(result.pendingCount||total.result===null){result.requiredCents=null;return result;}
  if(result.saleCount){const woodResult=total.result-result.serviceCents;result.periodBelow=woodResult<result.requiredCents;result.shortfallCents=Math.max(0,result.requiredCents-woodResult);}return result;

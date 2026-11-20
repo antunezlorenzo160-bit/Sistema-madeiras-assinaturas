@@ -256,3 +256,11 @@
 @media print{
  .history-paint-v802{content-visibility:visible!important;contain:none!important;contain-intrinsic-block-size:none!important}
 }
+
+/* V804: service forms stay readable inside the cubage dialog. */
+#cubagemToras #logLabourV804 .grid3{grid-template-columns:repeat(auto-fit,minmax(145px,1fr))!important}
+#logLabourV804{margin-top:16px}
+#logLabourV804 summary{font-weight:700;cursor:pointer}
+#logLabourV804 input,#logLabourV804 select{max-width:100%;box-sizing:border-box}
+#llHistoryV804>details{padding:10px;margin-top:10px;border:1px solid var(--line);border-radius:8px}
+#llHistoryV804 button{margin:6px 6px 0 0;white-space:normal}

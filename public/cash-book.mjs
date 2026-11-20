@@ -15,7 +15,7 @@ export function projectCashBookV759({opening=null,movements=[],purchases=[],from
  if(!paymentDateV757(from)||!paymentDateV757(to)||from>to)throw Error('Confira o período do caixa.');
  if(opening)normalizeCashOpeningV759(opening);
  const rows=[],cancelledRows=[],ids=new Set();let unknownPurchases=0,cancelledPaidCents=0;
- for(const row of movements){if(row.status==='cancelled'){if(row.date>=from&&row.date<=to)cancelledRows.push(row);continue;}if(row.status!=='active')throw Error('Movimentação de caixa inconsistente.');const normalized=normalizeCashMovementV759(Object.fromEntries(['id','date','direction','category','amountCents','description','partner','reference'].map(k=>[k,row[k]])));if(ids.has(normalized.id))throw Error('Movimentação de caixa repetida.');ids.add(normalized.id);rows.push({...row,...normalized,source:{type:'manual-cash'}});}
+ for(const row of movements){if(row.status==='cancelled'){if(row.date>=from&&row.date<=to)cancelledRows.push(row);continue;}if(row.status!=='active')throw Error('Movimentação de caixa inconsistente.');const normalized=normalizeCashMovementV759(Object.fromEntries(['id','date','direction','category','amountCents','description','partner','reference'].map(k=>[k,row[k]])));if(ids.has(normalized.id))throw Error('Movimentação de caixa repetida.');ids.add(normalized.id);rows.push({...row,...normalized,source:row.source?.type==='log-labour-payment'?row.source:{type:'manual-cash'}});}
  for(const purchase of purchases){
   if(purchase.type!=='purchase')continue;
   purchasePaidCentsV757(purchase);

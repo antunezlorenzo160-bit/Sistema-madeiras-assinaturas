@@ -46,6 +46,14 @@ export function compactLoadGroups(tables,options={}){
   const extras=[];
   for(const [label,unit,places,text] of [['m² face','m²',4,'Área de face'],['m linear','m',2,'Metros lineares'],['Peso kg','kg',1,'Peso']]){
    const index=g.headers.indexOf(label);if(index<0)continue;
+   // V803: source metrics, including unknown/partial flags, precede rounded cells.
+   const [field,flag,missing]=label==='m² face'?['m2','temM2','semM2']:label==='m linear'?['ml','temML','semML']:['kg','temKG','semPeso'];
+   const precise=g.physicalTotals.length&&g.physicalTotals.every(t=>t&&typeof t[field]==='number'&&Number.isFinite(t[field])&&t[field]>=0&&typeof t[flag]==='boolean'&&Number.isSafeInteger(t[missing])&&t[missing]>=0);
+   if(precise){
+    if(!g.physicalTotals.some(t=>t[flag]))extras.push(text+': '+(label==='m² face'?'não informada':'não informado'));
+    else{const total=g.physicalTotals.reduce((sum,t)=>sum+t[field],0);extras.push(text+': '+total.toLocaleString('pt-BR',{minimumFractionDigits:places,maximumFractionDigits:places})+' '+unit+(g.physicalTotals.some(t=>t[missing]>0)?' (parcial)':''));}
+    continue;
+   }
    const values=g.rows.map(row=>{const str=String(row[index]||'').trim();if(!/^[0-9][0-9.,]*$/.test(str))return null;return Number(str.replace(/\./g,'').replace(',','.'));});
    const known=values.filter(n=>n!==null&&Number.isFinite(n));
    if(!known.length){extras.push(text+': '+(label==='m² face'?'não informada':'não informado'));continue;}

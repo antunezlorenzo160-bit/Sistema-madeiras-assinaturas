@@ -36,6 +36,7 @@ export async function saveCashBook(db,identity,input,now=Date.now()){
    next={...data,signature,status:'active',revision:1,createdAt:now,createdBy:identity.uid,updatedAt:now,updatedBy:identity.uid};
   }else{
    if(!previous)throw new PlatformError(404,'Lançamento não encontrado.');
+   if(previous.source?.type==='log-labour-payment')throw new PlatformError(409,'Recebimento vinculado ao serviço de toras. Confira o serviço; uma devolução deve ser registrada como saída efetiva.');
    if(previous.status==='cancelled'&&previous.revision===data.revision+1)return {...context,entry:previous,repeated:true};
    if(previous.status!=='active'||previous.revision!==data.revision)throw new PlatformError(409,'O lançamento mudou. Consulte o caixa.');
    next={...previous,status:'cancelled',revision:previous.revision+1,cancelledAt:now,cancelledBy:identity.uid,updatedAt:now,updatedBy:identity.uid};
