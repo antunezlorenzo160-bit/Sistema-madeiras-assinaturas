@@ -60,12 +60,14 @@ export function completedLoadSale(items){
  return {...loadServiceSplit(items,Math.round(subtotal*100),Math.round(discount*100)),amountCents,date:dateParts.year+'-'+dateParts.month+'-'+dateParts.day,partner:String(customer.nome||items.find(i=>i.compradorDestino)?.compradorDestino||'').slice(0,120),subtotalCents:Math.round(subtotal*100),discountCents:Math.round(discount*100),freightCents:Math.round(round(config.frete)*100),otherCents:Math.round(round(config.outras)*100),zeroValueLines:values.filter(v=>v===0).length};
 }
 export function normalizeLoadSaleConfig(input){
- if(!input||typeof input!=='object'||Array.isArray(input)||Object.keys(input).some(k=>!['loadId','revision','signature','include','costCents','manualEntry','resolution'].includes(k)))throw Error('Dados da venda inválidos.');
+ if(!input||typeof input!=='object'||Array.isArray(input)||Object.keys(input).some(k=>!['loadId','revision','signature','include','costCents','manualEntry','resolution','materialCosts'].includes(k)))throw Error('Dados da venda inválidos.');
  if(typeof input.loadId!=='string'||!input.loadId||input.loadId.length>180||/[\u0000-\u001f]/.test(input.loadId)||!Number.isSafeInteger(input.revision)||input.revision<0||typeof input.signature!=='string'||!/^[a-f0-9]{64}$/.test(input.signature)||typeof input.include!=='boolean')throw Error('Atualize a venda do carregamento antes de salvar.');
  if(input.costCents!==null&&(!Number.isSafeInteger(input.costCents)||input.costCents<0||input.costCents>100000000000))throw Error('Informe o custo da madeira vendida ou deixe pendente.');
  if(!['none','separate','replace'].includes(input.resolution)||input.resolution==='replace'&&input.manualEntry===null||input.manualEntry!==null&&input.resolution!=='replace')throw Error('Confira como deseja tratar o lançamento manual.');
  if(input.manualEntry!==null&&(!input.manualEntry||typeof input.manualEntry!=='object'||Array.isArray(input.manualEntry)||Object.keys(input.manualEntry).some(k=>!['id','revision'].includes(k))||typeof input.manualEntry.id!=='string'||!/^[a-f0-9-]{36}$/.test(input.manualEntry.id)||!Number.isSafeInteger(input.manualEntry.revision)||input.manualEntry.revision<1||!input.include))throw Error('Selecione um lançamento manual válido para substituir.');
- return {loadId:input.loadId,revision:input.revision,signature:input.signature,include:input.include,costCents:input.costCents,manualEntry:input.manualEntry,resolution:input.resolution};
+ const materialCosts=input.materialCosts==null?null:normalizeLoadMaterialCostsV809(input.materialCosts).rows;
+ if(materialCosts&&normalizeLoadMaterialCostsV809(materialCosts).totalCents!==input.costCents)throw Error('A soma dos custos das madeiras não confere com o total.');
+ return {loadId:input.loadId,revision:input.revision,signature:input.signature,include:input.include,costCents:input.costCents,manualEntry:input.manualEntry,resolution:input.resolution,materialCosts};
 }
 export function reviewLoadSaleDuplicates(entries){
  const manual=entries.filter(row=>row.status==='active'&&row.type==='sale'&&!row.source);
@@ -85,4 +87,17 @@ export function loadSaleManualCost(valueCents,mode,physicalM3){
  const total=Number((BigInt(valueCents)*BigInt(units)+500000000n)/1000000000n);
  if(!Number.isSafeInteger(total)||total>100000000000)throw Error('Custo total acima do limite.');
  return total;
+}
+
+export function normalizeLoadMaterialCostsV809(costs,materials=null){
+ if(!Array.isArray(costs)||!costs.length||costs.length>400)throw Error('Informe o custo de cada madeira da carga.');
+ const keys=new Set();let total=0;
+ const rows=costs.map(row=>{
+  if(!row||Object.keys(row).some(k=>!['wood','thickness','costCents'].includes(k))||typeof row.wood!=='string'||!row.wood||row.wood.length>500||row.thickness!==null&&(!Number.isFinite(row.thickness)||row.thickness<=0)||!Number.isSafeInteger(row.costCents)||row.costCents<0)throw Error('Confira o custo de cada madeira.');
+  const key=JSON.stringify([row.wood,row.thickness]);if(keys.has(key))throw Error('Madeira repetida na conferência do custo.');keys.add(key);total+=row.costCents;
+  return {wood:row.wood,thickness:row.thickness,costCents:row.costCents};
+ });
+ if(!Number.isSafeInteger(total)||total>100000000000)throw Error('Custo total acima do limite.');
+ if(materials&&(materials.length!==rows.length||materials.some(row=>!keys.has(JSON.stringify([row.wood,row.thickness])))))throw Error('As madeiras da carga mudaram. Consulte novamente antes de salvar.');
+ return {rows,totalCents:total};
 }

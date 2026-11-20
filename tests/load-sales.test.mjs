@@ -99,3 +99,12 @@ test('cost conference identifies all species and thicknesses without repeating m
  assert.deepEqual(row.source.materials,[{wood:'Garapeira',thickness:5},{wood:'Itaúba',thickness:2.5},{wood:'Cedrinho',thickness:null}]);assert.equal(JSON.stringify(items),before);
  const renamed=items.map(i=>({...i,madeira:'Nome atualizado'}));assert.equal(describeLoadSale(renamed,gid).source.signature,row.source.signature);assert.deepEqual(loadMaterialSummaryV808([{}]),[{wood:'Espécie não informada',thickness:null}]);
 });
+test('separate material costs are verified against original load and preserved with summed total',async()=>{
+ const s=setup();s.records.set(s.path,line({id:'a',madeira:'Garapeira',espessura:5}));s.records.set(s.path.replace('/a','/b'),line({id:'b',madeira:'eucalipto',tipoMedida:'m2',volume:2}));
+ const items=[{...s.records.get(s.path),id:'a'},{...s.records.get(s.path.replace('/a','/b')),id:'b'}],current=describeLoadSale(items,gid),materials=[{wood:'Garapeira',thickness:5,costCents:500000},{wood:'eucalipto',thickness:null,costCents:30000}],input=config(current,{costCents:530000,materialCosts:materials}),sourceBefore=JSON.stringify(items);
+ let saved=await saveLoadSaleConfig(s.db,s.identity,input,now);assert.equal(saved.entry.costCents,530000);assert.deepEqual(saved.entry.source.materialCosts,materials);const count=s.writes.length;await saveLoadSaleConfig(s.db,s.identity,input,now);assert.equal(s.writes.length,count);assert.equal(JSON.stringify(items),sourceBefore);
+ await assert.rejects(()=>saveLoadSaleConfig(s.db,s.identity,{...input,revision:1,costCents:1},now),/soma/);
+ await assert.rejects(()=>saveLoadSaleConfig(s.db,s.identity,{...input,revision:1,materialCosts:[materials[0]],costCents:500000},now),/madeiras.*mudaram/);
+ await assert.rejects(()=>saveLoadSaleConfig(s.db,s.identity,{...input,revision:1,materialCosts:[materials[0],materials[0]],costCents:1000000},now),/repetida/);
+ const changed={...s.records.get(s.path),quantidade:12};s.records.set(s.path,changed);saved=describeLoadSale([{...changed,id:'a'},items[1]],gid,{...s.records.get(financeCollectionPath('tenant')+'VendasCarga/'+loadSaleKeys(gid).configId)});assert.equal(saved.costCents,null);assert.equal(saved.source.materialCosts,null);
+});

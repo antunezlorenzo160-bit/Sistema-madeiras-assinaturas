@@ -118,3 +118,12 @@ test('load cost form and sale explanation show species and thicknesses from the 
  const s=setup(),row=automaticSale();row.source.materials=[{wood:'Garapeira',thickness:5},{wood:'Itaúba',thickness:2.5}];s.setRequest(async()=>response({empresaId:'tenant',entries:[row],canWrite:true}));await s.c.financeLoadV722();
  for(const html of [s.nodes.finEntriesV722.innerHTML,s.nodes.finSaleChecksV735.innerHTML]){assert.match(html,/Madeiras do carregamento/);assert.match(html,/Garapeira — Esp. 5 cm/);assert.match(html,/Itaúba — Esp. 2,5 cm/);}
 });
+test('separate wood costs require every field, preview the sum and save the breakdown',async()=>{
+ const s=setup(),row=automaticSale();row.source.materials=[{wood:'Garapeira',thickness:5},{wood:'eucalipto',thickness:null}];s.setRequest(async()=>response({empresaId:'tenant',entries:[row],canWrite:true}));await s.c.financeLoadV722();assert.match(s.nodes.finEntriesV722.innerHTML,/Custo separado por madeira e espessura/);
+ const root=saleRoot(row),previous=root.querySelector,mode={value:'materials'},preview={textContent:''},inputs=[{value:'5000,00'},{value:''}],box={hidden:true,querySelectorAll:()=>inputs},totalLabel={hidden:false};
+ root.querySelector=selector=>({'[data-load-sale-cost-mode]':mode,'[data-load-sale-cost-preview]':preview,'[data-load-material-cost="0"]':inputs[0],'[data-load-material-cost="1"]':inputs[1],'[data-load-material-costs]':box,'[data-load-total-cost-label]':totalLabel}[selector]||previous(selector));
+ s.c.financeLoadCostPreviewV736(root);assert.match(preview.textContent,/eucalipto/);assert.equal(box.hidden,false);assert.equal(totalLabel.hidden,true);
+ const count=s.calls.length;await s.c.financeSaveLoadSaleV724(root);assert.equal(s.calls.length,count);assert.match(root.fields.status.textContent,/eucalipto/);
+ inputs[1].value='300,00';s.c.financeLoadCostPreviewV736(root);assert.match(preview.textContent,/5.300,00/);
+ s.setRequest(async(url,options)=>{const body=JSON.parse(options.body);assert.equal(body.costCents,530000);assert.equal(body.materialCosts.length,2);assert.equal(body.materialCosts[1].costCents,30000);return response({empresaId:'tenant',entry:{...row,costCents:body.costCents,source:{...row.source,costMode:'manual',materialCosts:body.materialCosts},revision:1}});});await s.c.financeSaveLoadSaleV724(root);assert.match(s.nodes.finEntriesV722.innerHTML,/value="materials" selected/);assert.match(s.nodes.finEntriesV722.innerHTML,/value="5000,00"/);
+});
