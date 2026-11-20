@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';import vm from 'node:vm';import {readFileSync} from 'node:fs';
-import {completedLoadSale,reviewLoadSaleDuplicates,loadSaleManualCost} from '../public/load-sales.mjs';
+import {completedLoadSale,reviewLoadSaleDuplicates,loadSaleManualCost,loadMaterialSummaryV808} from '../public/load-sales.mjs';
 import {describeLoadSale,projectLoadSales,saveLoadSaleConfig,loadSaleKeys} from '../Netlify/Funtions/lib/load-sales.mjs';
 import {listFinanceEntries,financeCollectionPath} from '../Netlify/Funtions/lib/company-finance.mjs';
 import {aggregateFinance} from '../public/company-finance.mjs';
@@ -92,4 +92,10 @@ test('manual unit cost uses physical volume with exact cent rounding; total mode
  assert.throws(()=>loadSaleManualCost(100000000000,'m3',100));
  assert.throws(()=>loadSaleManualCost(-1,'total',10));
  assert.throws(()=>loadSaleManualCost(130000,'other',10));
+});
+
+test('cost conference identifies all species and thicknesses without repeating matching lines or changing signatures',()=>{
+ const items=[line({id:'a',madeira:'Garapeira',espessura:5}),line({id:'b',madeira:'Garapeira',espessura:5}),line({id:'c',madeira:'Itaúba',espessura:2.5}),line({id:'d',especie:'Cedrinho',espessura:null})],before=JSON.stringify(items),row=describeLoadSale(items,gid);
+ assert.deepEqual(row.source.materials,[{wood:'Garapeira',thickness:5},{wood:'Itaúba',thickness:2.5},{wood:'Cedrinho',thickness:null}]);assert.equal(JSON.stringify(items),before);
+ const renamed=items.map(i=>({...i,madeira:'Nome atualizado'}));assert.equal(describeLoadSale(renamed,gid).source.signature,row.source.signature);assert.deepEqual(loadMaterialSummaryV808([{}]),[{wood:'Espécie não informada',thickness:null}]);
 });

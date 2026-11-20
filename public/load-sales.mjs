@@ -1,3 +1,12 @@
+// Display identification only; never changes sale signatures, prices or costs.
+export function loadMaterialSummaryV808(items){
+ const groups=new Map();
+ for(const item of items){
+  const wood=String(item.madeira||item.especie||item.produto||'Espécie não informada').trim()||'Espécie não informada',value=Number(item.espessura),thickness=Number.isFinite(value)&&value>0?value:null;
+  const key=JSON.stringify([wood,thickness]);if(!groups.has(key))groups.set(key,{wood,thickness});
+ }
+ return [...groups.values()];
+}
 // Physical wood volume for explanation only; this never changes document prices or stored costs.
 export function loadPhysicalM3(items){
  if(!Array.isArray(items)||!items.length)return null;let units=0;

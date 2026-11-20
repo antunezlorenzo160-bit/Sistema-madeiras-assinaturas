@@ -113,3 +113,8 @@ test('log labour shows service and receipts without wood cost or manual sale edi
  s.setRequest(async()=>response({empresaId:'tenant',entries:[row],canWrite:true}));await s.c.financeLoadV722();
  const html=s.nodes.finSaleChecksV735.innerHTML;assert.match(html,/Mão de obra de toras/);assert.match(html,/Valor do serviço/);assert.match(html,/Recebido[\s\S]*200,00/);assert.match(html,/Saldo a receber[\s\S]*1\.496,46/);assert.doesNotMatch(html,/Venda avulsa|Custo TOTAL|data-fin-edit|Total informado manualmente/);assert.match(s.nodes.finEntriesV722.innerHTML,/Serviço de mão de obra/);assert.match(s.nodes.finStatsV722.innerHTML,/Vendas e serviços do período/);assert.equal(JSON.stringify(row),before);
 });
+
+test('load cost form and sale explanation show species and thicknesses from the original load',async()=>{
+ const s=setup(),row=automaticSale();row.source.materials=[{wood:'Garapeira',thickness:5},{wood:'Itaúba',thickness:2.5}];s.setRequest(async()=>response({empresaId:'tenant',entries:[row],canWrite:true}));await s.c.financeLoadV722();
+ for(const html of [s.nodes.finEntriesV722.innerHTML,s.nodes.finSaleChecksV735.innerHTML]){assert.match(html,/Madeiras do carregamento/);assert.match(html,/Garapeira — Esp. 5 cm/);assert.match(html,/Itaúba — Esp. 2,5 cm/);}
+});
