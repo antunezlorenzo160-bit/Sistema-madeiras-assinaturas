@@ -137,3 +137,15 @@
 @media screen{
  body:has(#relatorios.tab.active)>header h1.marca-v474{display:none!important}
 }
+
+/* V812: compact report navigation; mobile lives in the existing fixed header. */
+@media screen{
+ #reportsViewBarV812{display:flex!important;flex-wrap:nowrap!important;gap:6px!important;margin:6px 0 10px!important;max-width:640px}
+ #reportsViewBarV812>button{flex:1 1 0!important;min-width:0!important;min-height:40px!important;padding:8px 6px!important;margin:0!important;font-size:12px!important;line-height:1.2!important;white-space:normal!important;border-radius:9px!important}
+ #reportsViewBarV812 [hidden]{display:none!important}
+}
+@media screen and (max-width:760px){
+ body>header>#reportsViewBarV812.reports-docked-v812{width:100%!important;max-width:none!important;margin:7px 0 0!important;padding-top:7px;border-top:1px solid var(--line);box-sizing:border-box}
+ body>header>#reportsViewBarV812.reports-docked-v812>button{min-height:38px!important}
+}
+@media print{#reportsViewBarV812{display:none!important}}
