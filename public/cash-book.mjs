@@ -28,7 +28,7 @@ export function projectCashBookV759({opening=null,movements=[],purchases=[],from
   }
  }
  const start=opening&&opening.date>from?opening.date:from,validOpening=!!opening&&opening.date<=to;
- let periodOpeningCents=validOpening?opening.amountCents:null,inCents=0,outCents=0;
+ let periodOpeningCents=validOpening?opening.amountCents:opening?null:0,inCents=0,outCents=0;
  const displayed=[];
  for(const row of rows){
   if(row.date>to||opening&&row.date<opening.date)continue;
