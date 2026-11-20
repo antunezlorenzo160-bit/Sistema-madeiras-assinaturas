@@ -31,3 +31,7 @@ test('generated cash panel is unique and employee guard blocks both cash tab and
  const start=app.indexOf('function employeeActionAllowed(target){'),end=app.indexOf("document.addEventListener('click'",start),c={parent:{__smEmployeeMember:()=>({papel:'employee'}),__smEmployeeCan:()=>true},employeeNavigationRoute:()=>null};vm.createContext(c);vm.runInContext(app.slice(start,end),c);
  for(const control of [{id:'cashSaveV759',dataset:{},closest:s=>s.includes('#cashPanelV759')?{}:null},{id:'',dataset:{reportView:'cash'},closest:()=>null}])assert.equal(c.employeeActionAllowed({closest:()=>control}),false);
 });
+
+test('wood sale receipts are linked to sale accounts and cannot be cancelled as manual cash',()=>{
+ const s=setup();s.c.fixtureReport=projectCashBookV759({sales:[{id,type:'sale',date:'2026-11-10',amountCents:5200000,partner:'Cliente',settlement:{payments:[{id,date:'2026-11-10',amountCents:5200000}]}}],from:'2026-11-10',to:'2026-11-10'});vm.runInContext("cashStateV759={empresaId:'tenant',canWrite:true,report:fixtureReport}",s.c);s.c.cashRenderV759();assert.match(s.nodes.cashRowsV759.innerHTML,/Recebimento vinculado à venda de madeira/);assert.match(s.nodes.cashRowsV759.innerHTML,/data-cash-sale/);assert.doesNotMatch(s.nodes.cashRowsV759.innerHTML,/data-cash-cancel/);
+});

@@ -9,10 +9,10 @@ export async function readCashBook(db,identity,{from,to},now=Date.now()){
  try{projectCashBookV759({from,to});}catch(e){throw new PlatformError(400,e.message);}
  const result=await db.runTransaction(async tx=>{
   const context=await financeOwnerContext(db,identity,r=>tx.get(r),false,now);
-  const [config,manual,purchases]=await Promise.all([tx.get(db.doc(cashOpeningPathV759(context.empresaId))),tx.get(db.collection(cashCollectionV759(context.empresaId)).where('date','<=',to).limit(2001)),tx.get(db.collection(financeCollectionPath(context.empresaId)).where('type','==','purchase').limit(1001))]);
-  if(manual.docs.length>2000||purchases.docs.length>1000||purchases.docs.reduce((sum,d)=>sum+(d.data().settlement?.payments?.length||0),0)>10000)throw new PlatformError(409,'O histórico excede o limite desta conferência. Preserve os registros e solicite o arquivamento do caixa.');
+  const [config,manual,purchases,sales]=await Promise.all([tx.get(db.doc(cashOpeningPathV759(context.empresaId))),tx.get(db.collection(cashCollectionV759(context.empresaId)).where('date','<=',to).limit(2001)),tx.get(db.collection(financeCollectionPath(context.empresaId)).where('type','==','purchase').limit(1001)),tx.get(db.collection(financeCollectionPath(context.empresaId)+'VendasRecebimentos').limit(1001))]);
+  if(sales.docs.length>1000||sales.docs.reduce((sum,d)=>sum+(d.data().settlement?.payments?.length||0),0)>10000||manual.docs.length>2000||purchases.docs.length>1000||purchases.docs.reduce((sum,d)=>sum+(d.data().settlement?.payments?.length||0),0)>10000)throw new PlatformError(409,'O histórico excede o limite desta conferência. Preserve os registros e solicite o arquivamento do caixa.');
   const opening=config.exists?{date:config.data().date,amountCents:config.data().amountCents,revision:config.data().revision}:null;
-  let report;try{report=projectCashBookV759({opening,movements:manual.docs.map(d=>({...d.data(),id:d.id})),purchases:purchases.docs.map(d=>({...d.data(),id:d.id})),from,to});}catch(e){throw new PlatformError(409,e.message);}
+  let report;try{report=projectCashBookV759({opening,movements:manual.docs.map(d=>({...d.data(),id:d.id})),purchases:purchases.docs.map(d=>({...d.data(),id:d.id})),sales:sales.docs.map(d=>({...d.data(),id:d.id})),from,to});}catch(e){throw new PlatformError(409,e.message);}
   return {...context,report};
  });
  const latest=await financeOwnerContext(db,identity,undefined,false,now);if(latest.empresaId!==result.empresaId)throw new PlatformError(409,'A empresa mudou.');return {...result,canWrite:latest.canWrite};

@@ -40,6 +40,7 @@ export async function saveLoadSaleConfig(db,identity,input,now=Date.now()){
   if(current.source.signature!==request.signature)throw new PlatformError(409,'A carga mudou. Consulte o período novamente antes de salvar o custo.');
   let manualRef=null,manual=null;
   if(request.manualEntry){manualRef=db.doc(financeCollectionPath(context.empresaId)+'/'+request.manualEntry.id);const snap=await tx.get(manualRef);manual=snap.exists?snap.data():null;}
+  if(request.manualEntry){const receipts=await tx.get(db.doc(financeCollectionPath(context.empresaId)+'VendasRecebimentos/'+request.manualEntry.id));if(receipts.exists&&(receipts.data().settlement?.payments||[]).some(p=>!p.voidedAt))throw new PlatformError(409,'Esta venda manual já tem recebimentos no caixa. Confira os recebimentos antes de substituir pela carga.');}
   const manualEntryId=request.manualEntry?.id||previous?.manualEntryId||null;
   if((previous?.revision||0)!==request.revision){
    if(previous?.revision===request.revision+1&&previous.costCents===request.costCents&&previous.include===request.include&&previous.signature===request.signature&&previous.manualEntryId===manualEntryId&&previous.resolution===request.resolution)return {empresaId:context.empresaId,entry:current,manualEntry:manual};

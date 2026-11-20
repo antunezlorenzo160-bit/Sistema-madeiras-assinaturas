@@ -1,3 +1,4 @@
+import {saleReceivedCentsV807} from './sale-receipts.mjs';
 import {paymentDateV757,purchasePaidCentsV757} from './purchase-payments.mjs';
 const cashUuidV759=/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i;
 export const CASH_CATEGORIES_V759=Object.freeze({sale:'Recebimento de venda',contribution:'Aporte',refund:'Reembolso recebido',expense:'Despesa paga',withdrawal:'Retirada',other:'Outros'});
@@ -11,7 +12,7 @@ export function normalizeCashMovementV759(input){
  const text=(key,max,required=false)=>{const s=input[key];if(typeof s!=='string'||s.length>max||/[\u0000-\u001f]/.test(s)||required&&!s.trim())throw Error('Confira descrição, nome e documento.');return s.trim();};
  return {id:input.id,date:input.date,direction:input.direction,category:input.category,amountCents:input.amountCents,description:text('description',180,true),partner:text('partner',120),reference:text('reference',120)};
 }
-export function projectCashBookV759({opening=null,movements=[],purchases=[],from,to}){
+export function projectCashBookV759({opening=null,movements=[],purchases=[],sales=[],from,to}){
  if(!paymentDateV757(from)||!paymentDateV757(to)||from>to)throw Error('Confira o período do caixa.');
  if(opening)normalizeCashOpeningV759(opening);
  const rows=[],cancelledRows=[],ids=new Set();let unknownPurchases=0,cancelledPaidCents=0;
@@ -25,6 +26,13 @@ export function projectCashBookV759({opening=null,movements=[],purchases=[],from
    const id='purchase:'+purchase.id+':'+payment.id;if(ids.has(id))throw Error('Pagamento de compra repetido no caixa.');ids.add(id);
    rows.push({id,date:payment.date,direction:'out',amountCents:payment.amountCents,category:'purchase',description:'Pagamento de compra'+(purchase.status==='cancelled'?' — compra cancelada':''),partner:purchase.partner||'',reference:purchase.reference||'',source:{type:'purchase-payment',entryId:purchase.id,paymentId:payment.id},createdAt:payment.createdAt||0,purchaseCancelled:purchase.status==='cancelled'});
    if(purchase.status==='cancelled'&&payment.date<=to&&(!opening||payment.date>=opening.date))cancelledPaidCents+=payment.amountCents;
+  }
+ }
+ for(const sale of sales){
+  if(sale.type!=='sale')continue;saleReceivedCentsV807(sale);
+  for(const payment of sale.settlement?.payments||[]){
+   if(payment.voidedAt)continue;const id='sale:'+sale.id+':'+payment.id;if(ids.has(id))throw Error('Recebimento de venda repetido no caixa.');ids.add(id);
+   rows.push({id,date:payment.date,direction:'in',amountCents:payment.amountCents,category:'sale',description:'Recebimento de venda de madeira',partner:sale.partner||'',reference:sale.reference||'',source:{type:'sale-receipt',entryId:sale.id,paymentId:payment.id},createdAt:payment.createdAt||0});
   }
  }
  const start=opening&&opening.date>from?opening.date:from,validOpening=!!opening&&opening.date<=to;
