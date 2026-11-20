@@ -26,7 +26,7 @@ export function aggregateFinance(entries,{from,to,group='month'}){
  for(const entry of entries){
   if(entry.date<from||entry.date>to)continue;
   if(entry.status==='pending-review'&&entry.source?.type==='load-sale'){const row=map.get(entry.date.slice(0,group==='month'?7:10));if(!row)throw Error('Data inválida na venda da carga.');row.pendingSales++;total.pendingSales++;continue;}
-  if(entry.status!=='active')continue;
+  if(entry.status!=='active'||entry.source?.type==='opening-payable')continue;
   if(!Object.hasOwn(FINANCE_TYPES,entry.type)||!Number.isSafeInteger(entry.amountCents)||entry.amountCents<0)throw Error('Registro financeiro inconsistente. Atualize a lista.');
   const row=map.get(entry.date.slice(0,group==='month'?7:10));if(!row)throw Error('Data inválida na lista financeira.');
   for(const target of [row,total]){target[entry.type]+=entry.amountCents;target.count++;if(entry.type==='sale'){if(entry.costCents===null)target.pendingCosts++;else if(Number.isSafeInteger(entry.costCents)&&entry.costCents>=0)target.cost+=entry.costCents;else throw Error('Custo inválido na venda.');}}

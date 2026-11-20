@@ -1,0 +1,14 @@
+import test from 'node:test';import assert from 'node:assert/strict';import vm from 'node:vm';import {readFileSync} from 'node:fs';import {randomUUID} from 'node:crypto';
+import {normalizeInitialDebtV811} from '../public/initial-stock.mjs';import {purchasePaymentCentsV758} from '../public/purchase-payments.mjs';
+const source=readFileSync(new URL('../ui/initial-debt.js',import.meta.url),'utf8');
+function setup(storage=new Map()){
+ const nodes={},calls=[];let send=async()=>{throw Error('Resposta perdida');};const node=id=>nodes[id]||(nodes[id]={value:'',textContent:'',querySelectorAll:()=>[],reset(){}});
+ const c={crypto:{randomUUID},normalizeInitialDebtV811,purchasePaymentCentsV758,cashElV759:node,empresaV456:'tenant',finOwnerV722:()=>true,navigator:{onLine:true},cashDayV759:()=> '2026-11-20',finMoneyV722:n=>String(n),financeLoadedRangeV722:{},window:{__v456Local:{durable:true,getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)}},financeRequestV722:async payload=>{calls.push(JSON.parse(JSON.stringify(payload)));return send(payload);}};vm.createContext(c);vm.runInContext(source,c);c.mountInitialDebtV811();node('initialDebtSupplierV811').value='Fornecedor antigo';node('initialDebtAmountV811').value='3000,00';node('initialDebtDueV811').value='2026-10-31';return {c,node,calls,storage,setSend:fn=>send=fn};
+}
+test('initial debt uncertainty preserves original id and values across reload without creating stock or payments',async()=>{
+ const s=setup();await s.c.initialDebtSaveV811({preventDefault(){}});const original=s.calls[0];assert.equal(original.amountCents,300000);assert.equal(original.payment,undefined);assert.equal(original.lines,undefined);assert.match(s.node('initialDebtStatusV811').textContent,/não duplicar/);const resumed=setup(s.storage);resumed.setSend(async payload=>{assert.deepEqual(JSON.parse(JSON.stringify(payload)),original);return {entry:{amountCents:300000}};});await resumed.c.initialDebtSaveV811();assert.equal(JSON.parse(s.storage.get('initial_debt_v811:tenant')),null);assert.match(resumed.node('initialDebtStatusV811').textContent,/Sem nova compra, estoque ou saída de caixa/);
+});
+test('offline and storage failures do not submit, late response cannot clear another company pending debt',async()=>{
+ const s=setup();s.c.navigator.onLine=false;await s.c.initialDebtSaveV811();assert.equal(s.calls.length,0);s.c.navigator.onLine=true;s.c.window.__v456Local.setItem=()=>{throw Error('Sem espaço');};await s.c.initialDebtSaveV811();assert.equal(s.calls.length,0);
+ const late=setup();let done;late.setSend(()=>new Promise(r=>done=r));const task=late.c.initialDebtSaveV811();await Promise.resolve();late.c.empresaV456='other';done({entry:{amountCents:300000}});await task;assert(late.storage.get('initial_debt_v811:tenant'));assert.equal(late.storage.has('initial_debt_v811:other'),false);
+});

@@ -28,6 +28,7 @@ export async function saveFinanceEntry(db,identity,input,now=Date.now()){
   const context=await financeOwnerContext(db,identity,r=>tx.get(r),true,now);if(context.empresaId!==initial.empresaId)throw new PlatformError(409,'O vínculo da conta mudou. Entre novamente.');
   const ref=db.doc(financeCollectionPath(context.empresaId)+'/'+entry.id),snapshot=await tx.get(ref),previous=snapshot.exists?snapshot.data():null;
   if(previous?.source?.type==='log-labour')throw new PlatformError(409,'Confira ou cancele o serviço na área de mão de obra das toras.');
+  if(previous?.source?.type==='opening-payable')throw new PlatformError(409,'Dívida inicial preservada. Registre os pagamentos nas contas a pagar.');
   if(previous?.settlement)throw new PlatformError(409,'Esta compra tem pagamentos registrados. Confira em Pagamentos de compras antes de alterar seus valores.');
   if(previous?.source?.type==='shared-trip')throw new PlatformError(409,'Altere estes gastos na viagem compartilhada.');
   if(previous?.source?.type==='log-purchase')throw new PlatformError(409,'Altere ou cancele esta compra na aba Toras.');

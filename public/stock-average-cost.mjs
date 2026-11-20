@@ -23,7 +23,7 @@ export function projectWeightedStockCosts({purchases,movements,stock,openingPoli
  for(const row of movements){if(row.tipo!=='saida'||row.transferencia===true||!row.grupoCargaId)continue;const key=stockCostKey(row),at=movementTimeV728(row);if(!key||at===null)continue;const id=JSON.stringify([key,row.grupoCargaId]);conferenceExits.set(id,Math.min(conferenceExits.get(id)??Infinity,at));}
  for(const receipt of purchases)for(const line of receipt.lines||[]){
   if(byMovement.has(line.movementId))throw Error('Entrada de compra repetida.');
-  byMovement.set(line.movementId,{...line,receiptId:receipt.id,createdAt:receipt.createdAt});
+  byMovement.set(line.movementId,{...line,receiptId:receipt.id,opening:receipt.kind==='opening-stock',createdAt:receipt.createdAt});
  }
  for(const row of stock){const key=stockCostKey(row);if(!key)continue;const p=pool(key);p.currentCount++;try{p.current+=purchaseVolumeUnits(row.volume);if(!Number.isSafeInteger(p.current))invalidate(p,'O saldo desta medida ultrapassa o limite de cálculo.');}catch{invalidate(p,'Há volume inválido no saldo desta medida.');}}
  const seen=new Set();
@@ -41,9 +41,10 @@ export function projectWeightedStockCosts({purchases,movements,stock,openingPoli
   if(!['entrada','saida'].includes(type)){invalidate(p,'Há um ajuste no histórico desta medida que precisa de conferência.');continue;}
   let quantity;try{quantity=purchaseVolumeUnits(Math.abs(Number(row.volume)));if(!quantity)continue;}catch{invalidate(p,'Há volume inválido no histórico desta medida.');continue;}
   const purchase=byMovement.get(row.id);let value=null,missingReason=null;
-  if(purchase){seen.add(row.id);if(row.tipo!=='entrada'||purchase.costKey!==key||Math.abs(purchaseVolumeUnits(purchase.volume)-quantity)>1||row.purchaseReceiptV728!==purchase.receiptId||!Number.isSafeInteger(purchase.acquisitionCents)||purchase.acquisitionCents<0)invalidate(p,'A entrada da compra não confere com o volume e a medida registrados.');else value=BigInt(purchase.acquisitionCents)*costPrecisionV728;}
+  if(purchase){seen.add(row.id);if(row.tipo!=='entrada'||purchase.costKey!==key||Math.abs(purchaseVolumeUnits(purchase.volume)-quantity)>1||(purchase.opening?row.initialStockReceiptV811:row.purchaseReceiptV728)!==purchase.receiptId||!(purchase.opening&&purchase.acquisitionCents===null)&&(!Number.isSafeInteger(purchase.acquisitionCents)||purchase.acquisitionCents<0))invalidate(p,'A entrada da compra não confere com o volume e a medida registrados.');else if(purchase.acquisitionCents===null)missingReason='O custo desta madeira do estoque inicial não foi informado.';else value=BigInt(purchase.acquisitionCents)*costPrecisionV728;}
   if(type==='entrada'&&!purchase){
-   if(row.purchaseReceiptV728)missingReason='A entrada tem referência de compra, mas o custo dessa compra não foi localizado neste financeiro.';
+   if(row.initialStockReceiptV811)missingReason='O custo privado desta entrada de estoque inicial não foi localizado. Confira o registro inicial.';
+   else if(row.purchaseReceiptV728)missingReason='A entrada tem referência de compra, mas o custo dessa compra não foi localizado neste financeiro.';
    else if(oldEnabled&&(row.tipoMedida||row.tipoCadastro||'m3')==='m3'&&at!==null&&at<=opening.cutoffAt)value=oldValue(quantity);
    else missingReason=row.ajusteConferenciaV391===true||row.ajusteConferenciaV390===true?'O ajuste de conferência acrescentou madeira sem custo de compra nesta medida. É preciso conferir a origem e o custo dessa entrada; o preço de venda não é usado como custo.':oldEnabled&&at>opening.cutoffAt?'Há entrada sem preço posterior ao salvamento do custo antigo. Essa entrada precisa do próprio custo.':'Há madeira sem custo de compra completo nesta medida.';
   }

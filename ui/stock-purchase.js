@@ -2,12 +2,12 @@
 let stockPurchaseDraftV728=null,stockPurchaseBusyV728=false,stockPurchaseUnitV755=null;
 const purchaseElV728=id=>document.getElementById(id),purchaseStorageV728=()=>'stock_purchase_v728:'+empresaV456;
 const purchaseOwnerV728=()=>parent.__smEmployeeMember?.()?.papel==='admin';
-function purchaseFreshV728(){const d=new Date();return {id:crypto.randomUUID(),enabled:false,confirmed:false,pending:null,lines:[],stock:null,supplier:'',date:d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'),reference:'',unit:'',freight:'',other:'',freightIncluded:false,otherIncluded:false};}
+function purchaseFreshV728(){const d=new Date();return {id:crypto.randomUUID(),operation:'purchase',acknowledged:false,enabled:false,confirmed:false,pending:null,lines:[],stock:null,supplier:'',date:d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'),reference:'',unit:'',freight:'',other:'',freightIncluded:false,otherIncluded:false};}
 function purchaseStoreV728(next){const raw=JSON.stringify(next);window.__v456Local.setItem(purchaseStorageV728(),raw);if(window.__v456Local.getItem(purchaseStorageV728())!==raw)throw Error('Não foi possível preservar o rascunho neste aparelho.');stockPurchaseDraftV728=next;}
-function purchaseReadFieldsV728(){return {...stockPurchaseDraftV728,...purchasePaymentDraftV757('purchasePay'),enabled:purchaseElV728('purchaseEnabledV728').checked,unitKindV755:purchaseUnitSymbolV755(modoMedida),supplier:purchaseElV728('purchaseSupplierV728').value.trim(),date:purchaseElV728('purchaseDateV728').value,reference:purchaseElV728('purchaseReferenceV728').value.trim(),unit:purchaseElV728('purchaseUnitV728').value,freight:purchaseElV728('purchaseFreightV728').value,other:purchaseElV728('purchaseOtherV728').value,freightIncluded:purchaseElV728('purchaseFreightIncludedV728').checked,otherIncluded:purchaseElV728('purchaseOtherIncludedV728').checked};}
-function purchaseInputV728(){if(stockPurchaseBusyV728||stockPurchaseDraftV728?.pending||stockPurchaseDraftV728?.confirmed)return;try{purchaseStoreV728(purchaseReadFieldsV728());purchaseRenderV728();}catch(e){purchaseElV728('purchaseStatusV728').textContent=e.message;}}
-function purchasePayloadV728(draft,includePayment=true){const base=normalizeStockPurchase({companyId:empresaV456,id:draft.id,date:draft.date,supplier:draft.supplier,reference:draft.reference,stock:draft.stock,freightCents:financeCents(draft.freight.trim()||'0'),otherCents:financeCents(draft.other.trim()||'0'),freightIncluded:draft.freightIncluded,otherIncluded:draft.otherIncluded,lines:draft.lines.map(({madeira,...line})=>line)});const payment=includePayment?purchasePaymentInputV757(draft,base.totalCents,base.date):undefined;return payment?{...base,payment}:base;}
-function purchaseRawPayloadV728(draft){const parsed=purchasePayloadV728(draft);return {companyId:parsed.companyId,id:parsed.id,date:parsed.date,supplier:parsed.supplier,reference:parsed.reference,stock:parsed.stock,freightCents:parsed.freightCents,otherCents:parsed.otherCents,freightIncluded:parsed.freightIncluded,otherIncluded:parsed.otherIncluded,...(parsed.payment?{payment:parsed.payment}:{}),lines:parsed.lines.map(({amountCents,acquisitionCents,...line})=>line)};}
+function purchaseReadFieldsV728(){return {...stockPurchaseDraftV728,operation:purchaseElV728('purchaseOperationV811')?.value||'purchase',acknowledged:purchaseElV728('purchaseOpeningAckV811')?.checked===true,...purchasePaymentDraftV757('purchasePay'),enabled:purchaseElV728('purchaseEnabledV728').checked,unitKindV755:purchaseUnitSymbolV755(modoMedida),supplier:purchaseElV728('purchaseSupplierV728').value.trim(),date:purchaseElV728('purchaseDateV728').value,reference:purchaseElV728('purchaseReferenceV728').value.trim(),unit:purchaseElV728('purchaseUnitV728').value,freight:purchaseElV728('purchaseFreightV728').value,other:purchaseElV728('purchaseOtherV728').value,freightIncluded:purchaseElV728('purchaseFreightIncludedV728').checked,otherIncluded:purchaseElV728('purchaseOtherIncludedV728').checked};}
+function purchaseInputV728(){if(stockPurchaseBusyV728||stockPurchaseDraftV728?.pending||stockPurchaseDraftV728?.confirmed)return;try{const next=purchaseReadFieldsV728();if((stockPurchaseDraftV728.operation||'purchase')!==next.operation&&stockPurchaseDraftV728.lines.length){purchaseElV728('purchaseOperationV811').value=stockPurchaseDraftV728.operation||'purchase';throw Error('Comece uma nova lista antes de trocar entre compra e estoque inicial.');}if((stockPurchaseDraftV728.operation||'purchase')!==next.operation){next.unit='';next.acknowledged=false;purchaseElV728('purchaseUnitV728').value='';if(purchaseElV728('purchaseOpeningAckV811'))purchaseElV728('purchaseOpeningAckV811').checked=false;}purchaseStoreV728(next);purchaseRenderV728();}catch(e){purchaseElV728('purchaseStatusV728').textContent=e.message;}}
+function purchasePayloadV728(draft,includePayment=true){if(draft.operation==='opening')return normalizeInitialStockV811({companyId:empresaV456,id:draft.id,date:draft.date,reference:draft.reference,stock:draft.stock,lines:draft.lines.map(({madeira,...line})=>line),operation:'opening',acknowledged:true});const base=normalizeStockPurchase({companyId:empresaV456,id:draft.id,date:draft.date,supplier:draft.supplier,reference:draft.reference,stock:draft.stock,freightCents:financeCents(draft.freight.trim()||'0'),otherCents:financeCents(draft.other.trim()||'0'),freightIncluded:draft.freightIncluded,otherIncluded:draft.otherIncluded,lines:draft.lines.map(({madeira,...line})=>line)});const payment=includePayment?purchasePaymentInputV757(draft,base.totalCents,base.date):undefined;return payment?{...base,payment}:base;}
+function purchaseRawPayloadV728(draft){const parsed=purchasePayloadV728(draft);if(draft.operation==='opening')return {companyId:parsed.companyId,id:parsed.id,date:parsed.date,reference:parsed.reference,stock:parsed.stock,operation:'opening',acknowledged:draft.acknowledged===true,lines:parsed.lines.map(({amountCents,acquisitionCents,...line})=>line)};return {companyId:parsed.companyId,id:parsed.id,date:parsed.date,supplier:parsed.supplier,reference:parsed.reference,stock:parsed.stock,freightCents:parsed.freightCents,otherCents:parsed.otherCents,freightIncluded:parsed.freightIncluded,otherIncluded:parsed.otherIncluded,...(parsed.payment?{payment:parsed.payment}:{}),lines:parsed.lines.map(({amountCents,acquisitionCents,...line})=>line)};}
 const purchaseUnitSymbolV755=kind=>kind==='linear'?'m':kind==='m2'?'m²':'m³';
 function purchaseUnitLabelV755(){
  const unit=purchaseUnitSymbolV755(modoMedida);
@@ -16,12 +16,12 @@ function purchaseUnitLabelV755(){
   if(previous!==unit)purchaseElV728('purchaseUnitV728').value='';
   stockPurchaseUnitV755=unit;
  }
- const label=purchaseElV728('purchaseUnitLabelV755');if(label)label.textContent='Preço de compra por '+purchaseUnitSymbolV755(modoMedida)+' (R$)';
+ const label=purchaseElV728('purchaseUnitLabelV755');if(label)label.textContent=(stockPurchaseDraftV728?.operation==='opening'?'Custo inicial por ':'Preço de compra por ')+purchaseUnitSymbolV755(modoMedida)+' (R$)';
 }
 function purchaseLineTextV755(line){
  const kind=line.tipoMedida,unit=purchaseUnitSymbolV755(kind);
  const detail=kind==='granel'?'A granel':kind==='linear'?(line.produto+' · '+(line.linearTotalV744===true?'Metragem total':line.comprimento+' m · '+line.quantidade+' peças')):kind==='m2'?(line.largura+' cm · '+line.comprimento+' m · '+line.quantidade+' peças'+(line.purchasePacketsV755?' · '+line.purchasePacketsV755+' pacote(s)':'')):line.espessura+' × '+line.largura+' cm · '+line.comprimento+' m · '+line.quantidade+' peças';
- return detail+' · '+num4(line.volume)+' '+unit+' · '+finMoneyV722(line.unitCents)+'/'+unit;
+ return detail+' · '+num4(line.volume)+' '+unit+' · '+(line.unitCents===null?'Custo não informado':finMoneyV722(line.unitCents)+'/'+unit);
 }
 function stockPurchaseVisibilityV728(){
  const node=purchaseElV728('stockPurchaseV728');if(!node)return;
@@ -31,7 +31,7 @@ function stockPurchaseVisibilityV728(){
  purchaseUnitLabelV755();
 }
 function purchaseRenderV728(){
- const draft=stockPurchaseDraftV728;if(!draft)return;
+ const draft=stockPurchaseDraftV728;if(!draft)return;const opening=draft.operation==='opening';for(const node of purchaseElV728('stockPurchaseV728').querySelectorAll('[data-purchase-only-v811]'))node.hidden=opening;for(const id of ['purchaseOpeningNoteV811','purchaseOpeningAckLabelV811']){const n=purchaseElV728(id);if(n)n.hidden=!opening;}purchaseUnitLabelV755();
  purchaseElV728('purchaseFieldsV728').hidden=!draft.enabled;
  const linesHost=purchaseElV728('purchaseLinesV728'),linesSignature=JSON.stringify(draft.lines);
  // Keep remove buttons mounted across input blur/change so their click is not lost.
@@ -39,14 +39,14 @@ function purchaseRenderV728(){
  linesHost.innerHTML=draft.lines.map((line,index)=>'<div class="purchase-line-v728"><strong>'+esc(line.madeira)+'</strong><span>'+esc(purchaseLineTextV755(line))+'</span><button type="button" class="btn btn-secondary" data-purchase-remove="'+index+'">Retirar da lista</button></div>').join('')||'<p class="note">Preencha a medida na calculadora e toque em Lançar para adicionar.</p>';
  linesHost.dataset.linesSignatureV753=linesSignature;
  }
- try{const totals=purchasePayloadV728(draft);purchaseElV728('purchaseTotalV728').textContent=(draft.stock==='estoque2'?'Estoque 2':'Estoque 1')+' · Madeira: '+finMoneyV722(totals.goodsCents)+' · Gastos acrescentados: '+finMoneyV722(totals.addedCents)+' · Compra: '+finMoneyV722(totals.totalCents);}catch{purchaseElV728('purchaseTotalV728').textContent=draft.lines.length+' item(ns) na lista. Preencha fornecedor, data e gastos para conferir o total.';}
+ try{const totals=purchasePayloadV728(draft);purchaseElV728('purchaseTotalV728').textContent=opening?'Estoque inicial · Custo conhecido: '+finMoneyV722(totals.goodsCents)+(totals.unknownCostLines?' · '+totals.unknownCostLines+' item(ns) com custo não informado':''):(draft.stock==='estoque2'?'Estoque 2':'Estoque 1')+' · Madeira: '+finMoneyV722(totals.goodsCents)+' · Gastos acrescentados: '+finMoneyV722(totals.addedCents)+' · Compra: '+finMoneyV722(totals.totalCents);}catch{purchaseElV728('purchaseTotalV728').textContent=draft.lines.length+' item(ns) na lista. Preencha fornecedor, data e gastos para conferir o total.';}
  const locked=stockPurchaseBusyV728||!!draft.pending||draft.confirmed;
  for(const node of purchaseElV728('stockPurchaseV728').querySelectorAll('input,select,[data-purchase-remove]'))node.disabled=locked;
  purchaseElV728('purchaseConfirmV728').disabled=stockPurchaseBusyV728||draft.confirmed||!draft.lines.length||window.__v456Local.durable===false;
- purchaseElV728('purchaseConfirmV728').textContent=draft.pending?'Conferir confirmação / tentar novamente':'Confirmar descarregamento e compra';
+ purchaseElV728('purchaseConfirmV728').textContent=draft.pending?'Conferir confirmação / tentar novamente':(opening?'Confirmar estoque inicial':'Confirmar descarregamento e compra');
  purchaseElV728('purchaseNewV728').disabled=stockPurchaseBusyV728||!!draft.pending;
 }
-function purchaseFillV728(){const d=stockPurchaseDraftV728;for(const [id,key] of [['purchaseSupplierV728','supplier'],['purchaseDateV728','date'],['purchaseReferenceV728','reference'],['purchaseUnitV728','unit'],['purchaseFreightV728','freight'],['purchaseOtherV728','other']])purchaseElV728(id).value=d[key]||'';for(const [id,key] of [['purchaseEnabledV728','enabled'],['purchaseFreightIncludedV728','freightIncluded'],['purchaseOtherIncludedV728','otherIncluded']])purchaseElV728(id).checked=d[key]===true;purchasePaymentFillV757('purchasePay',d);purchaseRenderV728();}
+function purchaseFillV728(){const d=stockPurchaseDraftV728;for(const [id,key] of [['purchaseSupplierV728','supplier'],['purchaseDateV728','date'],['purchaseReferenceV728','reference'],['purchaseUnitV728','unit'],['purchaseFreightV728','freight'],['purchaseOtherV728','other']])purchaseElV728(id).value=d[key]||'';for(const [id,key] of [['purchaseEnabledV728','enabled'],['purchaseFreightIncludedV728','freightIncluded'],['purchaseOtherIncludedV728','otherIncluded']])purchaseElV728(id).checked=d[key]===true;if(purchaseElV728('purchaseOperationV811'))purchaseElV728('purchaseOperationV811').value=d.operation||'purchase';if(purchaseElV728('purchaseOpeningAckV811'))purchaseElV728('purchaseOpeningAckV811').checked=d.acknowledged===true;purchasePaymentFillV757('purchasePay',d);purchaseRenderV728();}
 function stockPurchaseCaptureV728(item,destination){
  if(!['m3','granel','m2','linear'].includes(item.tipoMedida)||!purchaseOwnerV728()||!stockPurchaseDraftV728||!purchaseElV728('purchaseEnabledV728').checked)return false;
  const status=purchaseElV728('purchaseStatusV728');purchaseElV728('stockPurchaseV728').open=true;
@@ -55,7 +55,7 @@ function stockPurchaseCaptureV728(item,destination){
   if(stockPurchaseDraftV728.confirmed)throw Error('Esta compra já foi confirmada. Toque em Novo descarregamento.');
   if(!['m3','granel','m2','linear'].includes(item.tipoMedida))throw Error('Selecione uma unidade de compra válida.');
   const draft=purchaseReadFieldsV728();if(draft.stock&&draft.stock!==destination)throw Error('Confirme esta lista no estoque escolhido antes de trocar de estoque.');
-  const unitCents=financeCents(draft.unit.trim());
+  const unitCents=draft.operation==='opening'&&!draft.unit.trim()?null:financeCents(draft.unit.trim());
   const line={id:item.id,madeiraId:item.madeiraId,madeira:item.madeira,tipoMedida:item.tipoMedida,largura:Number(item.largura||0),espessura:Number(item.espessura||0),comprimento:Number(item.comprimento||0),quantidade:Number(item.quantidade||0),volume:purchasePhysicalQuantityV755(item),estadoMadeira:item.tipoMedida==='m3'&&$('chkMadeiraVerde')?.checked?'verde':'seca',unitCents};
   // Validate physical quantity and price now; supplier may be completed before confirmation.
   if(line.estadoMadeira==='verde')line.secagemDias=Number($('diasSecagemVerde')?.value||0);
@@ -72,7 +72,7 @@ async function purchaseRequestV728(payload){
  if(!purchaseOwnerV728())throw Error('A compra é exclusiva do responsável pela empresa.');
  if(!navigator.onLine)throw Error('Conecte-se à internet para confirmar. O rascunho foi preservado.');
  const user=authV456.currentUser;if(!user)throw Error('Entre novamente.');
- const response=await fetch('/.netlify/functions/company-stock-purchase',{method:'POST',headers:{Authorization:'Bearer '+await user.getIdToken(),'Content-Type':'application/json'},body:JSON.stringify(payload),signal:AbortSignal.timeout(30000)}),result=await response.json();
+ const response=await fetch('/.netlify/functions/'+(payload.operation==='opening'?'company-initial-stock':'company-stock-purchase'),{method:'POST',headers:{Authorization:'Bearer '+await user.getIdToken(),'Content-Type':'application/json'},body:JSON.stringify(payload),signal:AbortSignal.timeout(30000)}),result=await response.json();
  if(!response.ok){const error=Error(result.error||'Não foi possível confirmar o descarregamento.');error.status=response.status;throw error;}return result;
 }
 async function purchaseRefreshStockV728(receipt){
@@ -91,16 +91,16 @@ async function purchaseConfirmV728(){
  if(window.__v456Local.durable===false){status.textContent='Este navegador não está preservando o rascunho após fechar a página. Permita o armazenamento do site ou use uma janela normal antes de confirmar a compra.';return;}
  try{
   if(!navigator.onLine)throw Error('Conecte-se à internet para confirmar. O rascunho foi preservado.');
-  if(!stockPurchaseDraftV728.pending){const next=purchaseReadFieldsV728();payload=purchaseRawPayloadV728(next);if(purchaseElV728('purchasePayModeV757'))payload.payment=purchasePaymentInputV757(next,purchasePayloadV728(next,false).totalCents,next.date,true);purchaseStoreV728({...next,pending:payload});}else payload=stockPurchaseDraftV728.pending;
+  if(!stockPurchaseDraftV728.pending){const next=purchaseReadFieldsV728();payload=purchaseRawPayloadV728(next);if(next.operation==='opening')normalizeInitialStockV811(payload);if(next.operation!=='opening'&&purchaseElV728('purchasePayModeV757'))payload.payment=purchasePaymentInputV757(next,purchasePayloadV728(next,false).totalCents,next.date,true);purchaseStoreV728({...next,pending:payload});}else payload=stockPurchaseDraftV728.pending;
  }catch(e){status.textContent=e.message;return;}
- stockPurchaseBusyV728=true;purchaseRenderV728();status.textContent='Confirmando estoque e compra…';let submitted=false;
+ stockPurchaseBusyV728=true;purchaseRenderV728();status.textContent=payload.operation==='opening'?'Confirmando estoque inicial…':'Confirmando estoque e compra…';let submitted=false;
  try{
   await sincronizarOfflineOps();await waitForPendingWrites(db);
   if(temOperacoesPendentesV428(COL.estoque1)||temOperacoesPendentesV428(COL.estoque2)||temOperacoesPendentesV428(COL.movimentos))throw Error('Há registros aguardando sincronização. Preserve o rascunho e tente novamente depois.');
   submitted=true;const result=await purchaseRequestV728(payload);purchaseStoreV728({...stockPurchaseDraftV728,pending:null,confirmed:true});
   financeLoadedRangeV722=null;
-  status.textContent='Descarregamento confirmado: compra de '+finMoneyV722(result.receipt.totalCents)+' vinculada ao estoque e ao financeiro.';
-  try{await purchaseRefreshStockV728(result.receipt);}catch(e){status.textContent+=' '+e.message+' A compra já foi salva; não lance novamente.';}
+  status.textContent=payload.operation==='opening'?'Estoque inicial confirmado, sem compra, conta a pagar ou saída de caixa.':'Descarregamento confirmado: compra de '+finMoneyV722(result.receipt.totalCents)+' vinculada ao estoque e ao financeiro.';
+  try{await purchaseRefreshStockV728(result.receipt);}catch(e){status.textContent+=' '+e.message+' A entrada já foi salva; não lance novamente.';}
  }catch(e){
   if(!submitted||[400,403,413].includes(e.status))try{purchaseStoreV728({...stockPurchaseDraftV728,pending:null});}catch{}
   status.textContent=e.message+(stockPurchaseDraftV728.pending?' Use Conferir confirmação / tentar novamente. A identificação foi preservada para não duplicar.':' O rascunho foi preservado.');

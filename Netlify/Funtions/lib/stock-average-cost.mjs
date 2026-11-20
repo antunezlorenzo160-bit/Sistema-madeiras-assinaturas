@@ -1,10 +1,10 @@
 import {readOpeningStockCost} from './opening-stock-cost.mjs';
-import {purchaseRecordsPath} from './stock-purchase.mjs';
+import {purchaseRecordsPath,initialStockRecordsPathV811} from './stock-purchase.mjs';
 import {projectWeightedStockCosts} from '../../../public/stock-average-cost.mjs';
 const unavailable=reason=>Object.assign(new Map(),{unavailableReason:reason});
 export async function readWeightedStockCosts(db,empresaId,woodIds=null,openingPolicy=undefined){
  if(openingPolicy===undefined)openingPolicy=await readOpeningStockCost(db,empresaId);
- const purchasesSnap=await db.collection(purchaseRecordsPath(empresaId)).limit(1001).get();if(purchasesSnap.docs.length>1000)return unavailable('O histórico de compras ultrapassa o limite da conferência automática do custo.');
+ const [bought,initial]=await Promise.all([db.collection(purchaseRecordsPath(empresaId)).limit(1001).get(),db.collection(initialStockRecordsPathV811(empresaId)).limit(1001).get()]);const purchasesSnap={docs:[...bought.docs,...initial.docs]};if(purchasesSnap.docs.length>1000)return unavailable('O histórico de compras ultrapassa o limite da conferência automática do custo.');
  if(!purchasesSnap.docs.length&&openingPolicy.unitCents===null)return unavailable('Defina o custo do estoque antigo ou registre a compra dessa madeira para calcular o custo.');
  const rows=s=>s.docs.map(doc=>({...doc.data(),id:doc.id}));
  if(rows(purchasesSnap).some(receipt=>!Array.isArray(receipt.lines)))return unavailable('Há uma compra com dados incompletos para conferir o custo.');
