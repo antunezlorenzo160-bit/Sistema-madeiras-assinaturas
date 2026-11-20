@@ -5,7 +5,7 @@ function setup(storage=new Map()){
  const nodes={},calls=[];let send=async()=>{throw Error('Resposta perdida');},refresh=0;
  const node=id=>nodes[id]||(nodes[id]={id,value:'',dataset:{},innerHTML:'',textContent:'',querySelectorAll:()=>[],addEventListener(){}});
  const c={Date,crypto:{randomUUID},normalizeSaleReceiptV807,saleReceivedCentsV807,purchasePaymentCentsV758,finElV722:node,document:{getElementById:node},finOwnerV722:()=>true,empresaV456:'tenant',window:{__v456Local:{durable:true,getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)}},navigator:{onLine:true},confirm:()=>true,setTimeout(){},esc:String,stockChartLabelV720:String,finMoneyV722:n=>'R$'+(n/100).toFixed(2),financeLoadedRangeV722:{},cashLoadV759:async()=>{refresh++;},financeRequestV722:async(payload,range,endpoint)=>{calls.push({payload,range,endpoint});return send(payload,range);}};
- vm.createContext(c);vm.runInContext(source,c);c.saleFixture=sale;vm.runInContext("saleReceiptAccountsStateV807={empresaId:'tenant',canWrite:true,report:{rows:[saleFixture]}}",c);
+ vm.createContext(c);vm.runInContext(readFileSync(new URL('../ui/purchase-payments.js',import.meta.url),'utf8').slice(readFileSync(new URL('../ui/purchase-payments.js',import.meta.url),'utf8').indexOf('function paymentEntryTodayV810'))+'\n'+source,c);c.saleFixture=sale;vm.runInContext("saleReceiptAccountsStateV807={empresaId:'tenant',canWrite:true,report:{rows:[saleFixture]}}",c);
  return {c,nodes,node,storage,calls,get refresh(){return refresh;},setSend:fn=>send=fn};
 }
 test('receipt condition does not presume received sales; credit keeps amount out of cash',()=>{
@@ -24,4 +24,8 @@ test('offline or insufficient local storage does not submit, and late reply cann
 test('receipt submission identifies the original sale and requires confirmation against duplicate manual cash entries',async()=>{
  const s=setup();s.node('entryReceipt'+id+'ModeV757').value='cash';s.node('entryReceipt'+id+'DateV757').value='2026-11-20';
  const root={dataset:{saleReceiptEntry:id}},button={closest:()=>root,hasAttribute:key=>key==='data-sale-receipt-initialize'};s.c.confirm=()=>false;await s.c.saleReceiptPaymentActionV807(button);assert.equal(s.calls.length,0);s.c.confirm=()=>true;await s.c.saleReceiptPaymentActionV807(button);const p=s.calls[0].payload;assert.equal(p.entryId,id);assert.equal(p.signature,sale.receiptSignature);assert.equal(p.acknowledged,true);assert.equal(p.payment.paidCents,5200000);
+});
+
+test('old unconfirmed sales default receipt date to today and never fall back to sale date when cleared',()=>{
+ const s=setup();s.c.Date=class extends Date{constructor(...args){super(...(args.length?args:['2026-11-20T12:00:00Z']));}};s.c.report=saleAccountsV807([sale],{from:'2026-11-01',to:'2026-11-20'});vm.runInContext('saleReceiptAccountsStateV807.report=report',s.c);s.c.saleReceiptAccountsRenderV807();assert.equal(s.node('entryReceipt'+id+'DateV757').value,'2026-11-20');assert.throws(()=>s.c.saleReceiptPaymentInputV807({paymentMode:'cash',paymentDate:''},5200000,'2026-11-10',true),/data/);
 });

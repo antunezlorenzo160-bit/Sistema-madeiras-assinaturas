@@ -28,3 +28,10 @@ test('Brazilian currency grouping is accepted; malformed separators show a local
  s.c.purchasePaymentUseBalanceV758(button);assert.equal(field.value,'1575,57');assert.equal(s.calls.length,0,'prefill never posts a payment');assert.match(local.textContent,/Confira a data/);
  await s.c.purchasePaymentActionV757(button);assert.equal(s.calls[0].amountCents,157557);assert.equal(s.calls[0].date,'2026-11-14');
 });
+
+test('old pending purchases default to today and retain manually chosen payment dates',()=>{
+ const s=setup(),fields={},today='2026-11-20';s.c.Date=class extends Date{constructor(...args){super(...(args.length?args:['2026-11-20T12:00:00Z']));}};s.c.esc=String;s.c.stockChartLabelV720=String;s.c.finMoneyV722=String;s.c.document.getElementById=id=>fields[id]||(fields[id]={value:'',hidden:false});s.nodes.finPurchasePaymentRowsV757.querySelectorAll=()=>[];
+ s.c.fixture={canWrite:true,report:{rows:[{id,date:'2026-10-01',status:'active',amountCents:10000,paymentUnknown:true}],to:today,paidInPeriodCents:0,payableCents:0,overdueCents:0}};vm.runInContext('purchaseAccountsStateV757=fixture',s.c);s.c.purchaseAccountsRenderV757();assert.equal(fields['entryPay'+id+'DateV757'].value,today);
+ const manual=s.c.purchasePaymentInputV757({paymentMode:'cash',paymentDate:'2026-11-14'},10000,'2026-10-01',true);assert.equal(manual.paidDate,'2026-11-14');assert.match(s.c.paymentSavedMessageV810({action:'pay',date:'2026-11-14'}),/14\/11\/2026/);
+});
+test('successful payment refreshes cash and reports the date that was actually saved',async()=>{const s=setup();let refresh=0;s.c.cashLoadV759=async()=>refresh++;s.setSend(async()=>({entry:{id}}));await s.c.purchasePaymentSendV757(payload);assert.equal(refresh,1);assert.match(s.nodes.finPurchasePaymentsStatusV757.textContent,/14\/11\/2026/);});
