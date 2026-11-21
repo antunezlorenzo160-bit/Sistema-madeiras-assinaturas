@@ -145,7 +145,19 @@
  #reportsViewBarV812 [hidden]{display:none!important}
 }
 @media screen and (max-width:760px){
- body>header>#reportsViewBarV812.reports-docked-v812{width:100%!important;max-width:none!important;margin:7px 0 0!important;padding-top:7px;border-top:1px solid var(--line);box-sizing:border-box}
- body>header>#reportsViewBarV812.reports-docked-v812>button{min-height:38px!important}
+ body>header>#reportsDockV815.reports-docked-v812{width:100%!important;max-width:none!important;margin:7px 0 0!important;padding-top:7px;border-top:1px solid var(--line);box-sizing:border-box}
+ body>header>#reportsDockV815.reports-docked-v812 #reportsViewBarV812>button{min-height:38px!important}
 }
 @media print{#reportsViewBarV812{display:none!important}}
+
+/* V815: title travels with the selectors; labels have a lighter weight and tone. */
+@media screen{
+ #reportsDockV815{max-width:640px;margin:4px 0 10px}
+ #reportsDockV815>h2{font-size:18px;line-height:1.25;margin:0 0 6px;font-weight:600}
+ html body #reportsViewBarV812>button{font-weight:500!important;text-shadow:none!important;color:var(--muted,#bcc9c1)!important}
+ html body #reportsViewBarV812>button[aria-pressed="true"]{color:#314033!important}
+}
+@media screen and (max-width:760px){
+ body>header>#reportsDockV815.reports-docked-v812>h2{font-size:16px;margin:0 0 6px}
+ body>header>#reportsDockV815.reports-docked-v812 #reportsViewBarV812{margin:0!important}
+}
