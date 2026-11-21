@@ -23,7 +23,7 @@ setTimeout(mountReportsV722,0);
 
 // Use the existing fixed header and mobile content scroller, without per-scroll work.
 function mountReportsDockV812(section){
- const bar=document.getElementById('reportsViewBarV812'),header=document.querySelector('body>header');
+ const bar=document.getElementById('reportsViewBarV812'),header=document.querySelector('header .tabs')?.closest('header')||document.querySelector('body>header,#homeShellV492>header');
  if(!bar||!header||typeof window.matchMedia!=='function')return ()=>{};
  const home=bar.parentNode,anchor=bar.nextSibling,media=window.matchMedia('(max-width:760px)');
  const update=()=>{
