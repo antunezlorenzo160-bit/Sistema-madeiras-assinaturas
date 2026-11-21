@@ -96,3 +96,26 @@ async function tripStartFromListV742(){
  }catch(e){if(note)note.textContent=e.message+' A seleção foi preservada.';}finally{s.busy=false;tripFieldsV741();tripSelectionViewV742();}
 }
 Object.assign(window,{tripSetSelectionV742,tripListCheckboxV742,tripHandleLoadClickV742,tripStartFromListV742,tripLoadToolbarV742,tripLoadSelectorV742});
+
+// V817: move the existing trip buttons, preserving their handlers and selection state.
+function mountTripToolbarDockV817(){
+ const section=document.getElementById('carregamentos');
+ if(!section||typeof window.matchMedia!=='function'||document.getElementById('tripToolbarDockV817'))return;
+ const header=document.querySelector('header .tabs')?.closest('header')||document.querySelector('body>header,#homeShellV492>header');if(!header)return;
+ const dock=document.createElement('div');dock.id='tripToolbarDockV817';dock.className='no-print';dock.hidden=true;header.appendChild(dock);
+ const media=window.matchMedia('(max-width:760px)');let source=null,buttons=null;
+ const update=()=>{
+  const toolbar=section.querySelector('.trip-toolbar-v742'),active=media.matches&&section.classList.contains('active')&&!section.hidden&&finOwnerV722();
+  if(active&&toolbar){
+   if(source!==toolbar){dock.replaceChildren();source=toolbar;buttons=null;}
+   const fresh=toolbar.querySelector(':scope>.fin-actions');if(fresh){dock.replaceChildren(fresh);buttons=fresh;tripSelectionViewV742();}
+   dock.hidden=!buttons;
+  }else{
+   if(buttons&&source&&section.contains(source))source.insertBefore(buttons,source.firstChild);else dock.replaceChildren();
+   source=null;buttons=null;dock.hidden=true;
+  }
+  const show=!dock.hidden;if(document.body.classList.contains('trip-toolbar-fixed-v817')!==show)document.body.classList.toggle('trip-toolbar-fixed-v817',show);
+ };
+ const observer=new MutationObserver(update);observer.observe(section,{childList:true,subtree:true,attributes:true,attributeFilter:['class','hidden']});media.addEventListener?.('change',update);update();
+}
+setTimeout(mountTripToolbarDockV817,0);

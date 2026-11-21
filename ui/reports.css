@@ -161,3 +161,14 @@
  body>header>#reportsDockV815.reports-docked-v812>h2{font-size:16px;margin:0 0 6px}
  body>header>#reportsDockV815.reports-docked-v812 #reportsViewBarV812{margin:0!important}
 }
+
+/* V817: trip creation and saved trips stay with the mobile load header. */
+#tripToolbarDockV817[hidden]{display:none!important}
+@media screen and (max-width:760px){
+ #tripToolbarDockV817{margin-top:7px;padding-top:7px;border-top:1px solid var(--line);width:100%;box-sizing:border-box}
+ #tripToolbarDockV817>.fin-actions{display:flex;flex-wrap:nowrap;gap:7px;margin:0}
+ html body #tripToolbarDockV817 button{flex:1 1 0;min-width:0;min-height:40px;margin:0;padding:7px 8px;font-size:12px;line-height:1.2;font-weight:500;text-shadow:none;white-space:normal}
+ #tripToolbarDockV817 [hidden]{display:none!important}
+ body.trip-toolbar-fixed-v817 #carregamentos .trip-toolbar-v742{padding:0;border:0;margin:0}
+}
+@media print{#tripToolbarDockV817{display:none!important}}
