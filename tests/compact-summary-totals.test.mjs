@@ -1,0 +1,22 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {paginateCompactGroups} from '../public/compact-load-tables.mjs';import {renderCompactPages} from '../public/compact-documents.mjs';
+class Element{constructor(tag){this.tag=tag;this.children=[];this.dataset={};this.textContent='';}append(child){this.children.push(child);}insertRow(){const row=new Element('tr');row.insertCell=()=>{const cell=new Element('td');row.append(cell);return cell;};this.append(row);return row;}createTHead(){const head=new Element('thead');this.append(head);return head;}createTBody(){const body=new Element('tbody');this.append(body);return body;}}
+const doc={createElement:tag=>new Element(tag)};
+function all(node,tag){return [...(node.tag===tag?[node]:[]),...node.children.flatMap(child=>all(child,tag))];}
+test('last line of each group retains its supplied total once, including continuation over two columns and pages',()=>{
+ const groups=[{name:'Itaúba — Esp. 2,5 cm',header:['Pç.','Esp.','Larg.','Comp.','Volume'],rows:Array.from({length:80},(_,i)=>[String(i),'2,5 cm','12 cm','3,5 m','0,0210 m³']),footer:{label:'Volume total',value:'1,6800 m³'}},{name:'Itaúba — Esp. 5 cm',header:['Pç.','Esp.','Larg.','Comp.','Volume'],rows:[['2','5 cm','12 cm','4 m','0,0480 m³']],footer:{label:'Volume total',value:'0,0480 m³'}}];
+ const before=JSON.stringify(groups),pages=paginateCompactGroups(groups,12);assert.equal(pages.flat(2).filter(g=>g.finalFragment).length,2);assert.deepEqual(pages.flat(2).flatMap(g=>g.rows),groups.flatMap(g=>g.rows));
+ const tree=renderCompactPages(doc,groups,12),feet=all(tree,'tfoot');assert.equal(feet.length,2);assert.deepEqual(feet.map(foot=>foot.children[0].children[1].textContent),['1,6800 m³','0,0480 m³']);assert.equal(feet[0].children[0].children[0].colSpan,4);assert.equal(JSON.stringify(groups),before);
+});
+
+import {compactPrintClone} from '../public/compact-documents.mjs';
+test('calculator PDF keeps items together and moves saved length, thickness and species totals to the lower text',()=>{
+ const row=(kind,text,cells=[])=>({textContent:text,cells:cells.map(text=>({textContent:text,classList:{contains:()=>false}})),classList:{contains:name=>name===kind}});
+ let pages;const originalRows=[row('grupo-especie-titulo','Itaúba — Esp. 2,5 cm • Comp. 3,5 m'),row('grupo-especie-head','',['Pç.','Esp.','Larg.','Comp.','Volume']),row('linha-excluir-pecas','',['12pç','2,5 cm','12 cm','3,5 m','0,7000 m³']),row('resumo-total-bloco-v597','Volume total do bloco: 0,7000 m³'),row('grupo-especie-titulo','Itaúba — Esp. 2,5 cm • Comp. 4 m'),row('grupo-especie-head','',['Pç.','Esp.','Larg.','Comp.','Volume']),row('linha-excluir-pecas','',['1pç','2,5 cm','12 cm','4 m','0,0954 m³']),row('resumo-total-bloco-v597','Volume total do bloco: 0,0955 m³'),row('resumo-total-espessura','Itaúba — Volume total por espessura (2,5 cm): 0,7955 m³')];
+ const body={rows:originalRows,closest:()=>({replaceWith:node=>pages=node})},root={dataset:{},classList:{add(){}},ownerDocument:doc,querySelector:selector=>selector==='#tbLancamentos'?body:null,querySelectorAll:selector=>selector==='#resumoPorEspecieCalcV581 .stat'?[{querySelector:tag=>({textContent:tag==='small'?'Itaúba':'0,7955 m³ · 13 pç'})}]:[]};
+ compactPrintClone(root);assert.equal(all(pages,'tfoot').length,0);assert.equal(all(pages,'thead').length,1);const text=all(pages,'p').map(p=>p.textContent);assert(text.includes('Itaúba — 2,5 cm × 3,5 m: 0,7000 m³'));assert(text.includes('Itaúba — 2,5 cm × 4 m: 0,0955 m³'));assert(text.some(t=>t.includes('Total da espessura (2,5 cm): 0,7955 m³')));assert(text.includes('Itaúba — Total da espécie: 0,7955 m³'));assert.equal(all(pages,'h3')[0].textContent,'Itaúba');assert.equal(all(pages,'tbody').flatMap(b=>b.children).length,2);assert.equal(body.rows.length,originalRows.length);
+});
+
+test('length subtotal and thickness total stay together at the last continuation without duplication',()=>{
+ const group={name:'Itaúba — Esp. 2,5 cm • Comp. 3,5 m',header:['Pç.','Medidas','Volume'],rows:Array.from({length:80},(_,i)=>[String(i),'2,5 × 12','0,0210 m³']),footer:{label:'Subtotal — 3,5 m',value:'1,6800 m³'},extraFooter:{label:'Volume total da espessura',value:'2,0000 m³'}};
+ const tree=renderCompactPages(doc,[group],12),feet=all(tree,'tfoot');assert.equal(feet.length,1);assert.equal(feet[0].children.length,2);assert.deepEqual(feet[0].children.map(row=>row.children[1].textContent),['1,6800 m³','2,0000 m³']);assert.equal(all(tree,'tbody').flatMap(body=>body.children).length,80);
+});

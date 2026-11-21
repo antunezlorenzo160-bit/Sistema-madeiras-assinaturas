@@ -17,7 +17,7 @@ const app=JSON.parse(html.slice(start,end));
 function setup(){
   const targets=[],snapshots=new Map();let scheduled=0;
   const COL={madeiras:'madeiras',estoque1:'est1',estoque2:'est2',cargas:'cargas',movimentos:'movimentos',orcamento:'orcamento',orcamentosGuardados:'pedidos',servicos:'servicos',syncTest:'teste'};
-  const context=vm.createContext({COL,db:{},window:{addEventListener(){}},document:{hidden:false,addEventListener(){},getElementById:()=>null},
+  const context=vm.createContext({queueStockChartsV720(){},acessoPlanoAtual:()=>({read:true}),parent:{__smEmployeeCollectionCan:()=>true},COL,db:{},window:{addEventListener(){}},document:{hidden:false,addEventListener(){},getElementById:()=>null},
     observadoresBloqueadosV429:false,conexaoOnline:()=>true,cancelamentosV428:[],sessaoSyncV428:0,confirmacoesPendentesV700:new Set(),
     dadosEscutadosV428:snapshots,cadastroSyncRodando:false,reprocessarV428:false,agendamentoV428:null,
     setTimeout:()=>{scheduled++;return 1;},sincronizarSomenteCadastros(){},atualizarStatusSync(){},setBootStep(){},console,

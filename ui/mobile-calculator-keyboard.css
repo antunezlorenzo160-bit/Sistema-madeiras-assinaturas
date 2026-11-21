@@ -1,0 +1,18 @@
+@media screen and (max-width:760px) and (pointer:coarse){
+ html body.calc-fixa-v478.calc-mobile-v733{
+  position:relative!important;top:var(--calc-visible-top-v733,0px)!important;
+  display:flex!important;flex-direction:column!important;
+  height:var(--calc-visible-height-v733,100dvh)!important;max-height:var(--calc-visible-height-v733,100dvh)!important;
+  min-height:0!important;overflow:hidden!important;
+ }
+ html body.calc-fixa-v478.calc-mobile-v733>header{position:relative!important;top:auto!important;flex:0 0 auto!important}
+ html body.calc-fixa-v478.calc-mobile-v733>main{
+  flex:1 1 0!important;min-height:0!important;height:auto!important;max-height:none!important;
+  overflow-y:auto!important;overflow-x:hidden!important;touch-action:pan-y pinch-zoom!important;
+  overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;
+  padding-bottom:max(28px,env(safe-area-inset-bottom,0px))!important;
+ }
+ html body.calc-fixa-v478.calc-mobile-v733 #pcSplitWorkspace,
+ html body.calc-fixa-v478.calc-mobile-v733 #pcSplitCampos{min-height:0!important;height:auto!important;max-height:none!important;overflow:visible!important}
+ html body.calc-fixa-v478.calc-mobile-v733 #calculadora input{scroll-margin-block:12px}
+}

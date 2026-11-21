@@ -1,0 +1,8 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {sheetItemTotals} from '../public/sheet-item-totals.mjs';
+test('combines lengths at the end by species/thickness and preserves decimal thickness',()=>{
+ const items=[Object.freeze({madeira:'Angelim',tipoMedida:'m3',espessura:2.5,largura:15,comprimento:3,quantidade:8,volume:.09}),Object.freeze({madeira:'Angelim',tipoMedida:'m3',espessura:2.5,largura:25,comprimento:4,quantidade:3,volume:.075})];const before=JSON.stringify(items);const [g]=sheetItemTotals(items);assert.equal(g.quantity,11);assert(Math.abs(g.volume-.165)<1e-12);assert.match(g.title,/2,5 cm/);assert(Math.abs(g.face-6.6)<1e-12);assert.equal(g.linear,36);assert.match(g.text,/Peso: não informado/);assert(!g.text.includes('R$'));assert.equal(JSON.stringify(items),before);
+});
+test('unit groups stay separate; known weights and material/services are retained only in the requested financial view',()=>{
+ const items=[{madeira:'A',tipoMedida:'m3',espessura:5,volume:1,quantidade:2,preco:10,valorMaterial:100,valorEndireitamento:10,valorAplainamento:5,pesoReferenciaV420:{kgM3:700}},{madeira:'A',tipoMedida:'m2',volume:2,quantidade:4,comprimento:3,valor:30},{madeira:'A',tipoMedida:'linear',produto:'Rodapé',volume:5,quantidade:1,comprimento:5,valor:20},{madeira:'Cavaco',tipoMedida:'granel',volume:3,quantidade:3,valor:15}];
+ const groups=sheetItemTotals(items,true);assert.equal(groups.length,4);assert.equal(groups[0].weight,700);assert.equal(groups[0].value,115);assert.match(groups[0].text,/Valor: R\$ 115,00/);assert.equal(groups[1].unit,'m²');assert.equal(groups[2].unit,'m');assert.match(groups[3].text,/A granel/);assert(!groups[3].text.includes('3 pç'));
+});

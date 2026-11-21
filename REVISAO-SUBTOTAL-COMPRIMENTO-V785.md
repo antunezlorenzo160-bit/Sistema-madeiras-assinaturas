@@ -1,0 +1,5 @@
+## Subtotal por comprimento no PDF V785 — 17/11
+
+Usuário esclareceu que quer total por comprimento também. Resumo compacto agora conserva o comprimento no agrupamento (espécie/espessura/comprimento) e extrai o subtotal já calculado na linha resumo-total-bloco-v597. Cada tabela termina com Subtotal — comprimento. A última tabela da mesma espessura mostra também Volume total da espessura. Ordem dos itens, valores e total global preservados; não soma números arredondados novamente.
+
+Paginador reserva até duas linhas finais e mostra subtotais/total de espessura uma única vez no último fragmento, preservando duas colunas e continuação. Demais documentos sem extraFooter mantêm formato anterior.4suítes passaram (totais do resumo, tabelas compactas, impressão e UI de pedidos), build38scripts válidos. Integração cobre dois comprimentos com totais fonte0,7000+0,0955=0,7955 e80linhas continuadas sem repetir totais. Sem navegador nativo/Android ou alteração de dados/estoque/preços; somente prévia12, produção inalterada.
