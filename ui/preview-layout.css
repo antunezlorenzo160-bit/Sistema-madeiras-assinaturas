@@ -264,3 +264,12 @@
 #logLabourV804 input,#logLabourV804 select{max-width:100%;box-sizing:border-box}
 #llHistoryV804>details{padding:10px;margin-top:10px;border:1px solid var(--line);border-radius:8px}
 #llHistoryV804 button{margin:6px 6px 0 0;white-space:normal}
+
+/* V816: current budget/order/history title stays beside Home on mobile. */
+#orderPanelTitleV816{display:none}
+@media screen and (max-width:760px){
+ html body.order-title-fixed-v816 header .tabs #orderPanelTitleV816{display:block!important;flex:1 1 auto!important;min-width:0!important;font-size:16px!important;line-height:1.2!important;font-weight:600!important;margin:0 0 0 8px!important;padding:0!important;color:var(--text)!important;white-space:normal!important;text-shadow:none!important}
+ body.order-title-fixed-v816 .order-original-heading-v816,body.orcamento-topo-v496.pedidos-visiveis-v504.order-title-fixed-v816 #pedidosTituloV504{display:none!important}
+}
+#orderPanelTitleV816[hidden]{display:none!important}
+@media print{#orderPanelTitleV816{display:none!important}}
