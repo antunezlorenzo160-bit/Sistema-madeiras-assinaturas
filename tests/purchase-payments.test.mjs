@@ -1,3 +1,4 @@
+import {randomUUID} from 'node:crypto';
 import test from 'node:test';import assert from 'node:assert/strict';
 import {normalizePurchasePaymentV757,purchaseSettlementV757,purchaseAccountsV757} from '../public/purchase-payments.mjs';
 import {savePurchasePayment,listPurchaseAccounts} from '../Netlify/Funtions/lib/purchase-payments.mjs';
@@ -53,4 +54,11 @@ test('third payment closes the exact reported balance and retry never records a 
  const third={...second,revision:3,operationId:'931b625b-64d5-43bf-865e-d1bdf159f021',amountCents:157557},result=await savePurchasePayment(s.db,s.identity,third,now),report=purchaseAccountsV757([result.entry],{from:'2026-11-14',to:'2026-11-14'});
  assert.equal(result.entry.settlement.payments.length,3);assert.equal(report.paidInPeriodCents,467557);assert.equal(report.payableCents,0);assert.equal(report.rows[0].paidCents,467557);const writes=s.writes.length;await savePurchasePayment(s.db,s.identity,third,now);assert.equal(s.writes.length,writes);
  await assert.rejects(()=>savePurchasePayment(s.db,s.identity,{...third,revision:4,operationId:'a3b1ea61-b24a-4594-8892-05db7b0178e7',amountCents:1},now),/restante/);
+});
+
+test('period payment details reconcile the total across older purchases, instalments and cancelled purchases',()=>{
+ const payment=(date,amountCents,extra={})=>({id:randomUUID(),date,amountCents,...extra});
+ const entries=[{id:'planalto',type:'purchase',status:'active',partner:'Planalto',date:'2026-11-20',amountCents:2559600,settlement:{payments:[payment('2026-11-22',2559600)]}},{id:'old',type:'purchase',status:'cancelled',partner:'Anterior',date:'2026-10-01',amountCents:996827,settlement:{payments:[payment('2026-11-22',996777),payment('2026-11-21',50),payment('2026-11-22',100,{voidedAt:'x'})]}}];
+ const r=purchaseAccountsV757(entries,{from:'2026-11-22',to:'2026-11-22'});
+ assert.equal(r.paidInPeriodCents,3556377);assert.equal(r.paymentsInPeriodV820.length,2);assert.equal(r.paymentsInPeriodV820.reduce((n,p)=>n+p.amountCents,0),r.paidInPeriodCents);assert.equal(r.paymentsInPeriodV820[0].partner,'Anterior');assert.equal(r.paymentsInPeriodV820[0].cancelled,true);assert.equal(r.paymentsInPeriodV820[1].purchaseDate,'2026-11-20');
 });

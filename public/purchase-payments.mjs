@@ -29,11 +29,11 @@ export function purchasePaidCentsV757(entry,to='9999-12-31'){
 export function purchaseAccountsV757(entries,{from,to}){
  if(!paymentDateV757(from)||!paymentDateV757(to)||from>to)throw Error('Confira o período dos pagamentos.');
  let paidInPeriodCents=0,payableCents=0,overdueCents=0,unknownCount=0,cancelledPaidCents=0;
- const rows=[];
+ const rows=[],paymentsInPeriodV820=[];
  for(const entry of entries){
   if(entry.type!=='purchase')continue;
   const paid=purchasePaidCentsV757(entry,to);
-  for(const payment of entry.settlement?.payments||[])if(!payment.voidedAt&&payment.date>=from&&payment.date<=to)paidInPeriodCents+=payment.amountCents;
+  for(const payment of entry.settlement?.payments||[])if(!payment.voidedAt&&payment.date>=from&&payment.date<=to){paidInPeriodCents+=payment.amountCents;paymentsInPeriodV820.push({entryId:entry.id,paymentId:payment.id,partner:entry.partner||entry.description||'Compra sem fornecedor',purchaseDate:entry.date,date:payment.date,amountCents:payment.amountCents,cancelled:entry.status==='cancelled'});}
   if(entry.date>to)continue;
   if(entry.status==='cancelled'){cancelledPaidCents+=paid;if(paid)rows.push({...entry,paidCents:paid,payableCents:0,paymentUnknown:false});continue;}
   if(entry.status!=='active')continue;
@@ -42,5 +42,5 @@ export function purchaseAccountsV757(entries,{from,to}){
   rows.push({...entry,paidCents:unknown?null:paid,payableCents:remaining,paymentUnknown:unknown});
  }
  for(const value of [paidInPeriodCents,payableCents,overdueCents,cancelledPaidCents])if(!Number.isSafeInteger(value))throw Error('Limite do relatório de pagamentos atingido.');
- return {from,to,paidInPeriodCents,payableCents,overdueCents,unknownCount,cancelledPaidCents,rows:rows.sort((a,b)=>(a.settlement?.dueDate||a.date).localeCompare(b.settlement?.dueDate||b.date))};
+ return {from,to,paymentsInPeriodV820:paymentsInPeriodV820.sort((a,b)=>a.date.localeCompare(b.date)||a.partner.localeCompare(b.partner)),paidInPeriodCents,payableCents,overdueCents,unknownCount,cancelledPaidCents,rows:rows.sort((a,b)=>(a.settlement?.dueDate||a.date).localeCompare(b.settlement?.dueDate||b.date))};
 }

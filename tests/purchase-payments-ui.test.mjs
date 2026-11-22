@@ -35,3 +35,9 @@ test('old pending purchases default to today and retain manually chosen payment 
  const manual=s.c.purchasePaymentInputV757({paymentMode:'cash',paymentDate:'2026-11-14'},10000,'2026-10-01',true);assert.equal(manual.paidDate,'2026-11-14');assert.match(s.c.paymentSavedMessageV810({action:'pay',date:'2026-11-14'}),/14\/11\/2026/);
 });
 test('successful payment refreshes cash and reports the date that was actually saved',async()=>{const s=setup();let refresh=0;s.c.cashLoadV759=async()=>refresh++;s.setSend(async()=>({entry:{id}}));await s.c.purchasePaymentSendV757(payload);assert.equal(refresh,1);assert.match(s.nodes.finPurchasePaymentsStatusV757.textContent,/14\/11\/2026/);});
+
+test('payment breakdown displays supplier, payment and purchase dates and the reconciled total',()=>{
+ const s=setup();s.c.esc=x=>String(x).replaceAll('<','&lt;');s.c.stockChartLabelV720=String;s.c.finMoneyV722=String;s.nodes.finPurchasePaymentRowsV757.querySelectorAll=()=>[];
+ s.c.fixture={canWrite:false,report:{from:'2026-11-22',to:'2026-11-22',rows:[],paidInPeriodCents:3556377,payableCents:0,overdueCents:0,paymentsInPeriodV820:[{partner:'<Planalto>',date:'2026-11-22',purchaseDate:'2026-11-20',amountCents:2559600},{partner:'Anterior',date:'2026-11-22',purchaseDate:'2026-10-01',amountCents:996777}]}};
+ vm.runInContext('purchaseAccountsStateV757=fixture',s.c);s.c.purchaseAccountsRenderV757();const html=s.nodes.finPurchasePaymentTotalsV757.innerHTML;assert.match(html,/&lt;Planalto>/);assert.match(html,/Pago em 2026-11-22/);assert.match(html,/Compra de 2026-10-01/);assert.match(html,/Total pago: 3556377/);assert.equal(s.calls.length,0);
+});
