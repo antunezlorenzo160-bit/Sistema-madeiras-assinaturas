@@ -29,6 +29,7 @@ function stockPurchaseVisibilityV728(){
  if(!node.hidden&&!stockPurchaseDraftV728){purchaseMountV728();return;}
  if(!node.hidden&&stockPurchaseDraftV728?.pending)node.open=true;
  purchaseUnitLabelV755();
+ purchaseVolumePreviewV818();
 }
 function purchaseRenderV728(){
  const draft=stockPurchaseDraftV728;if(!draft)return;const opening=draft.operation==='opening';for(const node of purchaseElV728('stockPurchaseV728').querySelectorAll('[data-purchase-only-v811]'))node.hidden=opening;for(const id of ['purchaseOpeningNoteV811','purchaseOpeningAckLabelV811']){const n=purchaseElV728(id);if(n)n.hidden=!opening;}purchaseUnitLabelV755();
@@ -45,6 +46,7 @@ function purchaseRenderV728(){
  purchaseElV728('purchaseConfirmV728').disabled=stockPurchaseBusyV728||draft.confirmed||!draft.lines.length||window.__v456Local.durable===false;
  purchaseElV728('purchaseConfirmV728').textContent=draft.pending?'Conferir confirmação / tentar novamente':(opening?'Confirmar estoque inicial':'Confirmar descarregamento e compra');
  purchaseElV728('purchaseNewV728').disabled=stockPurchaseBusyV728||!!draft.pending;
+ if(!purchaseVolumePreviewV818()&&purchaseBaseVolumeV818)purchaseBaseVolumeV818();
 }
 function purchaseFillV728(){const d=stockPurchaseDraftV728;for(const [id,key] of [['purchaseSupplierV728','supplier'],['purchaseDateV728','date'],['purchaseReferenceV728','reference'],['purchaseUnitV728','unit'],['purchaseFreightV728','freight'],['purchaseOtherV728','other']])purchaseElV728(id).value=d[key]||'';for(const [id,key] of [['purchaseEnabledV728','enabled'],['purchaseFreightIncludedV728','freightIncluded'],['purchaseOtherIncludedV728','otherIncluded']])purchaseElV728(id).checked=d[key]===true;if(purchaseElV728('purchaseOperationV811'))purchaseElV728('purchaseOperationV811').value=d.operation||'purchase';if(purchaseElV728('purchaseOpeningAckV811'))purchaseElV728('purchaseOpeningAckV811').checked=d.acknowledged===true;purchasePaymentFillV757('purchasePay',d);purchaseRenderV728();}
 function stockPurchaseCaptureV728(item,destination){
@@ -121,3 +123,13 @@ function purchaseMountV728(){
  if(stockPurchaseDraftV728.pending)purchaseElV728('purchaseStatusV728').textContent='Há uma confirmação pendente. Use Conferir confirmação / tentar novamente; não lance a compra outra vez.';
 }
 setTimeout(purchaseMountV728,0);
+
+// V818: purchase/initial-inventory drafts are separate from normal calculator launches.
+function purchaseVolumePreviewV818(){
+ const draft=stockPurchaseDraftV728,output=purchaseElV728('sumVolumeTopo');
+ if(!output||!draft?.enabled||!purchaseOwnerV728()||!purchaseElV728('purchaseEnabledV728')?.checked||!['estoque1','estoque2'].includes(destinoSelecionado())||draft.stock&&draft.stock!==destinoSelecionado()||!['m3','m2','linear','granel'].includes(modoMedida))return false;
+ let units=0n;for(const line of draft.lines||[]){if(line.tipoMedida!==modoMedida)continue;const value=Number(line.volume),part=Math.round(value*1e9);if(!Number.isFinite(value)||value<0||!Number.isSafeInteger(part))return false;units+=BigInt(part);}
+ const total=Number(units)/1e9,text=modoMedida==='m2'?num2(total)+' m²':modoMedida==='linear'?num2(total)+' m':num4(total)+' m³';if(output.textContent!==text)output.textContent=text;return true;
+}
+const purchaseBaseVolumeV818=typeof atualizarVolumeAntesLancamento==='function'?atualizarVolumeAntesLancamento:null;
+if(purchaseBaseVolumeV818)atualizarVolumeAntesLancamento=function(){if(!purchaseVolumePreviewV818())purchaseBaseVolumeV818();};
