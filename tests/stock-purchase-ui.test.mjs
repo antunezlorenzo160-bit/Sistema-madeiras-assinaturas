@@ -98,3 +98,18 @@ test('purchase volume in the calculator tracks added and removed draft pieces wi
 test('draft volume respects the active measurement unit and does not leak to other destinations',()=>{
  const s=setup();s.nodes.sumVolumeTopo={textContent:'',dataset:{}};s.c.stockPurchaseCaptureV728(item(),'estoque1');s.c.modoMedida='m2';s.c.atualizarVolumeAntesLancamento();assert.equal(s.nodes.sumVolumeTopo.textContent,'0.00 m²');s.nodes.purchaseUnitV728.value='500';s.c.stockPurchaseCaptureV728({...item(),tipoMedida:'m2',largura:10,espessura:0,comprimento:3,quantidade:6,volume:1.8},'estoque1');assert.equal(s.nodes.sumVolumeTopo.textContent,'1.80 m²');s.c.destinoSelecionado=()=> 'carga';s.c.atualizarVolumeAntesLancamento();assert.equal(s.nodes.sumVolumeTopo.textContent,'normal');
 });
+
+test('purchase date follows local today across midnight until manually chosen; locked receipts keep original date',()=>{
+ const s=setup(),key='stock_purchase_v728:tenant';
+ class Clock extends Date {constructor(...args){super(...(args.length?args:['2026-11-22T12:00:00']));}}
+ s.c.Date=Clock;
+ s.c.stockPurchaseVisibilityV728();assert.equal(s.nodes.purchaseDateV728.value,'2026-11-22');
+ s.c.stockPurchaseCaptureV728(item(),'estoque1');assert.equal(JSON.parse(s.storage.get(key)).date,'2026-11-22');
+ s.nodes.purchaseDateV728.value='2026-11-20';s.nodes.purchaseDateV728.handlers.change();
+ s.c.stockPurchaseVisibilityV728();assert.equal(s.nodes.purchaseDateV728.value,'2026-11-20');assert.equal(JSON.parse(s.storage.get(key)).dateManualV819,true);
+ s.nodes.purchaseNewV728.onclick();assert.equal(s.nodes.purchaseDateV728.value,'2026-11-22');
+ const draft={...JSON.parse(s.storage.get(key)),date:'2026-11-20',dateManualV819:false};
+ for(const lock of [{confirmed:true},{pending:{date:'2026-11-20'}}]){s.storage.set(key,JSON.stringify({...draft,...lock}));const resumed=setup(s.storage);resumed.c.Date=Clock;resumed.c.stockPurchaseVisibilityV728();assert.equal(resumed.nodes.purchaseDateV728.value,'2026-11-20');}
+ s.storage.set(key,JSON.stringify({...draft,dateManualV819:true}));assert.equal(setup(s.storage).nodes.purchaseDateV728.value,'2026-11-20');
+ s.storage.set(key,JSON.stringify({...draft,operation:'opening'}));assert.equal(setup(s.storage).nodes.purchaseDateV728.value,'2026-11-20');
+});
