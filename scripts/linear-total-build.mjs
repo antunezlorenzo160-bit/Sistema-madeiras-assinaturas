@@ -1,3 +1,4 @@
+import {applyLastroV825} from './lastro-build.mjs';
 export function applyLinearTotalV744(app){
  if(app.includes('// LINEAR_TOTAL_V744'))return app;
  const replace=(a,b)=>{if(!app.includes(a))throw Error('Linear total: trecho ausente '+a.slice(0,90));app=app.replace(a,()=>b);};
@@ -52,5 +53,5 @@ export function applyLinearTotalV744(app){
  app=app.replaceAll('if(qDepois<=0){', 'if(qDepois<=(isLinearTotalV744(item)?1e-8:0)){');
  replace("botaoOpcaoOrc(ids,'compensarPerda',x.compensarPerda===true,'CMDP')", "(isLinearTotalV744(x)?'':botaoOpcaoOrc(ids,'compensarPerda',x.compensarPerda===true,'CMDP'))");
  replace("const botao=orc?'<div class=", "const botao=orc&&!isLinearTotalV744(x)?'<div class=");
- return app;
+ return applyLastroV825(app);
 }

@@ -7,11 +7,11 @@ export function stockCostKey(item){
  if(kind==='linear'){const product=String(item.produto||'').trim();return product?JSON.stringify([item.madeiraId,kind,'seca',product]):null;}
  if(kind==='m2')return JSON.stringify([item.madeiraId,kind,'seca',Number(item.largura||0).toFixed(6),Number(item.comprimento||0).toFixed(6)]);
  const num=k=>Number(item[k]||0).toFixed(6),green=item.estadoMadeira==='verde'||item.origemMadeira==='verde'||item.origemMovimentacao==='Mad. verde';
- return JSON.stringify([item.madeiraId,kind,green?'verde':'seca',...(kind==='granel'?[]:['espessura','largura','comprimento'].map(num))]);
+ return JSON.stringify([item.madeiraId,kind,green?'verde':'seca',...(item.lastroM3V825===true?['lastro']:[]),...(kind==='granel'?[]:['espessura','largura','comprimento'].map(num))]);
 }
 export function purchasePhysicalQuantityV755(item){
  const kind=item.tipoMedida||item.tipoCadastro||'m3';
- if(kind==='m3')return Number(item.largura)/100*Number(item.espessura)/100*Number(item.comprimento)*Number(item.quantidade);
+ if(kind==='m3')return Number(item.largura)/100*Number(item.espessura)/100*Number(item.comprimento)*(item.lastroM3V825===true?1:Number(item.quantidade));
  if(kind==='m2')return Number(item.largura)/100*Number(item.comprimento)*Number(item.quantidade);
  if(kind==='linear')return Number(item.comprimento)>0?Number(item.comprimento)*Number(item.quantidade):Number(item.volumeReal??item.volume);
  if(kind==='granel')return Number(item.volume);
@@ -26,9 +26,9 @@ export function groupStockPurchaseLinesV754(lines){
  const groups=new Map(),ids=new Set();
  for(const line of lines){
   if(ids.has(line.id))throw Error('Item repetido na lista da compra.');ids.add(line.id);
-  const key=JSON.stringify([line.madeiraId,line.tipoMedida,line.estadoMadeira,line.secagemDias??0,line.unitCents,line.largura,line.espessura,line.comprimento,line.produto||'',line.codigoProduto||'',line.linearTotalV744===true,line.purchasePiecesPerPacketV755||0]);
+  const key=JSON.stringify([line.madeiraId,line.tipoMedida,line.estadoMadeira,line.secagemDias??0,line.unitCents,line.largura,line.espessura,line.comprimento,line.produto||'',line.codigoProduto||'',line.linearTotalV744===true,line.lastroM3V825===true,line.purchasePiecesPerPacketV755||0]);
   const current=groups.get(key);
-  if(!current){groups.set(key,{...line});continue;}
+  if(!current||line.lastroM3V825===true){groups.set(line.lastroM3V825===true?key+line.id:key,{...line});continue;}
   current.quantidade+=line.quantidade;
   current.volume=['m3','m2'].includes(current.tipoMedida)||current.tipoMedida==='linear'&&current.comprimento>0?purchasePhysicalQuantityV755(current):(purchaseVolumeUnits(current.volume)+purchaseVolumeUnits(line.volume))/1e9;
   if(current.purchasePacketsV755)current.purchasePacketsV755+=line.purchasePacketsV755;
@@ -47,12 +47,12 @@ export function normalizeStockPurchase(input,{opening=false}={}){
  if(typeof input.freightIncluded!=='boolean'||typeof input.otherIncluded!=='boolean'||!Array.isArray(input.lines)||input.lines.length<1||input.lines.length>200)throw Error('Adicione de 1 a 200 itens ao descarregamento.');
  const ids=new Set();let goodsCents=0;
  const lines=input.lines.map(item=>{
-  if(!item||typeof item!=='object'||Array.isArray(item)||Object.keys(item).some(k=>!['id','madeiraId','tipoMedida','largura','espessura','comprimento','quantidade','volume','estadoMadeira','secagemDias','unitCents','produto','codigoProduto','linearTotalV744','purchasePacketsV755','purchasePiecesPerPacketV755'].includes(k))||!purchaseUuidV728.test(item.id||'')||ids.has(item.id)||typeof item.madeiraId!=='string'||!/^[-\w]{1,180}$/.test(item.madeiraId)||!['m3','granel','m2','linear'].includes(item.tipoMedida)||!['seca','verde'].includes(item.estadoMadeira))throw Error('Item do descarregamento inválido.');
+  if(!item||typeof item!=='object'||Array.isArray(item)||Object.keys(item).some(k=>!['id','madeiraId','tipoMedida','largura','espessura','comprimento','quantidade','volume','estadoMadeira','secagemDias','unitCents','produto','codigoProduto','linearTotalV744','lastroM3V825','purchasePacketsV755','purchasePiecesPerPacketV755'].includes(k))||!purchaseUuidV728.test(item.id||'')||ids.has(item.id)||typeof item.madeiraId!=='string'||!/^[-\w]{1,180}$/.test(item.madeiraId)||!['m3','granel','m2','linear'].includes(item.tipoMedida)||!['seca','verde'].includes(item.estadoMadeira))throw Error('Item do descarregamento inválido.');
   const secagemDias=item.secagemDias??0;if(!Number.isSafeInteger(secagemDias)||secagemDias<0||secagemDias>3650||item.estadoMadeira!=='verde'&&secagemDias!==0)throw Error('Prazo de secagem inválido.');
   ids.add(item.id);const unitCents=opening&&item.unitCents===null?null:money(item.unitCents);if(!opening&&!unitCents)throw Error('Informe o preço de compra por unidade.');
   const physical={};for(const k of ['largura','espessura','comprimento','quantidade','volume']){const n=item[k];if(typeof n!=='number'||!Number.isFinite(n)||n<0||n>1000000)throw Error('Medidas de compra inválidas.');physical[k]=n;}
   const kind=item.tipoMedida;
-  const extra={};
+  const extra={};if(item.lastroM3V825!==undefined){if(item.lastroM3V825!==true||kind!=='m3'||physical.quantidade!==0)throw Error('Lastro inválido.');extra.lastroM3V825=true;}
   if(item.linearTotalV744!==undefined&&item.linearTotalV744!==true)throw Error('Indicador de metragem total inválido.');
   if(kind==='linear'){
    if(typeof item.produto!=='string'||!item.produto.trim()||item.produto.length>120||/[\u0000-\u001f]/.test(item.produto))throw Error('Informe o tipo de produto em metros lineares.');
@@ -67,8 +67,8 @@ export function normalizeStockPurchase(input,{opening=false}={}){
   if(kind!=='m3'&&(item.estadoMadeira!=='seca'||secagemDias!==0))throw Error('Madeira verde por compra é informada em m³.');
   if(kind==='m2'&&(!physical.largura||!physical.comprimento||!Number.isSafeInteger(physical.quantidade)||!physical.quantidade))throw Error('Confira largura, comprimento e peças da compra em m².');
   if(kind==='linear'&&(physical.largura!==0||physical.espessura!==0||(item.linearTotalV744===true?(physical.comprimento!==0||physical.quantidade!==0):(!physical.comprimento||!Number.isSafeInteger(physical.quantidade)||!physical.quantidade))))throw Error('Confira a metragem ou as peças da compra linear.');
-  const expected=purchasePhysicalQuantityV755({...physical,tipoMedida:kind});
-  if(!(expected>0)||item.tipoMedida==='m3'&&(!Number.isSafeInteger(physical.quantidade)||!physical.quantidade||!physical.largura||!physical.espessura||!physical.comprimento)||item.tipoMedida==='granel'&&(physical.largura!==0||physical.espessura!==0||physical.comprimento!==0||physical.quantidade!==physical.volume||item.estadoMadeira==='verde')||Math.abs(physical.volume-expected)>1e-8)throw Error('O volume não corresponde às medidas da compra.');
+  const expected=purchasePhysicalQuantityV755({...physical,tipoMedida:kind,...extra});
+  if(!(expected>0)||item.tipoMedida==='m3'&&((item.lastroM3V825===true?physical.quantidade!==0:(!Number.isSafeInteger(physical.quantidade)||!physical.quantidade))||!physical.largura||!physical.espessura||!physical.comprimento)||item.tipoMedida==='granel'&&(physical.largura!==0||physical.espessura!==0||physical.comprimento!==0||physical.quantidade!==physical.volume||item.estadoMadeira==='verde')||Math.abs(physical.volume-expected)>1e-8)throw Error('O volume não corresponde às medidas da compra.');
   const units=purchaseVolumeUnits(expected),amountCents=Number((BigInt(units)*BigInt(unitCents||0)+500000000n)/1000000000n);if(!opening&&!amountCents)throw Error('O valor de cada item precisa ser de pelo menos um centavo.');goodsCents+=amountCents;
   return {id:item.id,madeiraId:item.madeiraId,tipoMedida:item.tipoMedida,...physical,volume:units/1e9,quantidade:item.tipoMedida==='granel'?units/1e9:physical.quantidade,estadoMadeira:item.estadoMadeira,secagemDias,unitCents,amountCents:unitCents===null?null:amountCents,...extra};
  });

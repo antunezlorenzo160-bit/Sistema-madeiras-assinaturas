@@ -147,3 +147,9 @@ test('stock purchase initializes payment without changing cost and confirmation 
  const s=purchaseTestDb(),raw=purchase({payment:{mode:'partial',paidCents:10000,paidDate:'2026-11-08',dueDate:'2026-12-08'}}),result=await confirmStockPurchase(s.db,s.identity,raw,at),receipt=result.receipt,entry=s.records.get(financeCollectionPath('tenant')+'/'+receipt.entryId);
  assert.equal(entry.settlement.payments.length,1);assert.equal(entry.settlement.payments[0].amountCents,10000);assert.equal(entry.amountCents,230000);assert.equal(receipt.lines[0].acquisitionCents,230000);const writes=s.writes.length;await confirmStockPurchase(s.db,s.identity,raw,at+1);assert.equal(s.writes.length,writes);
 });
+
+test('lastro purchase preserves unknown pieces and measured volume in stock and movement atomically',async()=>{
+ const input=purchase({freightCents:0,otherCents:0,lines:[line({lastroM3V825:true,largura:240,espessura:2.5,comprimento:5.5,quantidade:0,volume:0.33,unitCents:200000})]});const r=normalizeStockPurchase(input);assert.equal(r.lines[0].amountCents,66000);assert.equal(r.lines[0].quantidade,0);assert.equal(r.lines[0].lastroM3V825,true);assert.notEqual(stockCostKey(r.lines[0]),stockCostKey({...r.lines[0],lastroM3V825:false}));
+ const s=purchaseTestDb();const result=await confirmStockPurchase(s.db,s.identity,input,at);const saved=[...s.records.values()].filter(x=>x.lastroM3V825===true);assert(saved.length>=2);assert(saved.every(x=>x.quantidade===0));const count=s.writes.length;await confirmStockPurchase(s.db,s.identity,input,at);assert.equal(s.writes.length,count);
+ assert.throws(()=>normalizeStockPurchase(purchase({lines:[line({lastroM3V825:true,quantidade:2})]})));
+});
