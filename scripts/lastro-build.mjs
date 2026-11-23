@@ -33,7 +33,11 @@ export function applyLastroV825(app){
  app=app.replaceAll('g.quantidade+=Number(x.quantidade||0);', 'g.quantidade+=Number(x.quantidade||0);if(isLastroM3V825(x))g.lastrosV826=(g.lastrosV826||0)+1;');
  replace('<input id="quantidade" type="number"', '<input id="quantidade" type="text"');
  replace('id="quantidade" type="text" min="1"', 'id="quantidade" type="text" list="lastroOptionsV826" min="1"');
- replace('<div class="quantidade-row quantidade-row-v254">', `<datalist id="lastroOptionsV826"><option value="Lastros"></option></datalist><div class="quantidade-row quantidade-row-v254"><button id="lastroChooseV826" hidden type="button" class="btn btn-secondary" style="min-height:36px;padding:6px 10px" onclick="document.getElementById('quantidade').value='Lastros';calcPreview()">Lastros</button>`);
+ replace('<div class="quantidade-row quantidade-row-v254">', `<datalist id="lastroOptionsV826"><option value="Lastros"></option></datalist><div class="quantidade-row quantidade-row-v254"><button id="lastroChooseV826" hidden type="button" class="btn btn-secondary" style="min-height:36px;padding:6px 10px">Lastros</button>`);
  replace("  if(!m)return alert(", "  if(modoMedida==='m3'&&String($('quantidade').value).trim()==='')return alert('Informe a quantidade de peças ou escreva Lastros.');\n  if(!m)return alert(");
+ replace('function calcPreviewBaseV710(){', `// LASTRO_BUTTON_V827
+ document.getElementById('lastroChooseV826')?.addEventListener('click',()=>{if(modoMedida!=='m3')return;const field=$('quantidade');field.value='Lastros';calcPreview();});
+ // END_LASTRO_BUTTON_V827
+ function calcPreviewBaseV710(){`);
  return app;
 }

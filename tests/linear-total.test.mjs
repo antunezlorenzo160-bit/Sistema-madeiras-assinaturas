@@ -79,3 +79,8 @@ test('m³ requires an explicit quantity or Lastros keyword and never silently la
  for(const value of ['Lastros','lastro',' Lstr. '])assert(isLastroInputV826(value));for(const value of ['',' ','1','lastros2','abc'])assert.equal(isLastroInputV826(value),false);
  const s=compiledContext();s.c.modoMedida='m3';s.fields.largura.value='240';s.fields.espessura.value='2.5';s.fields.comprimento.value='5.5';s.fields.quantidade.value='';const a=app.indexOf('async function lancar(){'),b=app.indexOf('// O número digitado adiciona pacotes',a);vm.runInContext(app.slice(a,b),s.c);await s.c.lancar();assert.equal(s.c.orcamento.length,0);assert.equal(s.queue.length,0);assert.match(s.alerts[0],/quantidade de peças ou escreva Lastros/);assert.equal(lastroLabelV826({lastrosV826:2}),'2 Lstr');
 });
+
+test('Lastros button calls the calculator in module scope without an inline global function',()=>{
+ const button=app.match(/<button[^>]*id="lastroChooseV826"[^>]*>/)?.[0];assert(button);assert(!button.includes('onclick'));
+ const a=app.indexOf('// LASTRO_BUTTON_V827'),b=app.indexOf('// END_LASTRO_BUTTON_V827',a);assert(a>=0&&b>a);let click,previews=0;const field={value:'1'},c={document:{getElementById:id=>id==='lastroChooseV826'?{addEventListener:(event,fn)=>{assert.equal(event,'click');click=fn;}}:null},$:()=>field,modoMedida:'m3',calcPreview:()=>previews++};vm.createContext(c);vm.runInContext(app.slice(a,b),c);assert(click);click();assert.equal(field.value,'Lastros');assert.equal(previews,1);c.modoMedida='m2';field.value='7';click();assert.equal(field.value,'7');assert.equal(previews,1);
+});
