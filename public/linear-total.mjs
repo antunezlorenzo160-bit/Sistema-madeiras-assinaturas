@@ -7,7 +7,7 @@ export function linearEntryV744(length,quantity){
  const volume=metres*(pieces??1);if(!Number.isFinite(volume)||volume>1e9)throw Error('Metragem acima do limite.');
  return pieces===null?{linearTotalV744:true,quantidade:0,comprimento:0,volume,volumeReal:volume}:{quantidade:pieces,comprimento:metres,volume,volumeReal:volume};
 }
-export function linearPieceTextV744(item){return isMeasuredTotalV825(item)?'—':item.quantidade;}
+export function linearPieceTextV744(item){return isLastroM3V825(item)?lastroLabelV826(item):isLinearTotalV744(item)?'—':item.quantidade;}
 export function linearUnitsV744(item){return Number(isMeasuredTotalV825(item)?item.volume:item.quantidade)||0;}
 export function linearMatchV744(stock,request){
  if(isLastroM3V825(stock)||isLastroM3V825(request)){if(!isLastroM3V825(stock)||!isLastroM3V825(request))return false;return String(stock.madeiraId)===String(request.madeiraId)&&['espessura','largura','comprimento'].every(k=>Math.abs(Number(stock[k])-Number(request[k]))<1e-8);}
@@ -44,3 +44,6 @@ export function linearConferenceV744(items,sourceFor,match,isGreen){
 export function isLastroM3V825(item){return (item?.tipoMedida||item?.tipoCadastro)==='m3'&&item.lastroM3V825===true;}
 export function isMeasuredTotalV825(item){return isLinearTotalV744(item)||isLastroM3V825(item);}
 export function lastroEntryV825(width,thickness,length){const [l,e,c]=[width,thickness,length].map(v=>Number(String(v??'').replace(',','.')));if(![l,e,c].every(v=>Number.isFinite(v)&&v>0&&v<=1e6))throw Error('Informe espessura, largura medida e comprimento do lastro.');const v=l/100*e/100*c;if(!Number.isFinite(v)||v<=0||v>1e9)throw Error('Volume de lastro inválido.');return {lastroM3V825:true,quantidade:0,largura:l,espessura:e,comprimento:c,volume:v,volumeReal:v,compensarPerda:false};}
+
+export function isLastroInputV826(value){return /^(lastros?|lstr)\.?$/i.test(String(value??'').trim());}
+export function lastroLabelV826(item){return String(Number(item.lastrosV826||item._itens||item._ids?.length||1))+' Lstr';}

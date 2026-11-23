@@ -1,3 +1,4 @@
+import {isLastroM3V825} from '../public/linear-total.mjs';
 import {normalizeInitialStockV811} from '../public/initial-stock.mjs';
 import {normalizePurchasePaymentV757,purchasePaymentCentsV758,purchasePaidCentsV757} from '../public/purchase-payments.mjs';
 import test from 'node:test';import assert from 'node:assert/strict';import vm from 'node:vm';import {readFileSync} from 'node:fs';import {randomUUID} from 'node:crypto';
@@ -75,7 +76,7 @@ test('purchase captures m² packets and linear total with unit labels and no phy
 test('generated summary and stock sheet show grouped purchase packet counts and total pieces accurately',()=>{
  const raw=readFileSync(new URL('../public/index.html',import.meta.url),'utf8'),app=JSON.parse(raw.match(/const TEMPLATE\s*=\s*("(?:\\.|[^"\\])*")/)[1]);
  const row={tipoMedida:'m2',madeiraId:'wood',largura:20,comprimento:3,quantidade:20,volume:12,contadoComoPacote:true,purchasePacketsV755:2,purchasePiecesPerPacketV755:10};
- const c={purchasePacketCountV755,chaveAgrupamentoItem:()=> 'same',filtrados:[row]};vm.createContext(c);
+ const c={isLastroM3V825,purchasePacketCountV755,chaveAgrupamentoItem:()=> 'same',filtrados:[row]};vm.createContext(c);
  const start=app.indexOf('function agruparItensResumoCalculadora('),end=app.indexOf('function fonteResumoAtual()',start);vm.runInContext(app.slice(start,end),c);
  const group=c.agruparItensResumoCalculadora([row])[0];assert.equal(group.pacotes,2);assert.equal(group.pecasPacote,10);assert.equal(group.quantidade,20);
  const pos=app.indexOf('g.pecasTotal+=Number(x.quantidade||0);'),a=app.lastIndexOf('const grupos=new Map();',pos),b=app.indexOf('const linhas=[...grupos.values()];',pos);assert(a>=0&&b>a);vm.runInContext(app.slice(a,b)+';globalThis.stockRows=[...grupos.values()];',c);assert.equal(c.stockRows[0].pecasPacote,10);assert.equal(c.stockRows[0].pacotes,2);assert.equal(c.stockRows[0].pecasTotal,20);

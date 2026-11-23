@@ -22,7 +22,7 @@ function purchaseUnitLabelV755(){
 }
 function purchaseLineTextV755(line){
  const kind=line.tipoMedida,unit=purchaseUnitSymbolV755(kind);
- const detail=kind==='granel'?'A granel':kind==='linear'?(line.produto+' · '+(line.linearTotalV744===true?'Metragem total':line.comprimento+' m · '+line.quantidade+' peças')):kind==='m2'?(line.largura+' cm · '+line.comprimento+' m · '+line.quantidade+' peças'+(line.purchasePacketsV755?' · '+line.purchasePacketsV755+' pacote(s)':'')):line.espessura+' × '+line.largura+' cm · '+line.comprimento+' m · '+(line.lastroM3V825===true?'quantidade não informada':line.quantidade+' peças');
+ const detail=kind==='granel'?'A granel':kind==='linear'?(line.produto+' · '+(line.linearTotalV744===true?'Metragem total':line.comprimento+' m · '+line.quantidade+' peças')):kind==='m2'?(line.largura+' cm · '+line.comprimento+' m · '+line.quantidade+' peças'+(line.purchasePacketsV755?' · '+line.purchasePacketsV755+' pacote(s)':'')):line.espessura+' × '+line.largura+' cm · '+line.comprimento+' m · '+(line.lastroM3V825===true?'1 Lstr':line.quantidade+' peças');
  return detail+' · '+num4(line.volume)+' '+unit+' · '+(line.unitCents===null?'Custo não informado':finMoneyV722(line.unitCents)+'/'+unit);
 }
 function stockPurchaseVisibilityV728(){
