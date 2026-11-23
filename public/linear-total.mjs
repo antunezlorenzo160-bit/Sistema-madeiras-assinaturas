@@ -18,7 +18,7 @@ export function linearMatchV744(stock,request){
  return Boolean(wood&&norm(stock.produto||stock.tipoLinear)===norm(request.produto||request.tipoLinear));
 }
 export function linearRemainderV744(previous,next){
- if(isLastroM3V825(previous))return {...next,lastroM3V825:true,quantidade:0,volumeReal:Number(next.volume||0)};
+ if(isLastroM3V825(previous))return {...next,lastroM3V825:true,lastrosV826:Number(previous.lastrosV826||1)*Number(next.volume||0)/Number(previous.volume),quantidade:0,volumeReal:Number(next.volume||0)};
  if((previous.tipoMedida||previous.tipoCadastro)!=='linear')return next;
  const quantity=Number(next.quantidade||0),nearest=Math.round(quantity);
  if(isLinearTotalV744(previous)||Math.abs(quantity-nearest)>1e-8)return {...next,linearTotalV744:true,quantidade:0,comprimento:0,comprimentoCobrado:0,volumeReal:Number(next.volume||0)};
@@ -43,7 +43,7 @@ export function linearConferenceV744(items,sourceFor,match,isGreen){
 // A measured lastro retains dimensions, but has no known piece count.
 export function isLastroM3V825(item){return (item?.tipoMedida||item?.tipoCadastro)==='m3'&&item.lastroM3V825===true;}
 export function isMeasuredTotalV825(item){return isLinearTotalV744(item)||isLastroM3V825(item);}
-export function lastroEntryV825(width,thickness,length){const [l,e,c]=[width,thickness,length].map(v=>Number(String(v??'').replace(',','.')));if(![l,e,c].every(v=>Number.isFinite(v)&&v>0&&v<=1e6))throw Error('Informe espessura, largura medida e comprimento do lastro.');const v=l/100*e/100*c;if(!Number.isFinite(v)||v<=0||v>1e9)throw Error('Volume de lastro inválido.');return {lastroM3V825:true,quantidade:0,largura:l,espessura:e,comprimento:c,volume:v,volumeReal:v,compensarPerda:false};}
+export function lastroEntryV825(width,thickness,length,count=1){const [l,e,c]=[width,thickness,length].map(v=>Number(String(v??'').replace(',','.')));if(![l,e,c].every(v=>Number.isFinite(v)&&v>0&&v<=1e6))throw Error('Informe espessura, largura medida e comprimento do lastro.');const n=Number(count);if(!Number.isSafeInteger(n)||n<1||n>1000000)throw Error('Informe uma quantidade inteira positiva de lastros.');const v=l/100*e/100*c*n;if(!Number.isFinite(v)||v<=0||v>1e9)throw Error('Volume de lastro inválido.');return {lastroM3V825:true,lastrosV826:n,quantidade:0,largura:l,espessura:e,comprimento:c,volume:v,volumeReal:v,compensarPerda:false};}
 
 export function isLastroInputV826(value){return /^(lastros?|lstr)\.?$/i.test(String(value??'').trim());}
 export function lastroLabelV826(item){return String(Number(item.lastrosV826||item._itens||item._ids?.length||1))+' Lstr';}

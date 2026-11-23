@@ -153,3 +153,8 @@ test('lastro purchase preserves unknown pieces and measured volume in stock and 
  const s=purchaseTestDb();const result=await confirmStockPurchase(s.db,s.identity,input,at);const saved=[...s.records.values()].filter(x=>x.lastroM3V825===true);assert(saved.length>=2);assert(saved.every(x=>x.quantidade===0));const count=s.writes.length;await confirmStockPurchase(s.db,s.identity,input,at);assert.equal(s.writes.length,count);
  assert.throws(()=>normalizeStockPurchase(purchase({lines:[line({lastroM3V825:true,quantidade:2})]})));
 });
+
+test('multiple lastros retain their count and multiply purchase volume without inventing pieces',async()=>{
+ const input=purchase({freightCents:0,otherCents:0,lines:[line({lastroM3V825:true,lastrosV826:3,largura:240,espessura:2.5,comprimento:5.5,quantidade:0,volume:0.99,unitCents:200000})]});const r=normalizeStockPurchase(input);assert.equal(r.lines[0].amountCents,198000);assert.equal(r.lines[0].lastrosV826,3);const s=purchaseTestDb();await confirmStockPurchase(s.db,s.identity,input,at);const saved=[...s.records.values()].filter(x=>x.lastroM3V825===true);assert(saved.length>=2);assert(saved.every(x=>x.lastrosV826===3&&x.quantidade===0));
+ assert.throws(()=>normalizeStockPurchase({...input,lines:[{...input.lines[0],lastrosV826:0}]}));assert.throws(()=>normalizeStockPurchase({...input,lines:[{...input.lines[0],lastrosV826:1.5}]}));
+});
