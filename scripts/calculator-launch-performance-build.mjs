@@ -1,5 +1,9 @@
 import {readFileSync} from 'node:fs';
 export function applyCalculatorLaunchPerformanceV831(app){
+ const focusStart=app.indexOf('function prepararProximoLancamentoM3(){'),focusEnd=app.indexOf('// Renderizações fora da tela',focusStart);
+ if(focusStart<0||focusEnd<focusStart)throw Error('Launch stability: next-width function missing');
+ const focus=app.slice(focusStart,focusEnd).replace("if(document.activeElement!==largura)largura.focus({preventScroll:true});\n      largura.select();", "if(document.activeElement!==largura)largura.focus({preventScroll:true});");
+ app=app.slice(0,focusStart)+focus+app.slice(focusEnd);
  const a=app.indexOf('function atualizarTelasAposLancamento(destino){'),b=app.indexOf('function saldoDimensionalMadeira(',a);
  if(a<0||b<a)throw Error('Launch performance: launch rendering function missing');
  const original=app.slice(a,b);if(!original.includes("if(destino!=='carga')save();"))throw Error('Launch performance: persistence boundary changed');

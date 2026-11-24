@@ -3,7 +3,7 @@
  const media=window.matchMedia('(max-width:760px) and (pointer:coarse)');
  const calc=document.getElementById('calculadora'),main=document.querySelector('body > main');if(!calc||!main)return;
  let viewport=window.visualViewport,frame=null;try{if(window.parent!==window&&window.parent.visualViewport){viewport=window.parent.visualViewport;frame=window.frameElement;}}catch{}
- let baseline=0,visible=false,dismissed=false,armed=false,generation=0,launchGeneration=-1,editVersion=0,launchEditVersion=0,launchField=null,launchValue=null,lastFocused=null,raf=0,checkField=false;
+ let baseline=0,visible=false,dismissed=false,armed=false,generation=0,launchGeneration=-1,editVersion=0,launchEditVersion=0,launchField=null,launchValue=null,lastFocused=null,raf=0,checkField=false,lastHeight=null,lastTop=null;
  const active=()=>media.matches&&calc.classList.contains('active')&&!document.body.classList.contains('mobile-menu-open');
  const editable=el=>!!el&&calc.contains(el)&&el.tagName==='INPUT'&&!el.disabled&&!el.readOnly&&!['checkbox','radio','button','submit','hidden','file','range','color'].includes(el.type);
  function release(){dismissed=true;armed=false;generation++;}
@@ -21,13 +21,14 @@
   if(rect.top<top)main.scrollTop-=top-rect.top;else if(rect.bottom>bottom)main.scrollTop+=rect.bottom-bottom;
  }
  function update(){
-  raf=0;const enabled=active();document.body.classList.toggle('calc-mobile-v733',enabled);
-  if(!enabled){document.body.style.removeProperty('--calc-visible-height-v733');document.body.style.removeProperty('--calc-visible-top-v733');visible=false;checkField=false;return;}
+  raf=0;const enabled=active();if(document.body.classList.contains('calc-mobile-v733')!==enabled)document.body.classList.toggle('calc-mobile-v733',enabled);
+  if(!enabled){document.body.style.removeProperty('--calc-visible-height-v733');document.body.style.removeProperty('--calc-visible-top-v733');visible=false;checkField=false;lastHeight=null;lastTop=null;return;}
   const box=bounds();baseline=Math.max(baseline,box.height);
   const next=baseline-box.height>Math.max(100,baseline*.18);
   if(visible&&!next)release(); // Android's hide arrow often leaves the input focused.
   const justOpened=!visible&&next;visible=next;
-  document.body.style.setProperty('--calc-visible-height-v733',box.height+'px');document.body.style.setProperty('--calc-visible-top-v733',box.top+'px');
+  if(lastHeight===null||Math.abs(box.height-lastHeight)>1){document.body.style.setProperty('--calc-visible-height-v733',box.height+'px');lastHeight=box.height;}
+  if(lastTop===null||Math.abs(box.top-lastTop)>1){document.body.style.setProperty('--calc-visible-top-v733',box.top+'px');lastTop=box.top;}
   if(checkField||justOpened)keepFieldVisible(box);checkField=false;
  }
  function schedule(reveal=false){checkField||=reveal;if(!raf)raf=requestAnimationFrame(update);}

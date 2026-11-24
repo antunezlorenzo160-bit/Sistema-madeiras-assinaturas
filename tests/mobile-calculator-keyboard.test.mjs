@@ -42,3 +42,14 @@ test('real generated post-launch callbacks preserve quickly typed digits and res
  const s=setup();vm.runInContext(app.slice(start,end),s.c);s.focus(s.width);s.api.beginLaunch();s.width.value='12';s.fire('input',s.width,{isTrusted:true});s.c.prepararProximoLancamentoM3();assert.equal(s.width.value,'12','an async launch must not clear the next edit');s.api.beginLaunch();s.width.value='10';s.c.prepararProximoLancamentoM3();s.width.value='12';s.flush();s.timers.splice(0).forEach(fn=>fn());assert.equal(s.width.value,'12');
  s.resize(430);s.flush();s.api.beginLaunch();s.width.value='10';s.c.prepararProximoLancamentoM3();const focusCount=s.width.focuses,selectCount=s.width.selects;s.resize(800);s.flush();s.timers.splice(0).forEach(fn=>fn());assert.equal(s.width.focuses,focusCount);assert.equal(s.width.selects,selectCount);
 });
+
+test('settled keyboard viewport does not rewrite layout on scroll or one-pixel viewport jitter',()=>{
+ const s=setup();s.focus(s.width);s.resize(430);s.flush();let writes=0,toggles=0;const write=s.document.body.style.setProperty,toggle=s.document.body.classList.toggle;s.document.body.style.setProperty=(...args)=>{writes++;write(...args);};s.document.body.classList.toggle=(...args)=>{toggles++;toggle(...args);};
+ s.main.scrollTop=70;for(let n=0;n<5;n++){s.viewEvents.get('scroll')();s.flush();}assert.equal(writes,0);assert.equal(toggles,0);assert.equal(s.main.scrollTop,70);
+ s.viewport.offsetTop=1;s.resize(431);s.flush();assert.equal(writes,0);assert.equal(s.styles.get('--calc-visible-height-v733'),'430px');
+ s.resize(420);s.flush();assert.equal(s.styles.get('--calc-visible-height-v733'),'420px');assert.equal(writes,1);
+});
+test('real m³ post-launch callbacks never reselect an already focused empty width field',()=>{
+ const s=setup();s.focus(s.width);s.resize(430);s.flush();s.api.beginLaunch();s.width.value='20';
+ const raw=readFileSync(new URL('../public/index.html',import.meta.url),'utf8'),app=JSON.parse(raw.match(/const TEMPLATE\s*=\s*("(?:\\.|[^"\\])*")/)[1]),a=app.indexOf('function prepararProximoLancamentoM3(){'),b=app.indexOf('// Renderizações fora da tela',a);vm.runInContext(app.slice(a,b),s.c);s.c.prepararProximoLancamentoM3();s.flush();for(const fn of s.timers)fn();assert.equal(s.width.value,'');assert.equal(s.quantity.value,1);assert.equal(s.width.selects,0);assert.equal(s.width.focuses,0);assert.equal(s.document.activeElement,s.width);
+});

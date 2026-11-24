@@ -16,3 +16,11 @@
  html body.calc-fixa-v478.calc-mobile-v733 #pcSplitCampos{min-height:0!important;height:auto!important;max-height:none!important;overflow:visible!important}
  html body.calc-fixa-v478.calc-mobile-v733 #calculadora input{scroll-margin-block:12px}
 }
+
+/* V832: native scroll anchoring must not follow table growth during measurement entry. */
+@media screen and (max-width:760px) and (pointer:coarse){
+ html body.calc-fixa-v478.calc-mobile-v733>main{overflow-anchor:none!important}
+ html body.calc-fixa-v478.calc-mobile-v733 header .sync-status-bar{flex-wrap:nowrap!important;white-space:nowrap!important;overflow-x:auto!important;overflow-y:hidden!important;max-width:100%;min-height:20px;line-height:20px;scrollbar-width:none}
+ html body.calc-fixa-v478.calc-mobile-v733 header .sync-status-bar>span{flex:0 0 auto;white-space:nowrap!important}
+ html body.calc-fixa-v478.calc-mobile-v733 header .sync-status-bar::-webkit-scrollbar{display:none}
+}
