@@ -44,7 +44,7 @@ export function catalogPricePair(item,catalog){
   const r=(m.regrasM2||[]).filter(r=>(!r.larguras&&!r.larguraRegra||has(r.larguras??r.larguraRegra,item.largura))&&matchesLength(r)).sort((a,b)=>Number(Boolean(b.comprimentoRegra))-Number(Boolean(a.comprimentoRegra))||Number(b.acimaDe||0)-Number(a.acimaDe||0))[0];return {retail:retail(r||m),wholesale:wholesale(r||m)};
  }
  if(type==='granel')return {retail:retail(m),wholesale:wholesale(m)};
- const bit=(m.bitolas||[]).find(b=>has(b.espessuraRegra??b.espessura,item.espessura));
+ const bit=(m.bitolas||[]).find(b=>has(b.espessuraRegra??b.espessura,item.espessura)&&(!item.tipoBitolaV829||String(b.tipo??b.produto??'').trim()===item.tipoBitolaV829));
  if(!bit)return (m.bitolas||[]).length?{retail:n(item.preco),wholesale:0}:{retail:retail(m)||n(item.preco),wholesale:wholesale(m)};
  const width=(bit.regrasLargura||[]).find(r=>has(r.larguraRegra??r.larguras,item.largura));
  let r=retail(bit),w=wholesale(bit);
@@ -52,4 +52,14 @@ export function catalogPricePair(item,catalog){
  const rule=(bit.regrasComprimento||[]).filter(r=>Number(item.comprimento||0)>=Number(r.acimaDe??r.comprimentoRegra??Infinity)).sort((a,b)=>Number(b.acimaDe??b.comprimentoRegra)-Number(a.acimaDe??a.comprimentoRegra))[0];
  if(rule){const f=1+Number(rule.percentual??rule.acrescimoPercentual??0)/100;r=Math.round(r*f*100)/100;w=Math.round(w*f*100)/100;}
  return {retail:r,wholesale:w};
+}
+
+// Registered m³ types are scoped to the entered thickness; old untyped catalogs remain valid.
+export function m3TypeChoicesV829(bitolas,thickness){
+ const target=Number(thickness);if(!Number.isFinite(target)||target<=0)return [];
+ const types=new Map();for(const row of bitolas||[]){
+  const matches=String(row.espessuraRegra??row.espessura??'').replace(/,/g,'.').split(/[\s;/]+/).some(v=>v!==''&&Math.abs(Number(v)-target)<1e-6);
+  const type=String(row.tipo??row.produto??'').trim();if(matches&&type&&!types.has(type.toLocaleLowerCase('pt-BR')))types.set(type.toLocaleLowerCase('pt-BR'),type);
+ }
+ return [...types.values()];
 }

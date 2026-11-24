@@ -23,7 +23,7 @@ function purchaseUnitLabelV755(){
 function purchaseLineTextV755(line){
  const kind=line.tipoMedida,unit=purchaseUnitSymbolV755(kind);
  const detail=kind==='granel'?'A granel':kind==='linear'?(line.produto+' · '+(line.linearTotalV744===true?'Metragem total':line.comprimento+' m · '+line.quantidade+' peças')):kind==='m2'?(line.largura+' cm · '+line.comprimento+' m · '+line.quantidade+' peças'+(line.purchasePacketsV755?' · '+line.purchasePacketsV755+' pacote(s)':'')):line.espessura+' × '+line.largura+' cm · '+line.comprimento+' m · '+(line.lastroM3V825===true?String(line.lastrosV826||1)+' Lstr':line.quantidade+' peças');
- return detail+' · '+num4(line.volume)+' '+unit+' · '+(line.unitCents===null?'Custo não informado':finMoneyV722(line.unitCents)+'/'+unit);
+ return (line.tipoBitolaV829?line.tipoBitolaV829+' · ':'')+detail+' · '+num4(line.volume)+' '+unit+' · '+(line.unitCents===null?'Custo não informado':finMoneyV722(line.unitCents)+'/'+unit);
 }
 function stockPurchaseVisibilityV728(){
  const node=purchaseElV728('stockPurchaseV728');if(!node)return;
@@ -61,7 +61,7 @@ function stockPurchaseCaptureV728(item,destination){
   if(!['m3','granel','m2','linear'].includes(item.tipoMedida))throw Error('Selecione uma unidade de compra válida.');
   const draft=purchaseReadFieldsV728();if(draft.stock&&draft.stock!==destination)throw Error('Confirme esta lista no estoque escolhido antes de trocar de estoque.');
   const unitCents=draft.operation==='opening'&&!draft.unit.trim()?null:financeCents(draft.unit.trim());
-  const line={...(item.lastroM3V825===true?{lastroM3V825:true,lastrosV826:Number(item.lastrosV826||1)}:{}),id:item.id,madeiraId:item.madeiraId,madeira:item.madeira,tipoMedida:item.tipoMedida,largura:Number(item.largura||0),espessura:Number(item.espessura||0),comprimento:Number(item.comprimento||0),quantidade:Number(item.quantidade||0),volume:purchasePhysicalQuantityV755(item),estadoMadeira:item.tipoMedida==='m3'&&$('chkMadeiraVerde')?.checked?'verde':'seca',unitCents};
+  const line={...(item.tipoBitolaV829?{tipoBitolaV829:item.tipoBitolaV829}:{}),...(item.lastroM3V825===true?{lastroM3V825:true,lastrosV826:Number(item.lastrosV826||1)}:{}),id:item.id,madeiraId:item.madeiraId,madeira:item.madeira,tipoMedida:item.tipoMedida,largura:Number(item.largura||0),espessura:Number(item.espessura||0),comprimento:Number(item.comprimento||0),quantidade:Number(item.quantidade||0),volume:purchasePhysicalQuantityV755(item),estadoMadeira:item.tipoMedida==='m3'&&$('chkMadeiraVerde')?.checked?'verde':'seca',unitCents};
   // Validate physical quantity and price now; supplier may be completed before confirmation.
   if(line.estadoMadeira==='verde')line.secagemDias=Number($('diasSecagemVerde')?.value||0);
   if(item.tipoMedida==='linear')Object.assign(line,{produto:String(item.produto||''),codigoProduto:String(item.codigoProduto||''),...(item.linearTotalV744===true?{linearTotalV744:true}:{})});

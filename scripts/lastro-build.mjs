@@ -1,3 +1,4 @@
+import {applyCalculatorTypeV829} from './calculator-m3-type-build.mjs';
 export function applyLastroV825(app){
  const replace=(a,b)=>{if(!app.includes(a))throw Error('Lastro: trecho ausente '+a.slice(0,100));app=app.replace(a,()=>b);};
  replace("modoMedida==='linear'&&String($('quantidade').value).trim()===''?1:Number($('quantidade').value)","modoMedida==='linear'&&String($('quantidade').value).trim()===''?1:Number($('quantidade').value)");
@@ -47,5 +48,5 @@ export function applyLastroV825(app){
  const deduction=app.slice(deductionStart,deductionEnd).replaceAll('lastrosV826:Number(item.lastrosV826||1)', 'lastrosV826:Number(item.lastrosV826||1)*op.volume/Number(item.volume)');
  app=app.slice(0,deductionStart)+deduction+app.slice(deductionEnd);
  app=app.replaceAll('lastrosV826:Number(ref.lastrosV826||1)', 'lastrosV826:Number(ref.lastrosV826||1)*proporcao');
- return app;
+ return applyCalculatorTypeV829(app);
 }
