@@ -20,7 +20,6 @@ export function applyLastroV825(app){
  // Keep measured lastros separate from counted rows in all standard grouping keys.
  replace("fechado=x.vendaFechadaM3===true?'F1':isLinearTotalV744(x)?'LT1':'F0'", "fechado=isLastroM3V825(x)?'LASTRO':x.vendaFechadaM3===true?'F1':isLinearTotalV744(x)?'LT1':'F0'");
  replace("linear?'Quantidade (opcional)':'Quantidade'", "linear?'Quantidade (opcional)':'Quantidade';const lastroButton=document.getElementById('lastroChooseV826');if(lastroButton)lastroButton.hidden=modoMedida!=='m3'");
- replace('<p class="note" id="linearTotalHintV744"', '<p class="note">No m³, escolha Peças ou Lastros e informe a quantidade. O volume total considera a quantidade escolhida.</p><p class="note" id="linearTotalHintV744"');
  app=app.replaceAll('${g.quantidade}pç', "${g.lastroM3V825?lastroLabelV826(g):g.quantidade+'pç'}");
  app=app.replaceAll('${Number(x.quantidade)||0}pç', "${isLastroM3V825(x)?lastroLabelV826(x):(Number(x.quantidade)||0)+'pç'}");
  replace('nome,espessura:esp,largura:larg,comprimento:comp,', 'nome,lastroM3V825:x.lastroM3V825===true,espessura:esp,largura:larg,comprimento:comp,');
