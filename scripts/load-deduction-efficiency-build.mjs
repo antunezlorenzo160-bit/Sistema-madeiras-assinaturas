@@ -1,3 +1,4 @@
+import {applyLoadDeductionBatchV833} from './load-deduction-batch-build.mjs';
 export function applyLoadDeductionEfficiencyV796(app){
  if(app.includes('// LOAD_DEDUCTION_EFFICIENCY_V796'))return app;
  const start=app.indexOf("async function salvarCargaComBaixa(item,estoqueOrigem,finalidadeSaida='Carga'){"),end=app.indexOf('\nfunction mesmaBitolaTransferencia(',start);
@@ -18,5 +19,5 @@ export function applyLoadDeductionEfficiencyV796(app){
  app=app.slice(0,start)+body+app.slice(end);
  const anchor="      save();\n      await window.__v456Local.flush?.();\n      baixaRegistradaLocal=true;";
  if(!app.includes(anchor)||app.indexOf(anchor)!==app.lastIndexOf(anchor))throw Error('Persistência final da baixa mudou.');
- return app.replace(anchor,"      save([STORAGE.lancamentos,STORAGE.movimentos,'carregamentos_lancamentos_v1']);\n      await window.__v456Local.flush?.();\n      baixaRegistradaLocal=true;");
+ return applyLoadDeductionBatchV833(app.replace(anchor,"      save([STORAGE.lancamentos,STORAGE.movimentos,'carregamentos_lancamentos_v1']);\n      await window.__v456Local.flush?.();\n      baixaRegistradaLocal=true;"));
 }
