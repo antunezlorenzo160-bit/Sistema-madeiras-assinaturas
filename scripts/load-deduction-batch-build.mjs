@@ -1,3 +1,4 @@
+import {applyRomaneioStabilityV834} from './romaneio-stability-build.mjs';
 import {readFileSync} from 'node:fs';
 export function applyLoadDeductionBatchV833(app){
  if(app.includes('// LOAD_DEDUCTION_BATCH_V833'))return app;
@@ -33,5 +34,5 @@ export function applyLoadDeductionBatchV833(app){
  executor=executor.replace(repaint,`      try{atualizarTelasAposLancamento('carga')}catch(e){}
       atualizarFluxoCargaV388();
       try{if(!diferirRenderizacaoV595('renderCarregamentosV392','#carregamentos',renderCarregamentosV392))renderCarregamentosV392();}catch(e){}`);
- return app.slice(0,start)+'// LOAD_DEDUCTION_BATCH_V833\n'+planner+readFileSync(new URL('../ui/load-deduction-batch.js',import.meta.url),'utf8')+'\n'+executor+app.slice(end);
+ return applyRomaneioStabilityV834(app.slice(0,start)+'// LOAD_DEDUCTION_BATCH_V833\n'+planner+readFileSync(new URL('../ui/load-deduction-batch.js',import.meta.url),'utf8')+'\n'+executor+app.slice(end));
 }
