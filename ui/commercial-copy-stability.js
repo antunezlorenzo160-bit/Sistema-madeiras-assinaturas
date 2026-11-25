@@ -5,7 +5,7 @@ function commercialCopyCardV837(){const card=document.querySelector('#v408-detal
 function markCommercialCopyV837(){
  const card=commercialCopyCardV837();if(!card)return;
  const gid=String(estadoCargasV408.gid),signature=commercialCopySignatureV837(gid),form=card.querySelector('.v400-copia-box'),node=card.querySelector('.v400-documento-comercial');
- if(form)form.copyViewSignatureV837=signature;if(node){node.copyViewSignatureV837=signature;node.copyViewGroupV837=gid;}
+ if(form)form.copyViewSignatureV837=signature;if(node&&!node.copyViewSignatureV837){node.copyViewSignatureV837=signature;node.copyViewGroupV837=gid;}
 }
 function captureCommercialCopyV837(){
  const card=commercialCopyCardV837();if(!card)return null;
