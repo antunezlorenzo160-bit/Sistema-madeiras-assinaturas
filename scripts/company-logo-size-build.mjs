@@ -2,7 +2,7 @@ import {readFileSync} from 'node:fs';
 export function applyCompanyLogoSizeV835(app){
  if(app.includes('id="company-logo-size-v835"'))return app;
  const replace=(a,b)=>{if(!app.includes(a)||app.indexOf(a)!==app.lastIndexOf(a))throw Error('Company logo size: anchor changed '+a.slice(0,100));app=app.replace(a,()=>b);};
- replace('</head>','<script id="company-logo-size-v835">'+readFileSync(new URL('../ui/company-logo-size.js',import.meta.url),'utf8')+'</script></head>');
+ replace('</head>','<script id="company-logo-size-v835">'+readFileSync(new URL('../ui/company-logo-size.js',import.meta.url),'utf8')+'</script><style id="company-logo-frame-v836">.v421-empresa-documento,html body.custom-print #printAreaCustom .v421-empresa-documento{border:0!important;border-radius:0!important;box-shadow:none!important}.v421-logo-preview{border:0!important;box-shadow:none!important}.v421-empresa-documento .v421-empresa-cab img{border:0!important;outline:0!important;box-shadow:none!important}</style></head>');
  replace('            <label>Prévia</label>',`            <label for="empresaLogoEscalaPdfV835">Tamanho da logo nos PDFs: <output id="empresaLogoEscalaValorV835">100%</output></label>
             <input id="empresaLogoEscalaPdfV835" type="range" min="50" max="250" step="10" value="100">
             <p class="note">Ajuste a prévia e salve a empresa para aplicar nos PDFs.</p>
