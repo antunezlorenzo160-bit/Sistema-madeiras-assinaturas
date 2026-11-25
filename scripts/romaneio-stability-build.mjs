@@ -1,3 +1,4 @@
+import {applyCommercialCopyStabilityV837} from './commercial-copy-stability-build.mjs';
 import {applyCompanyLogoSizeV835} from './company-logo-size-build.mjs';
 import {readFileSync} from 'node:fs';
 export function applyRomaneioStabilityV834(app){
@@ -9,5 +10,5 @@ export function applyRomaneioStabilityV834(app){
  body=body.replace('    restaurarEdicoesPendentesV422(rascunhoV422);','    restaurarEdicoesPendentesV422(rascunhoV422);\n    restoreRomaneioV834(previewV834);');app=app.slice(0,start)+body+app.slice(end);
  const poll="    if(document.hidden||orcSubaba!=='carregamentos'||lotePacotesEmCurso)return;\n    const sig=assinaturaCargasV414();";
  if(!app.includes(poll))throw Error('Romaneio stability: polling changed');
- return applyCompanyLogoSizeV835(app.replace(poll,"    if(document.hidden||window.__smPrintingV556||orcSubaba!=='carregamentos'||lotePacotesEmCurso||currentRomaneioV834())return;\n    const sig=assinaturaCargasV414();"));
+ return applyCommercialCopyStabilityV837(applyCompanyLogoSizeV835(app.replace(poll,"    if(document.hidden||window.__smPrintingV556||orcSubaba!=='carregamentos'||lotePacotesEmCurso||currentRomaneioV834())return;\n    const sig=assinaturaCargasV414();")));
 }

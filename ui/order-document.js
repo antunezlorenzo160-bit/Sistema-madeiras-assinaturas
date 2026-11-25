@@ -94,3 +94,5 @@ function orderDocCopyFormAttrsV771(gid){const entry=orderDocCacheV767.get(gid);i
 function orderDocPinCopyV771(form){const gid=form?.dataset.orderCopyGid;if(gid&&!orderDocCopyPinsV771.has(gid))orderDocCopyPinsV771.set(gid,{revision:Number(form.dataset.orderCopyRevision),signature:form.dataset.orderCopySignature});}
 function orderDocResetCopyV771(gid){orderDocCopyPinsV771.delete(gid);}
 function orderDocFinishCopyV771(gid){orderDocCopyPinsV771.delete(gid);for(const form of document.querySelectorAll('[data-order-copy-gid]'))if(form.dataset.orderCopyGid===gid)form.dataset.pendente='0';}
+
+function orderDocCopyViewSignatureV837(gid){orderDocContextV767();const entry=orderDocCacheV767.get(gid);return JSON.stringify([entry?.bundle||null,entry?.copySignature||'',entry?.customerChanged===true]);}
