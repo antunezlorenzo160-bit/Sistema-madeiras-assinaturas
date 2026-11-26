@@ -1,5 +1,5 @@
 function promissoriaButton(gid){
-  return '<button type="button" class="btn btn-secondary" data-promissoria-load="'+esc(gid)+'">Gerar promissória</button>';
+  return '<button type="button" class="btn btn-secondary" data-promissoria-load="'+esc(gid)+'">Promissória</button>';
 }
 
 // Derive a display reference that stays the same across devices and exports.
@@ -38,10 +38,10 @@ function promissoriaSnapshot(gid, commercial, bundle){
   return {cliente,empresa,produtos,calc,totalPedidos,total,transporte:[transporte.transportadora,transporte.motorista,transporte.placa].filter(Boolean).join(' · ')};
 }
 
-function promissoriaLinkPanel(dialog, gid, prepare){
+function promissoriaLinkPanel(dialog, gid, prepare, onRecord){
   const panel=dialog.querySelector('[data-share-panel]');
   const create=panel.querySelector('[data-create-link]'), copy=panel.querySelector('[data-copy-link]');
-  const view=panel.querySelector('[data-view-signed]'), status=panel.querySelector('[role="status"]');
+  const view=dialog.querySelector('[data-view-signed]'), status=panel.querySelector('[role="status"]');
   const link=panel.querySelector('input'), whatsapp=panel.querySelector('a');
   let saved=null,busy=false;
   const company=empresaV456;
@@ -54,6 +54,8 @@ function promissoriaLinkPanel(dialog, gid, prepare){
       const result=await financeRequestV722({action,loadId:gid,...payload},null,'assinatura-promissoria');
       if(!dialog.open||company!==empresaV456)return;
       saved=result.document?result:null;
+      await onRecord(saved);
+      if(saved?.signedAt)return result;
       link.value='';
       whatsapp.removeAttribute('href');
       if(saved){
@@ -64,10 +66,9 @@ function promissoriaLinkPanel(dialog, gid, prepare){
       }
       const expired=saved&&Date.now()>=saved.expiresAt;
       const vencimento=saved?.document.vencimento.split('-').reverse().join('/');
-      status.textContent=saved?.signedAt
-        ?'Assinatura recebida em '+new Date(saved.signedAt).toLocaleString('pt-BR')+'.'
-        :expired?'Link expirado. Renove para enviar novamente.':saved?'Aguardando assinatura para '+valorPromissoria(saved.document.snapshot.total)+' com vencimento em '+vencimento+'.':'Gere o link depois de conferir o valor e o vencimento.';
-    }catch(error){status.textContent=error.message;}
+      status.textContent=expired?'Link expirado. Renove para enviar novamente.':saved?'Aguardando assinatura para '+valorPromissoria(saved.document.snapshot.total)+' com vencimento em '+vencimento+'.':'Gere o link depois de conferir o valor e o vencimento.';
+      return result;
+    }catch(error){status.textContent=error.message;dialog.querySelector('[data-record-status]').textContent=error.message;}
     finally{
       busy=false;
       const active=saved&&Date.now()<saved.expiresAt;
@@ -76,7 +77,7 @@ function promissoriaLinkPanel(dialog, gid, prepare){
       copy.hidden=!shareable;
       whatsapp.hidden=!shareable;
       view.hidden=!saved?.signedAt;
-      create.hidden=!!active;
+      create.hidden=!!active||!!saved?.signedAt;
       create.textContent=saved?'Renovar link':'Gerar link de assinatura';
       for(const button of [create,copy,view,panel.querySelector('[data-refresh-link]')])button.disabled=false;
     }
@@ -84,23 +85,15 @@ function promissoriaLinkPanel(dialog, gid, prepare){
   panel.addEventListener('toggle',()=>{if(panel.open)load('owner-read');});
   panel.querySelector('[data-refresh-link]').onclick=()=>load('owner-read');
   create.onclick=()=>{
-    const document=saved?{}:prepare();
-    if(document)load('create',document);
+    if(saved?.signedAt)return;
+    const payload=saved?{}:prepare();
+    if(payload)load('create',payload);
   };
   copy.onclick=async()=>{
     try{await navigator.clipboard.writeText(link.value);status.textContent='Link copiado.';}
     catch{link.focus();link.select();status.textContent='Copie o link selecionado.';}
   };
-  view.onclick=()=>{
-    if(!saved?.signedAt||company!==empresaV456||!finOwnerV722())return;
-    const {numeroPedido,snapshot,vencimento,local,emissao}=saved.document;
-    const sheet=document.createElement('div');
-    sheet.innerHTML=promissoriaSheet(numeroPedido,snapshot,vencimento,local,emissao);
-    const image=sheet.querySelector('.promissoria-sign img');
-    image.src=saved.signature;
-    image.hidden=false;
-    promissoriaPrint(dialog,sheet.firstElementChild,numeroPedido,status);
-  };
+  return ()=>load('owner-read');
 }
 
 async function promissoriaOpen(gid){
@@ -111,14 +104,15 @@ async function promissoriaOpen(gid){
   const dialog=document.createElement('dialog');
   dialog.className='promissoria-dialog';
   dialog.style.cssText='width:min(800px,94vw);max-height:90vh;overflow:auto;background:white;color:#16231b;padding:16px;border:1px solid #355845;border-radius:8px';
-  dialog.setAttribute('aria-label','Gerar promissória');
+  dialog.setAttribute('aria-label','Promissória');
   dialog.innerHTML=`<style>${promissoriaCss}
     .promissoria-dialog label{display:block;margin:8px 0}
     .promissoria-dialog [hidden]{display:none!important}
     .promissoria-dialog canvas{display:block;width:min(100%,400px);background:white;border:1px solid #355845;touch-action:none}
     .promissoria-actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
-    </style><h3>Gerar promissória</h3>
-    <form>
+    </style><h3>Promissória</h3>
+    <p data-record-status role="status">Consultando promissória…</p>
+    <form hidden>
       <label>Usar valores de <select name="origem"><option value="original">Carregamento original</option><option value="copia">Cópia comercial</option></select></label>
       <label>Vencimento <input type="date" name="vencimento" required></label>
       <label>Local de emissão e pagamento <input name="local" type="text" maxlength="120" required></label>
@@ -128,7 +122,6 @@ async function promissoriaOpen(gid){
         <button class="btn btn-secondary" type="button" data-clear>Limpar assinatura</button>
         <button class="btn btn-primary" type="submit" disabled>Salvar PDF</button>
         <a class="btn btn-secondary" href="https://assinador.iti.br/" target="_blank" rel="noopener noreferrer">Abrir assinador Gov.br</a>
-        <button class="btn btn-secondary" type="button" data-close>Fechar</button>
       </div>
       <p>Na impressão, escolha Salvar como PDF. Para o cliente assinar à distância, gere o link em Enviar ao cliente.</p>
       <p role="status"></p>
@@ -136,15 +129,18 @@ async function promissoriaOpen(gid){
     <details data-share-panel>
       <summary>Enviar ao cliente</summary>
       <div class="promissoria-actions">
-        <button class="btn btn-primary" type="button" data-create-link>Gerar link de assinatura</button>
+        <button class="btn btn-primary" type="button" data-create-link disabled>Gerar link de assinatura</button>
         <button class="btn btn-secondary" type="button" data-copy-link hidden>Copiar link</button>
         <a class="btn btn-secondary" target="_blank" rel="noopener noreferrer" hidden>Enviar link pelo WhatsApp</a>
         <button class="btn btn-secondary" type="button" data-refresh-link>Consultar assinatura</button>
-        <button class="btn btn-secondary" type="button" data-view-signed hidden>Salvar PDF assinado</button>
       </div>
       <label hidden>Link para o cliente <input type="url" readonly></label>
       <p role="status"></p>
     </details>
+    <div class="promissoria-actions">
+      <button class="btn btn-primary" type="button" data-view-signed hidden>Salvar PDF assinado</button>
+      <button class="btn btn-secondary" type="button" data-close>Fechar</button>
+    </div>
     <div data-preview></div>`;
   document.body.append(dialog);
   dialog.addEventListener('close',()=>dialog.remove(),{once:true});
@@ -155,7 +151,10 @@ async function promissoriaOpen(gid){
   const signature=promissoriaSignature(form.querySelector('canvas'));
   const empresa=lerEmpresaDocumentoV421();
   fields.local.value=[empresa.cidade,empresa.uf].filter(Boolean).join(' / ');
-  let bundle,ready=false,shown='',snapshot;
+  const recordStatus=dialog.querySelector('[data-record-status]');
+  const signedPdf=dialog.querySelector('[data-view-signed]');
+  const sharePanel=dialog.querySelector('[data-share-panel]');
+  let bundle,ready=false,shown='',snapshot,signed=null,checkingPrint=false,loadingOrders=false;
   const showSignature=()=>{
     const img=preview.querySelector('.promissoria-sign img');
     if(!img)return;
@@ -165,7 +164,7 @@ async function promissoriaOpen(gid){
     else img.removeAttribute('src');
   };
   const render=()=>{
-    if(!ready||company!==empresaV456||!finOwnerV722())return;
+    if(!ready||signed||company!==empresaV456||!finOwnerV722())return;
     try{
       const commercial=fields.origem.value==='copia';
       const card=document.querySelector('[data-v399-grupo="'+CSS.escape(String(gid))+'"]');
@@ -176,7 +175,7 @@ async function promissoriaOpen(gid){
       shown=JSON.stringify(snapshot);
       preview.innerHTML=promissoriaSheet(numeroPedido,snapshot,fields.vencimento.value,fields.local.value.trim(),emissao);
       showSignature();
-      submit.disabled=false;
+      submit.disabled=checkingPrint;
       status.textContent='';
     }catch(error){
       preview.replaceChildren();
@@ -184,7 +183,8 @@ async function promissoriaOpen(gid){
       status.textContent=error.message;
     }
   };
-  promissoriaLinkPanel(dialog,gid,()=>{
+  const refresh=promissoriaLinkPanel(dialog,gid,()=>{
+    if(signed||checkingPrint)return null;
     if(!form.reportValidity())return null;
     const before=shown;
     render();
@@ -194,28 +194,58 @@ async function promissoriaOpen(gid){
       return null;
     }
     return {numeroPedido,snapshot,vencimento:fields.vencimento.value,local:fields.local.value.trim()};
+  },async record=>{
+    recordStatus.textContent='';
+    if(record?.signedAt){
+      signed=record;
+      form.hidden=true;
+      sharePanel.hidden=true;
+      dialog.querySelector('h3').textContent='Promissória assinada';
+      recordStatus.textContent='Assinatura recebida em '+new Date(record.signedAt).toLocaleString('pt-BR')+'.';
+      const {numeroPedido,snapshot,vencimento,local,emissao}=record.document;
+      preview.innerHTML=promissoriaSheet(numeroPedido,snapshot,vencimento,local,emissao);
+      const image=preview.querySelector('.promissoria-sign img');
+      image.src=record.signature;
+      image.hidden=false;
+      return;
+    }
+    if(ready||loadingOrders)return;
+    loadingOrders=true;
+    status.textContent='Conferindo os pedidos incluídos…';
+    form.hidden=false;
+    try{
+      const result=await orderDocEnsureV767(gid);
+      if(!dialog.open||signed||company!==empresaV456||!finOwnerV722())return;
+      bundle=result?.bundle;
+      ready=true;
+      render();
+    }catch(error){status.textContent=error.message;}
+    finally{loadingOrders=false;}
   });
+  signedPdf.onclick=()=>{
+    if(signed&&company===empresaV456&&finOwnerV722()){
+      promissoriaPrint(dialog,preview.firstElementChild,signed.document.numeroPedido,recordStatus);
+    }
+  };
   form.addEventListener('input',render);
   form.querySelector('canvas').addEventListener('lostpointercapture',showSignature);
   dialog.querySelector('[data-clear]').onclick=()=>{signature.clear();showSignature();};
-  form.onsubmit=event=>{
+  form.onsubmit=async event=>{
     event.preventDefault();
-    if(!ready||company!==empresaV456||!finOwnerV722())return;
+    if(!ready||signed||checkingPrint||company!==empresaV456||!finOwnerV722())return;
+    checkingPrint=true;
+    submit.disabled=true;
+    const result=await refresh();
+    checkingPrint=false;
+    if(!dialog.open||signed||company!==empresaV456||!finOwnerV722())return;
     const before=shown;
     render();
-    if(submit.disabled)return;
+    if(!result||submit.disabled)return;
     if(before!==shown){status.textContent='Os dados mudaram. Confira o documento atualizado antes de salvar.';return;}
-    if(!fields.local.value.trim()){status.textContent='Informe o local de emissão e pagamento.';return;}
+    if(!form.reportValidity()||!fields.local.value.trim()){status.textContent='Confira o vencimento e o local de emissão e pagamento.';return;}
     promissoriaPrint(dialog,preview.firstElementChild,numeroPedido,status);
   };
-  status.textContent='Conferindo os pedidos incluídos…';
-  try{
-    const result=await orderDocEnsureV767(gid);
-    if(!dialog.open||company!==empresaV456||!finOwnerV722())return;
-    bundle=result?.bundle;
-    ready=true;
-    render();
-  }catch(error){status.textContent=error.message;}
+  await refresh();
 }
 
 document.addEventListener('click',event=>{
