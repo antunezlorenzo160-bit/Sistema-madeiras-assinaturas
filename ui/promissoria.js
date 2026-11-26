@@ -30,7 +30,7 @@ function promissoriaNumeroPedido(gid){
   for(const char of String(gid)){
     hash=BigInt.asUintN(64,(hash^BigInt(char.codePointAt(0)))*1099511628211n);
   }
-  return String(100000000000n+hash%900000000000n);
+  return String(10000n+hash%90000n);
 }
 
 function promissoriaSnapshot(gid, commercial, bundle){
