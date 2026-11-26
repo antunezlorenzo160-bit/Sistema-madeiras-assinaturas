@@ -24,6 +24,15 @@ function promissoriaButton(gid){
   return '<button type="button" class="btn btn-secondary" data-promissoria-load="'+esc(gid)+'">Gerar promissória</button>';
 }
 
+// Derive a display reference that stays the same across devices and exports.
+function promissoriaNumeroPedido(gid){
+  let hash=14695981039346656037n;
+  for(const char of String(gid)){
+    hash=BigInt.asUintN(64,(hash^BigInt(char.codePointAt(0)))*1099511628211n);
+  }
+  return String(100000000000n+hash%900000000000n);
+}
+
 function promissoriaSnapshot(gid, commercial, bundle){
   const itens=itensGrupoCargaV400(gid);
   if(!itens.length||statusGrupoV392(itens).chave==='montagem')throw Error('Feche o carregamento antes de emitir a promissória.');
@@ -51,7 +60,7 @@ function promissoriaSnapshot(gid, commercial, bundle){
   return {cliente,empresa,produtos,calc,totalPedidos,total,cabecalho:documentoEmpresaHtmlV421('relatorio'),transporte:[transporte.transportadora,transporte.motorista,transporte.placa].filter(Boolean).join(' · ')};
 }
 
-function promissoriaSheet(gid, snapshot, vencimento, local){
+function promissoriaSheet(numeroPedido, snapshot, vencimento, local){
   const {cliente,empresa,produtos,calc,totalPedidos,total,cabecalho,transporte}=snapshot;
   const data=vencimento?vencimento.split('-').reverse().join('/'):'—';
   const valor=finMoneyV722(total);
@@ -71,7 +80,7 @@ function promissoriaSheet(gid, snapshot, vencimento, local){
   ).join('');
   return `<article class="promissoria-sheet">
     <div class="promissoria-company">${cabecalho}</div>
-    <h2>PEDIDO <small>nº ${esc(gid)}</small></h2>
+    <h2>PEDIDO <small>nº ${numeroPedido}</small></h2>
     <table><tbody>
       <tr><td><b>Cliente</b> ${esc(cliente.nome)}</td><td><b>Telefone</b> ${esc(cliente.telefone||'—')}</td></tr>
       <tr><td colspan="2"><b>Endereço</b> ${esc(endereco||'—')}</td></tr>
@@ -85,7 +94,7 @@ function promissoriaSheet(gid, snapshot, vencimento, local){
     <section class="promissoria-note"><div class="promissoria-band promissoria-side">REPÚBLICA FEDERATIVA DO BRASIL</div><div>
       <h3>NOTA PROMISSÓRIA</h3>
       <table><tbody>
-        <tr><td><b>Número</b> ${esc(gid)}</td><td><b>Vencimento</b> ${data}</td><td><b>Valor</b> ${valor}</td></tr>
+        <tr><td><b>Número</b> ${numeroPedido}</td><td><b>Vencimento</b> ${data}</td><td><b>Valor</b> ${valor}</td></tr>
         <tr><td colspan="3"><b>Empresa</b> ${esc(empresa.nome)}${empresa.cnpj?' · CNPJ '+esc(fmtDocEmpresaV421(empresa.cnpj)):''}</td></tr>
         <tr><td colspan="3"><b>Cliente</b> ${esc(cliente.nome)}</td></tr>
         <tr><td colspan="3"><b>CPF / CNPJ</b> ${esc(documentoClienteFormatadoV417(cliente.documento)||'—')}</td></tr>
@@ -129,7 +138,7 @@ function promissoriaSignature(canvas){
   };
 }
 
-function promissoriaPrint(dialog, sheet, gid, status){
+function promissoriaPrint(dialog, sheet, numeroPedido, status){
   const frame=document.createElement('iframe');
   frame.title='Impressão da promissória';
   frame.style.cssText='position:absolute;width:194mm;height:281mm;left:-10000px;border:0';
@@ -147,7 +156,7 @@ function promissoriaPrint(dialog, sheet, gid, status){
       frame.contentWindow.print();
     }catch(error){status.textContent=error.message;frame.remove();}
   };
-  frame.srcdoc=`<!doctype html><html lang="pt-BR"><meta charset="utf-8"><title>Promissória ${esc(gid)}</title>
+  frame.srcdoc=`<!doctype html><html lang="pt-BR"><meta charset="utf-8"><title>Promissória ${numeroPedido}</title>
     <style>${promissoriaCss} @page{size:A4;margin:8mm}body{margin:0}main{height:280mm;width:194mm}</style>
     <main>${sheet.outerHTML}</main></html>`;
   dialog.querySelector('iframe')?.remove();
@@ -157,6 +166,7 @@ function promissoriaPrint(dialog, sheet, gid, status){
 async function promissoriaOpen(gid){
   if(!finOwnerV722()||document.querySelector('.promissoria-dialog'))return;
   const company=empresaV456;
+  const numeroPedido=promissoriaNumeroPedido(gid);
   const dialog=document.createElement('dialog');
   dialog.className='promissoria-dialog';
   dialog.style.cssText='width:min(800px,94vw);max-height:90vh;overflow:auto;background:white;color:#16231b;padding:16px;border:1px solid #355845;border-radius:8px';
@@ -209,7 +219,7 @@ async function promissoriaOpen(gid){
         (commercial&&card?.querySelector('.v400-copia-box[data-pendente="1"]')))throw Error('Salve as alterações do carregamento antes de continuar.');
       const snapshot=promissoriaSnapshot(gid,commercial,bundle);
       shown=JSON.stringify(snapshot);
-      preview.innerHTML=promissoriaSheet(gid,snapshot,fields.vencimento.value,fields.local.value.trim());
+      preview.innerHTML=promissoriaSheet(numeroPedido,snapshot,fields.vencimento.value,fields.local.value.trim());
       showSignature();
       submit.disabled=false;
       status.textContent='';
@@ -230,7 +240,7 @@ async function promissoriaOpen(gid){
     if(submit.disabled)return;
     if(before!==shown){status.textContent='Os dados mudaram. Confira o documento atualizado antes de salvar.';return;}
     if(!fields.local.value.trim()){status.textContent='Informe o local de emissão e pagamento.';return;}
-    promissoriaPrint(dialog,preview.firstElementChild,gid,status);
+    promissoriaPrint(dialog,preview.firstElementChild,numeroPedido,status);
   };
   status.textContent='Conferindo os pedidos incluídos…';
   try{
