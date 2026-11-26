@@ -45,17 +45,19 @@ function promissoriaLinkPanel(dialog, gid, prepare){
   const link=panel.querySelector('input'), whatsapp=panel.querySelector('a');
   let saved=null,busy=false;
   const company=empresaV456;
-  const load=async(action,document={})=>{
+  const load=async(action,payload={})=>{
     if(busy||company!==empresaV456||!finOwnerV722())return;
     busy=true;
     for(const button of [create,copy,view,panel.querySelector('[data-refresh-link]')])button.disabled=true;
     status.textContent='Consultando assinatura…';
     try{
-      const result=await financeRequestV722({action,loadId:gid,...document},null,'assinatura-promissoria');
+      const result=await financeRequestV722({action,loadId:gid,...payload},null,'assinatura-promissoria');
       if(!dialog.open||company!==empresaV456)return;
       saved=result.document?result:null;
+      link.value='';
+      whatsapp.removeAttribute('href');
       if(saved){
-        const url=new URL('/assinar-promissoria/',location.origin);
+        const url=new URL('/assinar-promissoria/',document.baseURI);
         url.hash=saved.token;
         link.value=url.href;
         whatsapp.href='https://wa.me/?text='+encodeURIComponent('Olá! Confira e assine a promissória do pedido nº '+saved.document.numeroPedido+': '+url.href);
@@ -69,9 +71,10 @@ function promissoriaLinkPanel(dialog, gid, prepare){
     finally{
       busy=false;
       const active=saved&&Date.now()<saved.expiresAt;
-      link.parentElement.hidden=!active;
-      copy.hidden=!active;
-      whatsapp.hidden=!active;
+      const shareable=active&&!!link.value;
+      link.parentElement.hidden=!shareable;
+      copy.hidden=!shareable;
+      whatsapp.hidden=!shareable;
       view.hidden=!saved?.signedAt;
       create.hidden=!!active;
       create.textContent=saved?'Renovar link':'Gerar link de assinatura';
