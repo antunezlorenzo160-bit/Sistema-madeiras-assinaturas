@@ -18,3 +18,23 @@ test('actual calculator selector changes price, auto-selects one type, and prese
 test('untyped legacy catalog keeps its price and changing species clears a stale type',()=>{
  const s=setup();s.c.madeiras.push({id:'old',preco:1500});s.nodes.calcTipoM3V829.value='Forro';s.c.calcTypeRefreshV829();s.nodes.calcMadeira.value='old';s.c.atualizarPrecoBitolaCalculadora();assert.equal(s.nodes.calcTipoM3V829.value,'');assert.equal(s.nodes.calcTipoM3V829.disabled,true);assert.equal(s.nodes.precoM3.value,1500);assert.equal(s.c.calcTypeValidateV829(),'');
 });
+
+test('species base prices cover unregistered thicknesses and preserve custom rates',()=>{
+ const s=setup();
+ const wood=s.c.madeiras[0];
+ wood.precoBaseVarejoM3=1800;
+ wood.precoBaseAtacadoM3=1500;
+ s.c.atualizarPrecoBitolaCalculadora();
+ assert.equal(s.nodes.precoM3.value,0,'registered types still require a choice');
+ s.nodes.espessura.value='3';
+ s.c.atualizarPrecoBitolaCalculadora();
+ assert.equal(s.nodes.precoM3.value,1800);
+ assert.deepEqual(catalogPricePair({espessura:3},wood),{retail:1800,wholesale:1500});
+ assert.deepEqual(catalogPricePair({espessura:5},wood),{retail:4000,wholesale:1500});
+ assert.deepEqual(catalogPricePair({espessura:2.5,tipoBitolaV829:'Tábua',largura:20,comprimento:5.5},wood),{retail:2310,wholesale:2090});
+
+ wood.bitolas=[];
+ s.c.atualizarPrecoBitolaCalculadora();
+ assert.equal(s.nodes.precoM3.value,1800);
+ assert.deepEqual(catalogPricePair({espessura:3},wood),{retail:1800,wholesale:1500});
+});

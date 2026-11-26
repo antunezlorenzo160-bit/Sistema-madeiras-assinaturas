@@ -45,9 +45,13 @@ export function catalogPricePair(item,catalog){
  }
  if(type==='granel')return {retail:retail(m),wholesale:wholesale(m)};
  const bit=(m.bitolas||[]).find(b=>has(b.espessuraRegra??b.espessura,item.espessura)&&(!item.tipoBitolaV829||String(b.tipo??b.produto??'').trim()===item.tipoBitolaV829));
- if(!bit)return (m.bitolas||[]).length?{retail:n(item.preco),wholesale:0}:{retail:retail(m)||n(item.preco),wholesale:wholesale(m)};
+ const baseRetail=n(m.precoBaseVarejoM3),baseWholesale=n(m.precoBaseAtacadoM3);
+ if(!bit){
+  const hasBitolas=(m.bitolas||[]).length>0;
+  return {retail:baseRetail||(hasBitolas?0:retail(m))||n(item.preco),wholesale:baseWholesale||(hasBitolas?0:wholesale(m))};
+ }
  const width=(bit.regrasLargura||[]).find(r=>has(r.larguraRegra??r.larguras,item.largura));
- let r=retail(bit),w=wholesale(bit);
+ let r=retail(bit)||baseRetail,w=wholesale(bit)||baseWholesale;
  if(width){if(retail(width)>0)r=retail(width);if(wholesale(width)>0)w=wholesale(width);}
  const rule=(bit.regrasComprimento||[]).filter(r=>Number(item.comprimento||0)>=Number(r.acimaDe??r.comprimentoRegra??Infinity)).sort((a,b)=>Number(b.acimaDe??b.comprimentoRegra)-Number(a.acimaDe??a.comprimentoRegra))[0];
  if(rule){const f=1+Number(rule.percentual??rule.acrescimoPercentual??0)/100;r=Math.round(r*f*100)/100;w=Math.round(w*f*100)/100;}

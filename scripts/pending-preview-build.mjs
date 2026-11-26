@@ -23,6 +23,47 @@ export function applyPendingPreview(html){
  const replace=(a,b)=>{if(!app.includes(a)||app.indexOf(a)!==app.lastIndexOf(a))throw Error('Trecho da prévia mudou: '+a.slice(0,80));app=app.replace(a,()=>b);};
  // Enter is already handled by the customer search listener.
  replace('    onkeydown="if(event.key===\'Enter\'){event.preventDefault();buscarClientePedidos();}"\n','');
+ const baseFields=`<div id="cadPrecosBaseM3" style="grid-column:1/-1;display:none">
+   <div class="grid">
+     <div><label for="cadBaseVarejoM3">Varejo base (R$/m³)</label><input id="cadBaseVarejoM3" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Opcional"></div>
+     <div><label for="cadBaseAtacadoM3">Atacado base (R$/m³)</label><input id="cadBaseAtacadoM3" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Opcional"></div>
+   </div>
+   <small class="note">Cadastre bitolas quando precisarem de preço ou regra própria. As demais usam o preço-base da espécie.</small>
+ </div>`;
+ replace('<div id="cadBitolasBox"',baseFields+'<div id="cadBitolasBox"');
+ replace('O preço da bitola é o preço-base. Se nenhuma regra se aplicar, ele será usado.','O preço preenchido na bitola tem prioridade sobre o preço-base da espécie.');
+ replace("  $('cadBitolasBox').style.display=m3?'':'none';","  $('cadPrecosBaseM3').style.display=m3?'':'none';\n  $('cadBitolasBox').style.display=m3?'':'none';");
+ replace("  const bitolas=cadastroTipo==='m3'?cadBitolasLer():[];",`  const bitolas=cadastroTipo==='m3'?cadBitolasLer():[];
+  const varejoBase=cadastroTipo==='m3'?Number($('cadBaseVarejoM3').value||0):0;
+  const atacadoBase=cadastroTipo==='m3'?Number($('cadBaseAtacadoM3').value||0):0;
+  if([varejoBase,atacadoBase].some(valor=>!Number.isFinite(valor)||valor<0))return alert('Informe preços-base válidos.');
+  if(atacadoBase>0&&varejoBase>0&&atacadoBase>varejoBase&&!confirm('O Atacado base está maior que o Varejo base. Deseja salvar assim mesmo?'))return;`);
+ replace("if(cadastroTipo==='m3'&&!bitolas.length)return alert('Adicione pelo menos uma bitola.');","if(cadastroTipo==='m3'&&!bitolas.length&&!varejoBase)return alert('Informe o varejo base ou cadastre uma bitola.');");
+ replace("    precoVerde:cadastroTipo==='m3'?", "    precoBaseVarejoM3:varejoBase,precoBaseAtacadoM3:atacadoBase,\n    precoVerde:cadastroTipo==='m3'?");
+ replace("$('cadPrecoVerde').value='';cadBitolasPreencher", "$('cadPrecoVerde').value='';$('cadBaseVarejoM3').value='';$('cadBaseAtacadoM3').value='';cadBitolasPreencher");
+ replace("  $('cadPrecoVerde').value=m.precoVerde||'';", `  $('cadPrecoVerde').value=m.precoVerde||'';
+  const madeiraM3=(m.tipoCadastro||'m3')==='m3';
+  $('cadBaseVarejoM3').value=madeiraM3?(m.precoBaseVarejoM3??(!m.bitolas?.length?m.preco:0))||'':'';
+  $('cadBaseAtacadoM3').value=madeiraM3?(m.precoBaseAtacadoM3??(!m.bitolas?.length?m.precoAtacado:0))||'':'';`);
+ replace('precoVerde:Number(x.precoVerde||0),estoque:', 'precoVerde:Number(x.precoVerde||0),precoBaseVarejoM3:Number(x.precoBaseVarejoM3||0),precoBaseAtacadoM3:Number(x.precoBaseAtacadoM3||0),estoque:');
+ replace('    const base=Number(bitola.precoVarejo??bitola.preco??0);','    const base=Number(bitola.precoVarejo??bitola.preco??0)||Number(madeira?.precoBaseVarejoM3||0);');
+ replace("  }else if(esp && bits.length){",`  }else if(Number(madeira?.precoBaseVarejoM3)>0&&(!esp||!m3TypeChoicesV829(bits,esp).length)){
+    const preco=Number(madeira.precoBaseVarejoM3);
+    $('precoM3').value=preco;
+    $('precoBitolaAoLado').textContent=moeda(preco)+'/m³';
+    $('precoBitolaAoLado').classList.remove('sem-preco');
+  }else if(esp && bits.length){`);
+ replace('const baseVarejo=Number(b.precoVarejo??b.preco??0);','const baseVarejo=Number(b.precoVarejo??b.preco??0)||Number(m.precoBaseVarejoM3||0);');
+ replace('const baseAtacado=Number(b.precoAtacado||0);','const baseAtacado=Number(b.precoAtacado||0)||Number(m.precoBaseAtacadoM3||0);');
+ replace('      return cab+regras;',`      const varejo=Number(m.precoBaseVarejoM3||0),atacado=Number(m.precoBaseAtacadoM3||0);
+      const base=varejo||atacado?\`<tr class="cad-m3-regra-v338"><td colspan="3">Preço-base da espécie</td><td>\${atacado?moeda(atacado):'—'}</td><td>\${varejo?moeda(varejo):'—'}</td></tr>\`:'';
+      return cab+base+(base&&!bitsV347.length?'':regras);`);
+ replace('    m.preco=Math.round((Number(m.preco||0)*fator+Number.EPSILON)*100)/100;',`    m.preco=Math.round((Number(m.preco||0)*fator+Number.EPSILON)*100)/100;
+    if((m.tipoCadastro||'m3')==='m3'){
+      for(const campo of ['precoBaseVarejoM3','precoBaseAtacadoM3']){
+        if(Number(m[campo])>0)m[campo]=Math.round((Number(m[campo])*fator+Number.EPSILON)*100)/100;
+      }
+    }`);
  const pure=['public/document-pricing.mjs','public/compact-load-tables.mjs','public/compact-documents.mjs','public/sheet-item-totals.mjs','public/stock-charts.mjs','public/company-finance.mjs','public/load-transport.mjs','public/load-sales.mjs','public/minimum-profit.mjs','public/purchase-payments.mjs','public/sale-receipts.mjs','public/cash-book.mjs','public/stock-purchase.mjs','public/initial-stock.mjs','public/opening-stock-cost.mjs','public/finance-reconciliation.mjs','public/shared-trips.mjs','public/linear-total.mjs','public/log-purchase.mjs','public/log-labour.mjs','public/order-document.mjs','public/order-copy.mjs'].map(p=>read(p).replace(/^import .*;\n/gm,'').replaceAll('export ','')).join('\n');
  const helpers=read('ui/preview-pricing.js')+'\n'+read('ui/compact-print-settings.js')+'\n'+read('ui/sheet-totals.js')+'\n'+read('ui/history-paint.js')+'\nsetTimeout(()=>startHistoryPaintV802(document,window),0);\n'+read('ui/stock-charts.js')+'\n'+read('ui/company-finance.js')+'\n'+read('ui/reports.js')+'\n'+read('ui/load-transport.js')+'\n'+read('ui/stock-purchase.js')+'\n'+read('ui/shared-trips.js')+'\n'+read('ui/log-purchase.js')+'\n'+read('ui/log-labour.js')+'\n'+read('ui/purchase-payments.js')+'\n'+read('ui/cash.js')+'\n'+read('ui/sale-receipts.js')+'\n'+read('ui/initial-debt.js')+'\n'+read('ui/desktop-dashboard.js')+'\n'+read('ui/delivery-receipt.js')+'\n'+read('ui/order-document.js');
  replace('function calcPreview(){','// PENDING_PREVIEW_V710\n'+pure+'\n'+helpers+'\nfunction calcPreview(){');
