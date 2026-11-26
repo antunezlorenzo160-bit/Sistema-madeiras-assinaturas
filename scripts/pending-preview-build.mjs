@@ -112,7 +112,7 @@ export function applyPendingPreview(html){
  replace('${orderDocButtonV767(gid)}','${orderDocButtonV767(gid)}${podeCopia&&finOwnerV722()?promissoriaButton(gid):""}');
  // The load's customer, pricing and transport helpers are private to this closure.
  const loadInit='  garantirAreaCarregamentosV392();\n  const abrirAntigoV392=';
- replace(loadInit,read('ui/promissoria.js')+'\n'+loadInit);
+ replace(loadInit,read('public/promissoria-document.mjs').replaceAll('export ','')+'\n'+read('ui/promissoria.js')+'\n'+loadInit);
  replace('function gruposMedidasCargaV599(linhas){','function gruposMedidasCargaV599(linhas,porComprimento=true){');
  replace("const comprimento=tipo==='granel'?null:Number(item.comprimento||0);","const comprimento=!porComprimento||tipo==='granel'?null:Number(item.comprimento||0);");
  app=applyLinearTotalV744(app);

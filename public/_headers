@@ -37,3 +37,9 @@
 
 /termos/*
   Cache-Control: no-cache, max-age=0, must-revalidate
+
+/assinar-promissoria/*
+  Cache-Control: no-store
+  Referrer-Policy: no-referrer
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
