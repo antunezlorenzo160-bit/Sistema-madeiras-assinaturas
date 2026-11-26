@@ -163,6 +163,38 @@ function promissoriaPrint(dialog, sheet, numeroPedido, status){
   dialog.append(frame);
 }
 
+function promissoriaShare(dialog, numeroPedido, company){
+  const panel=dialog.querySelector('[data-share-panel]');
+  const input=panel.querySelector('input[type="file"]');
+  const share=panel.querySelector('button');
+  const status=panel.querySelector('[role="status"]');
+  const text='Olá! Segue a nota promissória do pedido nº '+numeroPedido+'. Abra https://assinador.iti.br/ com sua conta Gov.br, selecione o PDF e me devolva o arquivo assinado.';
+  panel.querySelector('a').href='https://wa.me/?text='+encodeURIComponent(text);
+  input.addEventListener('change',()=>{
+    status.textContent='';
+    share.disabled=!input.files.length;
+  });
+  share.addEventListener('click',async()=>{
+    if(company!==empresaV456||!finOwnerV722())return;
+    const file=input.files[0];
+    if(!file)return;
+    if(file.type!=='application/pdf'&&!/\.pdf$/i.test(file.name)){
+      status.textContent='Selecione o arquivo PDF salvo.';
+      return;
+    }
+    const data={files:[file],title:'Promissória nº '+numeroPedido,text};
+    try{
+      if(navigator.canShare?.(data)&&typeof navigator.share==='function'){
+        await navigator.share(data);
+        return;
+      }
+    }catch(error){
+      if(error.name==='AbortError')return;
+    }
+    status.textContent='Abra a mensagem no WhatsApp e anexe o PDF salvo antes de enviar.';
+  });
+}
+
 async function promissoriaOpen(gid){
   if(!finOwnerV722()||document.querySelector('.promissoria-dialog'))return;
   const company=empresaV456;
@@ -188,13 +220,25 @@ async function promissoriaOpen(gid){
         <a class="btn btn-secondary" href="https://assinador.iti.br/" target="_blank" rel="noopener noreferrer">Abrir assinador Gov.br</a>
         <button class="btn btn-secondary" type="button" data-close>Fechar</button>
       </div>
-      <p>Na impressão, escolha Salvar como PDF. Para assinar pelo Gov.br, selecione o PDF salvo e devolva o arquivo assinado.</p>
+      <p>Na impressão, escolha Salvar como PDF. Para o cliente assinar, deixe a assinatura em branco e envie o PDF salvo.</p>
       <p role="status"></p>
-    </form><div data-preview></div>`;
+    </form>
+    <details data-share-panel>
+      <summary>Enviar ao cliente</summary>
+      <label>Selecione o PDF salvo <input type="file" accept="application/pdf,.pdf"></label>
+      <div class="promissoria-actions">
+        <button class="btn btn-primary" type="button" disabled>Compartilhar PDF</button>
+        <a class="btn btn-secondary" target="_blank" rel="noopener noreferrer">Abrir mensagem no WhatsApp</a>
+      </div>
+      <p>Na mensagem do WhatsApp, anexe o PDF salvo antes de enviar.</p>
+      <p role="status"></p>
+    </details>
+    <div data-preview></div>`;
   document.body.append(dialog);
   dialog.addEventListener('close',()=>dialog.remove(),{once:true});
   dialog.querySelector('[data-close]').onclick=()=>dialog.close();
   dialog.showModal();
+  promissoriaShare(dialog,numeroPedido,company);
   const form=dialog.querySelector('form'),fields=form.elements,status=form.querySelector('[role="status"]');
   const preview=dialog.querySelector('[data-preview]'),submit=form.querySelector('[type="submit"]');
   const signature=promissoriaSignature(form.querySelector('canvas'));
