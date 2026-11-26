@@ -1,7 +1,7 @@
 function calcTypeRefreshV829(){
  const select=document.getElementById('calcTipoM3V829');if(!select)return '';
  const wood=madeiras.find(x=>String(x.id)===String($('calcMadeira').value)),id=String(wood?.id||''),thickness=Number($('espessura').value||0);
- const choices=m3TypeChoicesV829(normalizarBitolasCadastroV347(wood?.bitolas||[]),thickness);
+ const choices=m3TypeChoicesV829(normalizarBitolasCadastroV347(wood?.bitolas||[]),thickness,wood?.tiposGeraisM3);
  let selected=id===select.dataset.woodV829?select.value:'';select.dataset.woodV829=id;
  if(!choices.includes(selected))selected=choices.length===1?choices[0]:'';
  const signature=JSON.stringify([id,thickness,choices]);
@@ -14,6 +14,6 @@ function calcTypeRefreshV829(){
 }
 function calcTypeValidateV829(){
  const selected=calcTypeRefreshV829(),select=document.getElementById('calcTipoM3V829');
- return select&&!select.disabled&&!selected?'Selecione o tipo cadastrado para esta espessura.':'';
+ return select&&!select.disabled&&!selected?'Selecione o tipo da madeira.':'';
 }
 document.getElementById('calcTipoM3V829')?.addEventListener('change',()=>{if(modoMedida==='m3'||modoMedida==='m3fechado')atualizarPrecoBitolaCalculadora();});

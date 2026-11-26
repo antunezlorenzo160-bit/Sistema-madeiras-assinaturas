@@ -29,30 +29,36 @@ export function applyPendingPreview(html){
      <div><label for="cadBaseAtacadoM3">Atacado base (R$/m³)</label><input id="cadBaseAtacadoM3" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Opcional"></div>
    </div>
    <small class="note">Cadastre bitolas quando precisarem de preço ou regra própria. As demais usam o preço-base da espécie.</small>
+   <div><label for="cadTiposGeraisM3">Tipos gerais da espécie</label>
+     <textarea id="cadTiposGeraisM3" rows="3" maxlength="1000" placeholder="Tábua&#10;Prancha&#10;Caibro"></textarea>
+     <small class="note">Um tipo por linha. Os tipos gerais aparecem em qualquer espessura.</small>
+   </div>
  </div>`;
  replace('<div id="cadBitolasBox"',baseFields+'<div id="cadBitolasBox"');
  replace('O preço da bitola é o preço-base. Se nenhuma regra se aplicar, ele será usado.','O preço preenchido na bitola tem prioridade sobre o preço-base da espécie.');
  replace("  $('cadBitolasBox').style.display=m3?'':'none';","  $('cadPrecosBaseM3').style.display=m3?'':'none';\n  $('cadBitolasBox').style.display=m3?'':'none';");
  replace("  const bitolas=cadastroTipo==='m3'?cadBitolasLer():[];",`  const bitolas=cadastroTipo==='m3'?cadBitolasLer():[];
+  const tiposGeraisM3=cadastroTipo==='m3'?m3GeneralTypes($('cadTiposGeraisM3').value):[];
   const varejoBase=cadastroTipo==='m3'?Number($('cadBaseVarejoM3').value||0):0;
   const atacadoBase=cadastroTipo==='m3'?Number($('cadBaseAtacadoM3').value||0):0;
   if([varejoBase,atacadoBase].some(valor=>!Number.isFinite(valor)||valor<0))return alert('Informe preços-base válidos.');
   if(atacadoBase>0&&varejoBase>0&&atacadoBase>varejoBase&&!confirm('O Atacado base está maior que o Varejo base. Deseja salvar assim mesmo?'))return;`);
  replace("if(cadastroTipo==='m3'&&!bitolas.length)return alert('Adicione pelo menos uma bitola.');","if(cadastroTipo==='m3'&&!bitolas.length&&!varejoBase)return alert('Informe o varejo base ou cadastre uma bitola.');");
- replace("    precoVerde:cadastroTipo==='m3'?", "    precoBaseVarejoM3:varejoBase,precoBaseAtacadoM3:atacadoBase,\n    precoVerde:cadastroTipo==='m3'?");
- replace("$('cadPrecoVerde').value='';cadBitolasPreencher", "$('cadPrecoVerde').value='';$('cadBaseVarejoM3').value='';$('cadBaseAtacadoM3').value='';cadBitolasPreencher");
+ replace("    precoVerde:cadastroTipo==='m3'?", "    precoBaseVarejoM3:varejoBase,precoBaseAtacadoM3:atacadoBase,tiposGeraisM3,\n    precoVerde:cadastroTipo==='m3'?");
+ replace("$('cadPrecoVerde').value='';cadBitolasPreencher", "$('cadPrecoVerde').value='';$('cadBaseVarejoM3').value='';$('cadBaseAtacadoM3').value='';$('cadTiposGeraisM3').value='';cadBitolasPreencher");
  replace("  $('cadPrecoVerde').value=m.precoVerde||'';", `  $('cadPrecoVerde').value=m.precoVerde||'';
   const madeiraM3=(m.tipoCadastro||'m3')==='m3';
   $('cadBaseVarejoM3').value=madeiraM3?(m.precoBaseVarejoM3??(!m.bitolas?.length?m.preco:0))||'':'';
-  $('cadBaseAtacadoM3').value=madeiraM3?(m.precoBaseAtacadoM3??(!m.bitolas?.length?m.precoAtacado:0))||'':'';`);
- replace('precoVerde:Number(x.precoVerde||0),estoque:', 'precoVerde:Number(x.precoVerde||0),precoBaseVarejoM3:Number(x.precoBaseVarejoM3||0),precoBaseAtacadoM3:Number(x.precoBaseAtacadoM3||0),estoque:');
+  $('cadBaseAtacadoM3').value=madeiraM3?(m.precoBaseAtacadoM3??(!m.bitolas?.length?m.precoAtacado:0))||'':'';
+  $('cadTiposGeraisM3').value=madeiraM3?m3GeneralTypes(m.tiposGeraisM3).join('\\n'):'';`);
+ replace('precoVerde:Number(x.precoVerde||0),estoque:', 'precoVerde:Number(x.precoVerde||0),precoBaseVarejoM3:Number(x.precoBaseVarejoM3||0),precoBaseAtacadoM3:Number(x.precoBaseAtacadoM3||0),tiposGeraisM3:m3GeneralTypes(x.tiposGeraisM3),estoque:');
  replace('    const base=Number(bitola.precoVarejo??bitola.preco??0);','    const base=Number(bitola.precoVarejo??bitola.preco??0)||Number(madeira?.precoBaseVarejoM3||0);');
- replace("  }else if(esp && bits.length){",`  }else if(Number(madeira?.precoBaseVarejoM3)>0&&(!esp||!m3TypeChoicesV829(bits,esp).length)){
+ replace("  }else if(esp && bits.length){",`  }else if(Number(madeira?.precoBaseVarejoM3)>0&&(tipoBitolaV829||!exigeTipo)){
     const preco=Number(madeira.precoBaseVarejoM3);
     $('precoM3').value=preco;
     $('precoBitolaAoLado').textContent=moeda(preco)+'/m³';
     $('precoBitolaAoLado').classList.remove('sem-preco');
-  }else if(esp && bits.length){`);
+  }else if(exigeTipo||(esp&&bits.length)){`);
  replace('const baseVarejo=Number(b.precoVarejo??b.preco??0);','const baseVarejo=Number(b.precoVarejo??b.preco??0)||Number(m.precoBaseVarejoM3||0);');
  replace('const baseAtacado=Number(b.precoAtacado||0);','const baseAtacado=Number(b.precoAtacado||0)||Number(m.precoBaseAtacadoM3||0);');
  replace('      return cab+regras;',`      const varejo=Number(m.precoBaseVarejoM3||0),atacado=Number(m.precoBaseAtacadoM3||0);

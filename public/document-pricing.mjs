@@ -44,7 +44,7 @@ export function catalogPricePair(item,catalog){
   const r=(m.regrasM2||[]).filter(r=>(!r.larguras&&!r.larguraRegra||has(r.larguras??r.larguraRegra,item.largura))&&matchesLength(r)).sort((a,b)=>Number(Boolean(b.comprimentoRegra))-Number(Boolean(a.comprimentoRegra))||Number(b.acimaDe||0)-Number(a.acimaDe||0))[0];return {retail:retail(r||m),wholesale:wholesale(r||m)};
  }
  if(type==='granel')return {retail:retail(m),wholesale:wholesale(m)};
- const bit=(m.bitolas||[]).find(b=>has(b.espessuraRegra??b.espessura,item.espessura)&&(!item.tipoBitolaV829||String(b.tipo??b.produto??'').trim()===item.tipoBitolaV829));
+ const bit=m3BitolaForType(m.bitolas,item.espessura,item.tipoBitolaV829);
  const baseRetail=n(m.precoBaseVarejoM3),baseWholesale=n(m.precoBaseAtacadoM3);
  if(!bit){
   const hasBitolas=(m.bitolas||[]).length>0;
@@ -58,12 +58,34 @@ export function catalogPricePair(item,catalog){
  return {retail:r,wholesale:w};
 }
 
-// Registered m³ types are scoped to the entered thickness; old untyped catalogs remain valid.
-export function m3TypeChoicesV829(bitolas,thickness){
- const target=Number(thickness);if(!Number.isFinite(target)||target<=0)return [];
- const types=new Map();for(const row of bitolas||[]){
-  const matches=String(row.espessuraRegra??row.espessura??'').replace(/,/g,'.').split(/[\s;/]+/).some(v=>v!==''&&Math.abs(Number(v)-target)<1e-6);
-  const type=String(row.tipo??row.produto??'').trim();if(matches&&type&&!types.has(type.toLocaleLowerCase('pt-BR')))types.set(type.toLocaleLowerCase('pt-BR'),type);
+const m3TypeKey=value=>String(value??'').trim().toLocaleLowerCase('pt-BR');
+const m3BitolaMatches=(row,thickness)=>
+ String(row.espessuraRegra??row.espessura??'').replace(/,/g,'.').split(/[\s;/]+/)
+  .some(value=>value!==''&&Math.abs(Number(value)-thickness)<1e-6);
+
+export function m3GeneralTypes(values){
+ const names=Array.isArray(values)?values:String(values??'').split(/\r?\n/);
+ const unique=new Map();
+ for(const value of names){
+  const name=String(value??'').trim(),key=m3TypeKey(name);
+  if(name&&!unique.has(key))unique.set(key,name);
  }
- return [...types.values()];
+ return [...unique.values()];
+}
+
+export function m3BitolaForType(bitolas,thickness,type){
+ const target=Number(thickness);
+ if(!Number.isFinite(target)||target<=0)return undefined;
+ const matches=(bitolas||[]).filter(row=>m3BitolaMatches(row,target));
+ const key=m3TypeKey(type);
+ if(!key)return matches[0];
+ return matches.find(row=>m3TypeKey(row.tipo??row.produto)===key)
+  ||matches.find(row=>!m3TypeKey(row.tipo??row.produto));
+}
+
+export function m3TypeChoicesV829(bitolas,thickness,generalTypes=[]){
+ const target=Number(thickness);
+ if(!Number.isFinite(target)||target<=0)return [];
+ const specific=(bitolas||[]).filter(row=>m3BitolaMatches(row,target)).map(row=>row.tipo??row.produto);
+ return m3GeneralTypes([...m3GeneralTypes(generalTypes),...specific]);
 }
