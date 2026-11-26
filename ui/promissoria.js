@@ -34,38 +34,30 @@ function promissoriaSnapshot(gid, commercial, bundle){
   const copia=commercial?dadosCopiaComercialV400(gid,itens,grupos):null;
   const calc=calcularFinanceiroV403(copia?.valorComercial??valorTotalOriginalCargaV402(itens),obterAjusteV403(itens,commercial?'copia':'original'));
   if(!calc.valido)throw Error('Confira os ajustes financeiros do documento escolhido.');
-  const linhas=(copia?.linhas??agruparLinhasCopiaV400(itens)).map(item=>{
-    const medida=item.tipoMedida||item.tipoCadastro||'m3';
-    const porVolume=medida==='granel'||item.vendaFechadaM3||item.lastroM3V825||item.linearTotalV744;
-    return [
-      porVolume?esc(volumeLinhaV392(item)):esc(String(item.quantidade??'—')+' pç'),
-      [esc([nomeLinhaV392(item),item.qualidade].filter(Boolean).join(' · ')),medida==='granel'?'A granel':medidasLinhaV392(item),esc(compLinhaV392(item))].join(' · '),
-      esc(precoVisivelCargaV402(item,commercial)),
-      moeda(commercial?item._valorComercial:valorOriginalLinhaV399(item))
-    ];
-  });
   const orders=bundle?.orders||[];
   const anexos=commercial&&orders.length?orders.map(order=>projectOrderCopyV771(order,orderDocCopyPhysicalV771(gid),orderDocCopyMapV771(gid))):orders;
-  for(const order of anexos){
-    for(const line of order.lines){
-      const unit=(line.tipoMedida||line.tipoCadastro)==='linear'?'m':(line.tipoMedida||line.tipoCadastro)==='m2'?'m²':'m³';
-      const quantidade=line.linearTotalV744||line.vendaFechadaM3||line.lastroM3V825||line.tipoMedida==='granel'?line.volume+' '+unit:line.quantidade+' pç';
-      linhas.push([esc(quantidade),[esc(nomeLinhaV392(line)),medidasLinhaV392(line),esc(compLinhaV392(line)),'Pedido incluído'].join(' · '),'—',finMoneyV722(line.parts.reduce((sum,cents)=>sum+cents,0))]);
-    }
-  }
-  const total=Math.round(calc.total*100)+anexos.reduce((sum,order)=>sum+order.totalCents,0);
+  const totalPedidos=anexos.reduce((sum,order)=>sum+order.totalCents,0);
+  const total=Math.round(calc.total*100)+totalPedidos;
   if(!Number.isSafeInteger(total)||total<=0)throw Error('O valor total da promissória precisa ser maior que zero.');
   const transporte=dadosTransporteV414(itens);
-  return {cliente,empresa,linhas,calc,total,cabecalho:documentoEmpresaHtmlV421('relatorio'),transporte:[transporte.transportadora,transporte.motorista,transporte.placa].filter(Boolean).join(' · ')};
+  return {cliente,empresa,calc,totalPedidos,total,cabecalho:documentoEmpresaHtmlV421('relatorio'),transporte:[transporte.transportadora,transporte.motorista,transporte.placa].filter(Boolean).join(' · ')};
 }
 
 function promissoriaSheet(gid, snapshot, vencimento, local){
-  const {cliente,empresa,linhas,calc,total,cabecalho,transporte}=snapshot;
+  const {cliente,empresa,calc,totalPedidos,total,cabecalho,transporte}=snapshot;
   const data=vencimento?vencimento.split('-').reverse().join('/'):'—';
   const valor=finMoneyV722(total);
   const endereco=[cliente.logradouro,cliente.numero,cliente.complemento,cliente.bairro,cliente.cep].filter(Boolean).join(' · ');
-  const rows=linhas.map(([q,desc,unit,amount])=>`<tr><td>${q}</td><td>${desc}</td><td class="promissoria-money">${unit}</td><td class="promissoria-money">${amount}</td></tr>`).join('');
-  const ajustes=[calc.desconto?'Desconto − '+moeda(calc.desconto):'',calc.frete?'Frete + '+moeda(calc.frete):'',calc.outras?'Outras despesas + '+moeda(calc.outras):''].filter(Boolean).join(' · ');
+  const resumo=[
+    ['Subtotal do carregamento',Math.round(calc.subtotal*100)],
+    ['Desconto',-Math.round(calc.desconto*100)],
+    ['Frete',Math.round(calc.frete*100)],
+    ['Outras despesas',Math.round(calc.outras*100)],
+    ['Pedidos incluídos',totalPedidos]
+  ];
+  const rows=resumo.filter(([,amount],index)=>index===0||amount!==0).map(([label,amount])=>
+    `<tr><td>${label}</td><td class="promissoria-money">${finMoneyV722(amount)}</td></tr>`
+  ).join('');
   return `<article class="promissoria-sheet">
     <div class="promissoria-company">${cabecalho}</div>
     <h2>PEDIDO <small>nº ${esc(gid)}</small></h2>
@@ -75,9 +67,8 @@ function promissoriaSheet(gid, snapshot, vencimento, local){
       <tr><td><b>Cidade / UF</b> ${esc([cliente.cidade,cliente.uf].filter(Boolean).join(' / ')||'—')}</td><td><b>Pagamento</b> Nota promissória</td></tr>
       <tr><td colspan="2"><b>Transporte</b> ${esc(transporte||'—')}</td></tr>
     </tbody></table>
-    <table><thead><tr><th>QUANT.</th><th>MERCADORIAS / MEDIDAS</th><th>UNIT.</th><th>TOTAL</th></tr></thead>
-    <tbody>${rows}${'<tr><td>&nbsp;</td><td></td><td></td><td></td></tr>'.repeat(Math.max(0,8-linhas.length))}</tbody></table>
-    ${ajustes?`<p class="promissoria-money">${esc(ajustes)}</p>`:''}
+    <table><thead><tr><th>RESUMO DO PEDIDO</th><th>VALOR</th></tr></thead>
+    <tbody>${rows}</tbody></table>
     <div class="promissoria-total">TOTAL DO PEDIDO: ${valor}</div>
     <hr class="promissoria-cut">
     <section class="promissoria-note"><div class="promissoria-band promissoria-side">REPÚBLICA FEDERATIVA DO BRASIL</div><div>
