@@ -22,7 +22,7 @@ export function applyPendingPreview(html){
  const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
  const replace=(a,b)=>{if(!app.includes(a)||app.indexOf(a)!==app.lastIndexOf(a))throw Error('Trecho da prévia mudou: '+a.slice(0,80));app=app.replace(a,()=>b);};
  const pure=['public/document-pricing.mjs','public/compact-load-tables.mjs','public/compact-documents.mjs','public/sheet-item-totals.mjs','public/stock-charts.mjs','public/company-finance.mjs','public/load-transport.mjs','public/load-sales.mjs','public/minimum-profit.mjs','public/purchase-payments.mjs','public/sale-receipts.mjs','public/cash-book.mjs','public/stock-purchase.mjs','public/initial-stock.mjs','public/opening-stock-cost.mjs','public/finance-reconciliation.mjs','public/shared-trips.mjs','public/linear-total.mjs','public/log-purchase.mjs','public/log-labour.mjs','public/order-document.mjs','public/order-copy.mjs'].map(p=>read(p).replace(/^import .*;\n/gm,'').replaceAll('export ','')).join('\n');
- const helpers=read('ui/preview-pricing.js')+'\n'+read('ui/compact-print-settings.js')+'\n'+read('ui/sheet-totals.js')+'\n'+read('ui/history-paint.js')+'\nsetTimeout(()=>startHistoryPaintV802(document,window),0);\n'+read('ui/stock-charts.js')+'\n'+read('ui/company-finance.js')+'\n'+read('ui/reports.js')+'\n'+read('ui/load-transport.js')+'\n'+read('ui/stock-purchase.js')+'\n'+read('ui/shared-trips.js')+'\n'+read('ui/log-purchase.js')+'\n'+read('ui/log-labour.js')+'\n'+read('ui/purchase-payments.js')+'\n'+read('ui/cash.js')+'\n'+read('ui/sale-receipts.js')+'\n'+read('ui/initial-debt.js')+'\n'+read('ui/desktop-dashboard.js')+'\n'+read('ui/delivery-receipt.js')+'\n'+read('ui/order-document.js')+'\n'+read('ui/promissoria.js');
+ const helpers=read('ui/preview-pricing.js')+'\n'+read('ui/compact-print-settings.js')+'\n'+read('ui/sheet-totals.js')+'\n'+read('ui/history-paint.js')+'\nsetTimeout(()=>startHistoryPaintV802(document,window),0);\n'+read('ui/stock-charts.js')+'\n'+read('ui/company-finance.js')+'\n'+read('ui/reports.js')+'\n'+read('ui/load-transport.js')+'\n'+read('ui/stock-purchase.js')+'\n'+read('ui/shared-trips.js')+'\n'+read('ui/log-purchase.js')+'\n'+read('ui/log-labour.js')+'\n'+read('ui/purchase-payments.js')+'\n'+read('ui/cash.js')+'\n'+read('ui/sale-receipts.js')+'\n'+read('ui/initial-debt.js')+'\n'+read('ui/desktop-dashboard.js')+'\n'+read('ui/delivery-receipt.js')+'\n'+read('ui/order-document.js');
  replace('function calcPreview(){','// PENDING_PREVIEW_V710\n'+pure+'\n'+helpers+'\nfunction calcPreview(){');
  app=app.replace('function calcPreview(){', 'function calcPreview(){calcPreviewBaseV710();stockPurchaseVisibilityV728();document.getElementById("pricePreviewV710")?.remove();previewDocumentValueV710();}\nfunction calcPreviewBaseV710(){');
  replace('orcamento.push(oi);','orcamento.push(attachPriceV710(oi,orcamento));\n      repriceBudgetV710();\n      Object.assign(oi,orcamento.find(i=>i.id===oi.id)||oi);');
@@ -110,6 +110,9 @@ export function applyPendingPreview(html){
  app=applyPacketBatchV777(app);
  app=applyOrderDocumentBuildV767(app);
  replace('${orderDocButtonV767(gid)}','${orderDocButtonV767(gid)}${podeCopia&&finOwnerV722()?promissoriaButton(gid):""}');
+ // The load's customer, pricing and transport helpers are private to this closure.
+ const loadInit='  garantirAreaCarregamentosV392();\n  const abrirAntigoV392=';
+ replace(loadInit,read('ui/promissoria.js')+'\n'+loadInit);
  app=applyLinearTotalV744(app);
  app=applyOfflineSyncBatchesV794(app);
  app=applyLoadDeductionEfficiencyV796(app);
