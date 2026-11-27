@@ -32,7 +32,7 @@ export function projectCashBookV759({opening=null,movements=[],purchases=[],sale
   if(sale.type!=='sale')continue;saleReceivedCentsV807(sale);
   for(const payment of sale.settlement?.payments||[]){
    if(payment.voidedAt)continue;const id='sale:'+sale.id+':'+payment.id;if(ids.has(id))throw Error('Recebimento de venda repetido no caixa.');ids.add(id);
-   rows.push({id,date:payment.date,direction:'in',amountCents:payment.amountCents,category:'sale',description:'Recebimento de venda de madeira',partner:sale.partner||'',reference:sale.reference||'',source:{type:'sale-receipt',entryId:sale.id,paymentId:payment.id},createdAt:payment.createdAt||0});
+   rows.push({id,date:payment.date,direction:'in',amountCents:payment.amountCents,category:'sale',description:payment.source?.type==='promissoria'?(payment.source.parcela?'Promissória · parcela '+payment.source.parcela:'Recebimento de promissória'):'Recebimento de venda de madeira',partner:sale.partner||'',reference:sale.reference||'',source:{type:'sale-receipt',entryId:sale.id,paymentId:payment.id},createdAt:payment.createdAt||0});
   }
  }
  const start=opening&&opening.date>from?opening.date:from,validOpening=!!opening&&opening.date<=to;

@@ -44,18 +44,33 @@ function promissoriaLinkPanel(dialog, gid, prepare, onRecord){
   const view=dialog.querySelector('[data-view-signed]'), status=panel.querySelector('[role="status"]');
   const link=panel.querySelector('input'), whatsapp=panel.querySelector('a');
   const selector=dialog.querySelector('[data-parcela-select]');
+  const paymentForm=dialog.querySelector('[data-payment-form]');
+  const paymentStatus=dialog.querySelector('[data-payment-status]');
+  const paymentDate=paymentForm.elements.date;
+  const confirmPayment=paymentForm.querySelector('button');
+  const today=new Intl.DateTimeFormat('sv-SE',{timeZone:'America/Sao_Paulo'}).format(new Date());
+  paymentDate.value=paymentDate.max=today;
+  let paying=false;
+  const showPayment=record=>{
+    const payment=record?.payment;
+    paymentForm.hidden=!record||!!payment;
+    paymentStatus.textContent=payment?(payment.voided?'Recebimento anulado':'Pago em '+vencimentoDaPromissoria(payment.date))+' · '+valorPromissoria(payment.amountCents):'';
+    if(record)paymentForm.querySelector('strong').textContent=valorPromissoria(record.parcela?.centavos??record.document.snapshot.total);
+  };
   let saved=null,busy=false;
   const company=empresaV456;
   const load=async(action,payload={})=>{
-    if(busy||company!==empresaV456||!finOwnerV722())return;
+    if(busy||paying||company!==empresaV456||!finOwnerV722())return;
     busy=true;
     for(const button of [create,copy,view,panel.querySelector('[data-refresh-link]')])button.disabled=true;
     selector.disabled=true;
+    confirmPayment.disabled=true;
     status.textContent='Consultando assinatura…';
     try{
       const result=await financeRequestV722({action,loadId:gid,...(saved?.document.parcelas?{parcela:Number(selector.value)}:{}),...payload},null,'assinatura-promissoria');
       if(!dialog.open||company!==empresaV456)return;
       saved=result.document?result:null;
+      showPayment(saved);
       await onRecord(saved);
       if(saved?.signedAt&&!saved.document.parcelas)return result;
       link.value='';
@@ -84,10 +99,28 @@ function promissoriaLinkPanel(dialog, gid, prepare, onRecord){
       whatsapp.hidden=!shareable;
       view.hidden=!saved?.signedAt&&!saved?.document.parcelas;
       selector.disabled=false;
+      confirmPayment.disabled=false;
       create.hidden=!!active||!!saved?.signedAt;
       create.textContent=saved?'Renovar link':'Gerar link de assinatura';
       for(const button of [create,copy,view,panel.querySelector('[data-refresh-link]')])button.disabled=false;
     }
+  };
+  paymentForm.onsubmit=async event=>{
+    event.preventDefault();
+    if(!saved||saved.payment||busy||paying||company!==empresaV456||!finOwnerV722())return;
+    const amount=saved.parcela?.centavos??saved.document.snapshot.total;
+    if(!window.confirm('Confirma o recebimento de '+valorPromissoria(amount)+' em '+vencimentoDaPromissoria(paymentDate.value)+'? Prossiga somente se este valor ainda não foi lançado no caixa.'))return;
+    paying=true;
+    selector.disabled=confirmPayment.disabled=true;
+    paymentStatus.textContent='Registrando recebimento…';
+    try{
+      const result=await financeRequestV722({action:'confirm-payment',loadId:gid,date:paymentDate.value,
+        acknowledged:true,...(saved.parcela?{parcela:saved.parcela.numero}:{})},null,'assinatura-promissoria');
+      if(!dialog.open||company!==empresaV456)return;
+      saved.payment=result.payment;
+      showPayment(saved);
+    }catch(error){paymentStatus.textContent=error.message;}
+    finally{paying=false;selector.disabled=confirmPayment.disabled=false;}
   };
   panel.addEventListener('toggle',()=>{if(panel.open)load('owner-read');});
   panel.querySelector('[data-refresh-link]').onclick=()=>load('owner-read');
@@ -197,6 +230,12 @@ async function promissoriaOpen(gid){
       <label hidden>Link para o cliente <input type="url" readonly></label>
       <p role="status"></p>
     </details>
+    <form data-payment-form hidden>
+      <p>Valor a receber <strong></strong></p>
+      <label>Data do recebimento <input type="date" name="date" required></label>
+      <button class="btn btn-primary" type="submit">Confirmar pagamento</button>
+    </form>
+    <p data-payment-status role="status"></p>
     <div class="promissoria-actions">
       <button class="btn btn-primary" type="button" data-view-signed hidden>Salvar PDF assinado</button>
       <button class="btn btn-secondary" type="button" data-close>Fechar</button>
@@ -206,7 +245,7 @@ async function promissoriaOpen(gid){
   dialog.addEventListener('close',()=>dialog.remove(),{once:true});
   dialog.querySelector('[data-close]').onclick=()=>dialog.close();
   dialog.showModal();
-  const form=dialog.querySelector('form'),fields=form.elements,status=form.querySelector('[role="status"]');
+  const form=dialog.querySelector('form:not([data-payment-form])'),fields=form.elements,status=form.querySelector('[role="status"]');
   const preview=dialog.querySelector('[data-preview]'),submit=form.querySelector('[type="submit"]');
   const empresa=lerEmpresaDocumentoV421();
   fields.local.value=[empresa.cidade,empresa.uf].filter(Boolean).join(' / ');

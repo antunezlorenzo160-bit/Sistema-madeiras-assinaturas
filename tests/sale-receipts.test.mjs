@@ -1,7 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {randomUUID} from 'node:crypto';
 import {financeDbV804} from './fixtures/finance-db.mjs';
 import {financeCollectionPath} from '../Netlify/Funtions/lib/finance-access.mjs';
-import {listSaleReceipts,saveSaleReceipt,saleReceiptPathV807,saleReceiptSignatureV807} from '../Netlify/Funtions/lib/sale-receipts.mjs';
+import {listSaleReceipts,saveSaleReceipt,saleReceiptPathV807,saleReceiptSignatureV807,confirmPromissoriaPayment,readPromissoriaPayment} from '../Netlify/Funtions/lib/sale-receipts.mjs';
 import {readCashBook} from '../Netlify/Funtions/lib/cash-book.mjs';
 import {loadSaleKeys} from '../Netlify/Funtions/lib/load-sales.mjs';
 import {aggregateFinance} from '../public/company-finance.mjs';
@@ -39,4 +39,31 @@ test('ownership, company, concurrent revision, future date and log service prote
 });
 test('two devices cannot initialize or over-receive the same sale concurrently',async()=>{
  const s=setup(),r=await row(s),a=request(r,{payment:{mode:'cash',paidDate:'2026-11-20'}}),b=request(r,{payment:{mode:'cash',paidDate:'2026-11-20'}}),results=await Promise.allSettled([saveSaleReceipt(s.db,s.identity,a,now),saveSaleReceipt(s.db,s.identity,b,now)]);assert.equal(results.filter(r=>r.status==='fulfilled').length,1);assert.equal((await cash(s)).balanceCents,100000);assert.equal([...s.records.keys()].filter(k=>k.startsWith(saleReceiptPathV807('tenant')+'/')&&!k.slice((saleReceiptPathV807('tenant')+'/').length).includes('/')).length,1);
+});
+
+test('promissory installments reuse sale receipts and credit cash at most once per installment',async()=>{
+ const at=Date.UTC(2026,10,10,12),loadId='parcel-load',path='empresas/tenant/dados/sm2_carregamentos/registros/a';
+ const item={grupoCargaId:loadId,cargaStatus:'concluido',cargaBaixadaEm:at,atualizadoEm:at,valor:1000,quantidade:10,volume:2,tipoMedida:'m3',madeiraId:'wood'};
+ const s=financeDbV804([[path,item]]);
+ const base={empresaId:'tenant',loadId,date:'2026-11-20',dueDate:'2026-12-31'};
+ assert.equal(await readPromissoriaPayment(s.db,'tenant',loadId,1),null);
+ const payments=await Promise.all([1,1].map(numero=>confirmPromissoriaPayment(s.db,s.identity,{...base,numero,amountCents:60000},now)));
+ assert.deepEqual(payments[0],payments[1]);
+ assert.equal((await cash(s)).balanceCents,60000);
+ assert.equal((await cash(s)).rows[0].description,'Promissória · parcela 1');
+ assert.equal((await row(s)).receivableCents,40000);
+ assert.equal(await readPromissoriaPayment(s.db,'tenant',loadId,2),null);
+ await assert.rejects(()=>confirmPromissoriaPayment(s.db,s.identity,{...base,numero:2,amountCents:40001},now),/restante/);
+ await assert.rejects(()=>confirmPromissoriaPayment(s.db,s.identity,{...base,date:'2026-11-21',numero:2,amountCents:20000},now),/futura/);
+ for(const numero of [2,3])await confirmPromissoriaPayment(s.db,s.identity,{...base,numero,amountCents:20000},now);
+ assert.equal((await cash(s)).balanceCents,100000);
+ assert.equal((await cash(s)).rows.length,3);
+ assert.equal((await row(s)).receivableCents,0);
+ assert.deepEqual(s.records.get(path),item);
+ const r=await row(s);
+ const paymentId=r.settlement.payments[0].id;
+ await saveSaleReceipt(s.db,s.identity,request(r,{action:'void',paymentId}),now);
+ assert.equal((await cash(s)).balanceCents,40000);
+ assert.equal((await readPromissoriaPayment(s.db,'tenant',loadId,1)).voided,true);
+ await assert.rejects(()=>confirmPromissoriaPayment(s.db,s.identity,{...base,numero:1,amountCents:60000},now),/anulado/);
 });

@@ -1,3 +1,4 @@
+import {readPromissoriaPayment,confirmPromissoriaPayment} from './lib/sale-receipts.mjs';
 import {calcularParcelasPromissoria} from '../../public/promissoria-parcelas.mjs';
 import {createHash,createHmac} from 'node:crypto';
 import {authenticate,failure,json,PlatformError,serverDb} from './lib/platform-auth.mjs';
@@ -89,10 +90,24 @@ export default async function handler(req){
     try{input=JSON.parse(raw);}catch{throw new PlatformError(400,'Pedido inválido.');}
     if(!input||typeof input!=='object')throw new PlatformError(400,'Pedido inválido.');
     const now=Date.now();
-    if(['owner-read','create'].includes(input.action)){
+    if(['owner-read','create','confirm-payment'].includes(input.action)){
       if(typeof input.loadId!=='string'||!/^[-\w]{1,180}$/.test(input.loadId))throw new PlatformError(400,'Carregamento inválido.');
       const identity=await authenticate(req,false,{requireMembership:false});
       const {db}=identity;
+      if(input.action==='confirm-payment'){
+        if(input.acknowledged!==true)throw new PlatformError(400,'Confirme que o valor foi recebido e ainda não foi lançado no caixa.');
+        const {empresaId}=await financeOwnerContext(db,identity,undefined,true,now);
+        const saved=await invitationRef(db,invitationToken(empresaId,input.loadId)).get();
+        if(!saved.exists)throw new PlatformError(404,'Promissória não encontrada.');
+        const record=saved.data();
+        if(record.document.parcelas&&input.parcela===undefined)throw new PlatformError(400,'Selecione a parcela recebida.');
+        const parcela=parcelaSelecionada(record,input.parcela);
+        const payment=await confirmPromissoriaPayment(db,identity,{
+          empresaId,loadId:input.loadId,numero:parcela?.numero??0,amountCents:parcela?.centavos??record.document.snapshot.total,
+          date:input.date,dueDate:record.document.parcelas?.reduce((last,row)=>row.vencimento>last?row.vencimento:last,record.document.vencimento)??record.document.vencimento
+        },now);
+        return json(200,{empresaId,payment});
+      }
       const result=await db.runTransaction(async tx=>{
         const {empresaId}=await financeOwnerContext(db,identity,ref=>tx.get(ref),input.action==='create',now);
         const token=invitationToken(empresaId,input.loadId),ref=invitationRef(db,token);
@@ -100,11 +115,12 @@ export default async function handler(req){
         if(saved.exists){
           const record=saved.data();
           const view=await readParcela(db,ref,record,input.parcela,child=>tx.get(child));
+          const payment=await readPromissoriaPayment(db,empresaId,input.loadId,view.parcela?.numero??0,child=>tx.get(child));
           if(input.action==='create'&&record.expiresAt<=now){
             record.expiresAt=now+days;
             tx.update(ref,{expiresAt:record.expiresAt});
           }
-          return {...view,expiresAt:record.expiresAt,token,empresaId};
+          return {...view,expiresAt:record.expiresAt,token,empresaId,payment};
         }
         if(input.action==='owner-read')return {document:null,empresaId};
         const document=documentFrom(input);
