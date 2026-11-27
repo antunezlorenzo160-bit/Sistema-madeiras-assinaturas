@@ -9,7 +9,7 @@ const signature=promissoriaSignature(form.querySelector('canvas'));
 const style=document.createElement('style');
 style.textContent=promissoriaCss;
 document.head.append(style);
-let saved;
+let saved,paymentRequest;
 
 async function request(action,additional={}){
   const response=await fetch('/.netlify/functions/assinatura-promissoria',{
@@ -22,20 +22,42 @@ async function request(action,additional={}){
   return result;
 }
 
-function render(result){
-  saved=result;
+function renderDocument(){
+  const result=saved;
   const {numeroPedido,snapshot,vencimento,local,emissao}=result.document;
-  preview.innerHTML=promissoriaSheet(numeroPedido,snapshot,vencimento,local,emissao,result.parcela?{...result.parcela,quantidade:result.document.parcelas.length}:null);
+  preview.innerHTML=promissoriaSheet(numeroPedido,snapshot,vencimento,local,emissao,result.parcela?{...result.parcela,quantidade:result.document.parcelas.length}:null,result.payment);
   if(result.signedAt){
     const image=preview.querySelector('.promissoria-sign img');
     image.src=result.signature;
     image.hidden=false;
+  }
+}
+
+function render(result){
+  saved=result;
+  renderDocument();
+  if(result.signedAt){
     status.textContent='Assinatura recebida pela empresa. Salve uma cópia em PDF.';
   }else{
     status.textContent='';
   }
   form.hidden=!!result.signedAt;
   save.hidden=!result.signedAt;
+}
+
+function refreshPayment(){
+  if(!paymentRequest){
+    paymentRequest=request('payment-status').then(({payment})=>{
+      if(saved.payment?.date===payment?.date)return;
+      saved={...saved,payment};
+      renderDocument();
+    }).finally(()=>{paymentRequest=null;});
+  }
+  return paymentRequest;
+}
+
+function refreshVisiblePayment(){
+  if(!document.hidden&&saved)refreshPayment().catch(()=>{});
 }
 
 form.querySelector('#limpar').onclick=()=>signature.clear();
@@ -46,15 +68,27 @@ form.onsubmit=async event=>{
   if(!image){status.textContent='Desenhe sua assinatura antes de confirmar.';return;}
   confirm.disabled=true;
   status.textContent='Enviando assinatura…';
-  try{render(await request('sign',{accepted:true,signature:image}));}
+  try{
+    const result=await request('sign',{accepted:true,signature:image});
+    render({...result,payment:saved.payment});
+    refreshVisiblePayment();
+  }
   catch(error){status.textContent=error.message+' Você pode tentar novamente.';}
   finally{confirm.disabled=false;}
 };
-save.onclick=()=>{
-  if(saved?.signedAt)promissoriaPrint(main,preview.firstElementChild,saved.document.numeroPedido,status);
+save.onclick=async()=>{
+  if(!saved?.signedAt||save.disabled)return;
+  save.disabled=true;
+  try{
+    await refreshPayment();
+    promissoriaPrint(main,preview.firstElementChild,saved.document.numeroPedido,status);
+  }catch(error){status.textContent=error.message;}
+  finally{save.disabled=false;}
 };
 
 try{
   if(!/^[A-Za-z0-9_-]{43}$/.test(token))throw new Error('Link inválido. Peça o link de assinatura à empresa.');
   render(await request('view'));
+  setInterval(refreshVisiblePayment,15000);
+  document.addEventListener('visibilitychange',refreshVisiblePayment);
 }catch(error){status.textContent=error.message;}

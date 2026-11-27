@@ -131,13 +131,20 @@ export default async function handler(req){
       });
       return json(200,result);
     }
-    if(!['view','sign'].includes(input.action)||typeof input.token!=='string'||!validToken.test(input.token))throw new PlatformError(404,'Link inválido.');
+    if(!['view','sign','payment-status'].includes(input.action)||typeof input.token!=='string'||!validToken.test(input.token))throw new PlatformError(404,'Link inválido.');
     const db=serverDb(),ref=invitationRef(db,input.token);
     const read=saved=>{
       if(!saved.exists||saved.data().expiresAt<=now)throw new PlatformError(404,'Link inválido ou expirado. Peça à empresa para renovar o link.');
       return saved.data();
     };
-    if(input.action==='view')return json(200,await readParcela(db,ref,read(await ref.get()),input.parcela,child=>child.get()));
+    if(input.action!=='sign'){
+      const record=read(await ref.get());
+      const parcela=parcelaSelecionada(record,input.parcela);
+      const receipt=await readPromissoriaPayment(db,record.empresaId,record.loadId,parcela?.numero??0);
+      const payment=receipt&&!receipt.voided?{date:receipt.date}:null;
+      if(input.action==='payment-status')return json(200,{payment});
+      return json(200,{...await readParcela(db,ref,record,input.parcela,child=>child.get()),payment});
+    }
     if(input.accepted!==true)throw new PlatformError(400,'Confirme que você leu e concorda com o documento.');
     try{validateSignatureImage(input.signature);}catch(error){throw new PlatformError(400,error.message);}
     const result=await db.runTransaction(async tx=>{
