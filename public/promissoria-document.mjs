@@ -17,6 +17,7 @@ export const promissoriaCss = `
 .promissoria-cut{border:0;border-top:1px dashed #55645a;margin:4mm 0}
 .promissoria-note{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2mm}
 .promissoria-side{writing-mode:vertical-rl;transform:rotate(180deg);white-space:nowrap;font-weight:bold}
+.promissoria-paid{display:table;margin:2mm 0 1mm auto;padding:1mm 2mm;border:2px solid #154423;border-radius:3px;color:#154423;font-weight:bold}
 .promissoria-sign{text-align:center;padding:2mm 0}.promissoria-sign img{display:block;margin:auto;width:85mm;max-width:100%;height:17mm;object-fit:contain}
 .promissoria-sign span{display:block;border-top:1px solid;margin:auto;width: min(85mm,95%);padding-top:1mm;font-weight:bold}
 .promissoria-sign img[hidden]{display:none}
@@ -24,7 +25,7 @@ export const promissoriaCss = `
 @media print{.promissoria-sheet{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
 `;
 
-export function promissoriaSheet(numeroPedido, snapshot, vencimento, local, emissao, parcela=null){
+export function promissoriaSheet(numeroPedido, snapshot, vencimento, local, emissao, parcela=null, pagamento=null){
   const {cliente,empresa,produtos,calc,totalPedidos,total,transporte}=snapshot;
   const data=parcela?vencimentoDaPromissoria(parcela.vencimento):vencimento?escapePromissoria(vencimento.split('-').reverse().join('/')):'—';
   const logo=typeof empresa.logoDataUrl==='string'&&/^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(empresa.logoDataUrl)?empresa.logoDataUrl:'';
@@ -72,6 +73,7 @@ export function promissoriaSheet(numeroPedido, snapshot, vencimento, local, emis
         <tr><td colspan="3"><b>Local e data de emissão</b> ${escapePromissoria(local||'—')} · ${escapePromissoria(emissao)}</td></tr>
         <tr><td colspan="3">Pagarei por esta nota promissória, no vencimento indicado, a ${escapePromissoria(empresa.nome)} ou à sua ordem, a quantia de ${valorNota}, em moeda corrente nacional. Local de pagamento: ${escapePromissoria(local||'—')}.</td></tr>
       </tbody></table>
+      ${pagamento&&!pagamento.voided?`<div class="promissoria-paid">PAGO · ${vencimentoDaPromissoria(pagamento.date)}</div>`: ''}
       <div class="promissoria-sign"><img alt="Assinatura desenhada pelo cliente" hidden><span>Assinatura do cliente</span></div>
     </div></section>
   </article>`;

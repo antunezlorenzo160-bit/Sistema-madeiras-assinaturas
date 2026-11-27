@@ -97,7 +97,7 @@ function promissoriaLinkPanel(dialog, gid, prepare, onRecord){
       link.parentElement.hidden=!shareable;
       copy.hidden=!shareable;
       whatsapp.hidden=!shareable;
-      view.hidden=!saved?.signedAt&&!saved?.document.parcelas;
+      view.hidden=!saved?.signedAt&&!saved?.document.parcelas&&!saved?.payment;
       selector.disabled=false;
       confirmPayment.disabled=false;
       create.hidden=!!active||!!saved?.signedAt;
@@ -119,6 +119,8 @@ function promissoriaLinkPanel(dialog, gid, prepare, onRecord){
       if(!dialog.open||company!==empresaV456)return;
       saved.payment=result.payment;
       showPayment(saved);
+      await onRecord(saved);
+      view.hidden=false;
     }catch(error){paymentStatus.textContent=error.message;}
     finally{paying=false;selector.disabled=confirmPayment.disabled=false;}
   };
@@ -288,13 +290,13 @@ async function promissoriaOpen(gid){
     return {numeroPedido,snapshot,vencimento:plan?.input[0].vencimento??fields.vencimento.value,local:fields.local.value.trim(),...(plan?{parcelas:plan.input,parcela:plan.selected.numero}:{})};
   },async record=>{
     recordStatus.textContent='';
-    if(record?.signedAt||record?.document.parcelas){
+    if(record?.signedAt||record?.document.parcelas||record?.payment){
       recordAtual=record;
       form.hidden=true;
-      sharePanel.hidden=!record.document.parcelas;
-      dialog.querySelector('h3').textContent=record.signedAt?'Promissória assinada':'Promissórias parceladas';
-      recordStatus.textContent=record.signedAt?'Assinatura recebida em '+new Date(record.signedAt).toLocaleString('pt-BR')+'.':'Aguardando assinatura desta parcela.';
-      signedPdf.textContent=record.signedAt?'Salvar PDF assinado':'Salvar PDF da parcela';
+      sharePanel.hidden=!!record.signedAt&&!record.document.parcelas;
+      dialog.querySelector('h3').textContent=record.signedAt?'Promissória assinada':record.document.parcelas?'Promissórias parceladas':'Promissória';
+      recordStatus.textContent=record.signedAt?'Assinatura recebida em '+new Date(record.signedAt).toLocaleString('pt-BR')+'.':record.document.parcelas?'Aguardando assinatura desta parcela.':'Aguardando assinatura.';
+      signedPdf.textContent=record.signedAt?'Salvar PDF assinado':record.document.parcelas?'Salvar PDF da parcela':'Salvar PDF';
       if(record.document.parcelas){
         const parcelas=record.document.parcelas;
         selector.closest('label').hidden=false;
@@ -304,7 +306,7 @@ async function promissoriaOpen(gid){
         selector.value=String(record.parcela.numero);
       }
       const {numeroPedido,snapshot,vencimento,local,emissao}=record.document;
-      preview.innerHTML=promissoriaSheet(numeroPedido,snapshot,vencimento,local,emissao,record.parcela?{...record.parcela,quantidade:record.document.parcelas.length}:null);
+      preview.innerHTML=promissoriaSheet(numeroPedido,snapshot,vencimento,local,emissao,record.parcela?{...record.parcela,quantidade:record.document.parcelas.length}:null,record.payment);
       const image=preview.querySelector('.promissoria-sign img');
       if(record.signedAt){image.src=record.signature;image.hidden=false;}
       return;
@@ -322,10 +324,11 @@ async function promissoriaOpen(gid){
     }catch(error){status.textContent=error.message;}
     finally{loadingOrders=false;}
   });
-  signedPdf.onclick=()=>{
-    if(recordAtual&&company===empresaV456&&finOwnerV722()){
-      promissoriaPrint(dialog,preview.firstElementChild,recordAtual.document.numeroPedido,recordStatus);
-    }
+  signedPdf.onclick=async()=>{
+    if(!recordAtual||company!==empresaV456||!finOwnerV722())return;
+    if(recordAtual.payment&&!recordAtual.payment.voided&&!await refresh())return;
+    if(!dialog.open||company!==empresaV456||!finOwnerV722())return;
+    promissoriaPrint(dialog,preview.firstElementChild,recordAtual.document.numeroPedido,recordStatus);
   };
   selector.onchange=()=>recordAtual?refresh():render();
   form.addEventListener('input',render);
