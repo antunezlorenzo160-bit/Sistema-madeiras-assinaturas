@@ -106,7 +106,7 @@ async function promissoriaOpen(gid){
   dialog.style.cssText='width:min(800px,94vw);max-height:90vh;overflow:auto;background:white;color:#16231b;padding:16px;border:1px solid #355845;border-radius:8px';
   dialog.setAttribute('aria-label','Promissória');
   dialog.innerHTML=`<style>${promissoriaCss}
-    .promissoria-dialog label{display:block;margin:8px 0}
+    .promissoria-dialog label{display:grid;gap:5px;margin:0 0 12px;color:#16231b;font-size:14px;font-weight:650}
     .promissoria-dialog [hidden]{display:none!important}
     .promissoria-actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
     </style><h3>Promissória</h3>
