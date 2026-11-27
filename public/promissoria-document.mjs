@@ -17,11 +17,11 @@ export const promissoriaCss = `
 .promissoria-cut{border:0;border-top:1px dashed #55645a;margin:4mm 0}
 .promissoria-note{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2mm}
 .promissoria-side{writing-mode:vertical-rl;transform:rotate(180deg);white-space:nowrap;font-weight:bold}
-.promissoria-paid{position:absolute;z-index:1;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-13deg);width:max-content;max-width:70%;box-sizing:border-box;padding:2mm 6mm;border:4px double currentColor;border-radius:2mm;color:#92332b;background:rgba(255,255,255,.82);text-align:center;line-height:1.15;pointer-events:none}
+.promissoria-paid{position:absolute;z-index:1;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-21deg);width:max-content;max-width:70%;box-sizing:border-box;color:rgba(0,0,0,.52);text-align:center;line-height:1.15;pointer-events:none}
 .promissoria-paid strong,.promissoria-paid span{display:block}
-.promissoria-paid strong{font-size:clamp(30px,8vw,56px);font-weight:900;letter-spacing:.09em}
-.promissoria-paid span{font-size:11px;font-weight:700;overflow-wrap:anywhere}
-.promissoria-paid time{font-size:11px}
+.promissoria-paid strong{font-size:clamp(42px,13vw,90px);font-weight:900;letter-spacing:.06em;color:rgba(0,0,0,.25)}
+.promissoria-paid span{font-size:13px;font-weight:700;overflow-wrap:anywhere}
+.promissoria-paid time{font-size:12px}
 .promissoria-sign{text-align:center;padding:2mm 0}.promissoria-sign img{display:block;margin:auto;width:85mm;max-width:100%;height:17mm;object-fit:contain}
 .promissoria-sign span{display:block;border-top:1px solid;margin:auto;width: min(85mm,95%);padding-top:1mm;font-weight:bold}
 .promissoria-sign img[hidden]{display:none}
