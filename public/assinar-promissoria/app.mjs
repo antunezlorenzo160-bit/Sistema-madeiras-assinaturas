@@ -3,7 +3,9 @@ import {promissoriaCss,promissoriaSheet,promissoriaSignature,promissoriaPrint} f
 const [token,parte]=location.hash.slice(1).split('/');
 const parcela=parte===undefined?undefined:Number(parte);
 const main=document.querySelector('main'), preview=document.querySelector('#documento');
-const form=main.querySelector('form'), status=main.querySelector('#status');
+const dialog=main.querySelector('.signature-dialog'), open=main.querySelector('#abrir-assinatura');
+const form=dialog.querySelector('form'), status=main.querySelector('#status');
+const signatureStatus=dialog.querySelector('#status-assinatura'), close=dialog.querySelector('#fechar-assinatura');
 const confirm=form.querySelector('[type="submit"]'), save=main.querySelector('#salvar');
 const signature=promissoriaSignature(form.querySelector('canvas'));
 const style=document.createElement('style');
@@ -41,7 +43,7 @@ function render(result){
   }else{
     status.textContent='';
   }
-  form.hidden=!!result.signedAt;
+  open.hidden=!!result.signedAt;
   save.hidden=!result.signedAt;
 }
 
@@ -60,21 +62,25 @@ function refreshVisiblePayment(){
   if(!document.hidden&&saved)refreshPayment().catch(()=>{});
 }
 
-form.querySelector('#limpar').onclick=()=>signature.clear();
+open.onclick=()=>{signatureStatus.textContent='';dialog.showModal();};
+close.onclick=()=>dialog.close();
+dialog.addEventListener('cancel',event=>{if(confirm.disabled)event.preventDefault();});
+form.querySelector('#limpar').onclick=()=>{signature.clear();signatureStatus.textContent='';};
 form.onsubmit=async event=>{
   event.preventDefault();
   if(confirm.disabled||saved?.signedAt)return;
   const image=signature.image();
-  if(!image){status.textContent='Desenhe sua assinatura antes de confirmar.';return;}
-  confirm.disabled=true;
-  status.textContent='Enviando assinatura…';
+  if(!image){signatureStatus.textContent='Desenhe sua assinatura antes de confirmar.';return;}
+  confirm.disabled=close.disabled=true;
+  signatureStatus.textContent='Enviando assinatura…';
   try{
     const result=await request('sign',{accepted:true,signature:image});
+    dialog.close();
     render({...result,payment:saved.payment});
     refreshVisiblePayment();
   }
-  catch(error){status.textContent=error.message+' Você pode tentar novamente.';}
-  finally{confirm.disabled=false;}
+  catch(error){signatureStatus.textContent=error.message+' Você pode tentar novamente.';}
+  finally{confirm.disabled=close.disabled=false;}
 };
 save.onclick=async()=>{
   if(!saved?.signedAt||save.disabled)return;

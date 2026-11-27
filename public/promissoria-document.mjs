@@ -115,7 +115,28 @@ export function promissoriaSignature(canvas){
   canvas.onlostpointercapture=()=>{pointer=null;};
   return {
     clear(){ctx.clearRect(0,0,canvas.width,canvas.height);signed=false;},
-    image(){return signed?canvas.toDataURL('image/png'):'';}
+    image(){
+      if(!signed)return '';
+      const pixels=ctx.getImageData(0,0,canvas.width,canvas.height).data;
+      let left=canvas.width,top=canvas.height,right=-1,bottom=-1;
+      for(let y=0;y<canvas.height;y++){
+        for(let x=0;x<canvas.width;x++){
+          if(!pixels[(y*canvas.width+x)*4+3])continue;
+          left=Math.min(left,x);top=Math.min(top,y);
+          right=Math.max(right,x);bottom=Math.max(bottom,y);
+        }
+      }
+      if(right<left)return '';
+      const width=right-left+1,height=bottom-top+1;
+      const scale=Math.min(1,784/width,184/height);
+      const renderedWidth=width*scale,renderedHeight=height*scale;
+      const image=document.createElement('canvas');
+      image.width=Math.max(100,Math.ceil(renderedWidth)+16);
+      image.height=Math.max(50,Math.ceil(renderedHeight)+16);
+      image.getContext('2d').drawImage(canvas,left,top,width,height,
+        (image.width-renderedWidth)/2,(image.height-renderedHeight)/2,renderedWidth,renderedHeight);
+      return image.toDataURL('image/png');
+    }
   };
 }
 
