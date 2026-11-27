@@ -108,7 +108,6 @@ async function promissoriaOpen(gid){
   dialog.innerHTML=`<style>${promissoriaCss}
     .promissoria-dialog label{display:block;margin:8px 0}
     .promissoria-dialog [hidden]{display:none!important}
-    .promissoria-dialog canvas{display:block;width:min(100%,400px);background:white;border:1px solid #355845;touch-action:none}
     .promissoria-actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
     </style><h3>Promissória</h3>
     <p data-record-status role="status">Consultando promissória…</p>
@@ -116,10 +115,7 @@ async function promissoriaOpen(gid){
       <label>Usar valores de <select name="origem"><option value="original">Carregamento original</option><option value="copia">Cópia comercial</option></select></label>
       <label>Vencimento <input type="date" name="vencimento" required></label>
       <label>Local de emissão e pagamento <input name="local" type="text" maxlength="120" required></label>
-      <label for="promissoria-canvas">Assinatura desenhada (opcional)</label>
-      <canvas id="promissoria-canvas" width="800" height="200" aria-label="Área para assinatura desenhada"></canvas>
       <div class="promissoria-actions">
-        <button class="btn btn-secondary" type="button" data-clear>Limpar assinatura</button>
         <button class="btn btn-primary" type="submit" disabled>Salvar PDF</button>
         <a class="btn btn-secondary" href="https://assinador.iti.br/" target="_blank" rel="noopener noreferrer">Abrir assinador Gov.br</a>
       </div>
@@ -148,21 +144,12 @@ async function promissoriaOpen(gid){
   dialog.showModal();
   const form=dialog.querySelector('form'),fields=form.elements,status=form.querySelector('[role="status"]');
   const preview=dialog.querySelector('[data-preview]'),submit=form.querySelector('[type="submit"]');
-  const signature=promissoriaSignature(form.querySelector('canvas'));
   const empresa=lerEmpresaDocumentoV421();
   fields.local.value=[empresa.cidade,empresa.uf].filter(Boolean).join(' / ');
   const recordStatus=dialog.querySelector('[data-record-status]');
   const signedPdf=dialog.querySelector('[data-view-signed]');
   const sharePanel=dialog.querySelector('[data-share-panel]');
   let bundle,ready=false,shown='',snapshot,signed=null,checkingPrint=false,loadingOrders=false;
-  const showSignature=()=>{
-    const img=preview.querySelector('.promissoria-sign img');
-    if(!img)return;
-    const image=signature.image();
-    img.hidden=!image;
-    if(image)img.src=image;
-    else img.removeAttribute('src');
-  };
   const render=()=>{
     if(!ready||signed||company!==empresaV456||!finOwnerV722())return;
     try{
@@ -174,7 +161,6 @@ async function promissoriaOpen(gid){
       snapshot=promissoriaSnapshot(gid,commercial,bundle);
       shown=JSON.stringify(snapshot);
       preview.innerHTML=promissoriaSheet(numeroPedido,snapshot,fields.vencimento.value,fields.local.value.trim(),emissao);
-      showSignature();
       submit.disabled=checkingPrint;
       status.textContent='';
     }catch(error){
@@ -228,8 +214,6 @@ async function promissoriaOpen(gid){
     }
   };
   form.addEventListener('input',render);
-  form.querySelector('canvas').addEventListener('lostpointercapture',showSignature);
-  dialog.querySelector('[data-clear]').onclick=()=>{signature.clear();showSignature();};
   form.onsubmit=async event=>{
     event.preventDefault();
     if(!ready||signed||checkingPrint||company!==empresaV456||!finOwnerV722())return;
