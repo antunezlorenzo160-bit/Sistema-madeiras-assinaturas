@@ -3,7 +3,7 @@ const vencimentoDaPromissoria=value=>escapePromissoria(value.split('-').reverse(
 const valorPromissoria=cents=>(cents/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 
 export const promissoriaCss = `
-.promissoria-sheet{position:relative;box-sizing:border-box;color:#16231b;background:white;border:1px solid #355845;padding:3mm;font:10pt/1.25 Arial,sans-serif;overflow-wrap:anywhere}
+.promissoria-sheet{box-sizing:border-box;color:#16231b;background:white;border:1px solid #355845;padding:3mm;font:10pt/1.25 Arial,sans-serif;overflow-wrap:anywhere}
 .promissoria-sheet h2,.promissoria-sheet h3,.promissoria-sheet th,.promissoria-band{background:#154423;color:white;margin:0;text-align:center;padding:1.2mm 2mm}
 .promissoria-sheet h2{font-size:17pt}.promissoria-sheet h3{font-size:14pt}
 .promissoria-sheet table{width:100%;border-collapse:collapse;margin:2mm 0;font:inherit;color:inherit;min-width:0}
@@ -15,7 +15,7 @@ export const promissoriaCss = `
 .promissoria-company .v421-empresa-nome{font-size:16pt;font-weight:bold;color:#154423}
 .promissoria-total{padding:1.6mm;background:#e4ebe4;text-align:right;font-weight:bold;color:#154423}
 .promissoria-cut{border:0;border-top:1px dashed #55645a;margin:4mm 0}
-.promissoria-note{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2mm}
+.promissoria-note{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr);gap:2mm}
 .promissoria-side{writing-mode:vertical-rl;transform:rotate(180deg);white-space:nowrap;font-weight:bold}
 .promissoria-paid{position:absolute;z-index:1;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-21deg);width:max-content;max-width:70%;box-sizing:border-box;color:rgba(0,0,0,.52);text-align:center;line-height:1.15;pointer-events:none}
 .promissoria-paid strong,.promissoria-paid span{display:block}
@@ -78,11 +78,12 @@ export function promissoriaSheet(numeroPedido, snapshot, vencimento, local, emis
         <tr><td colspan="3">Pagarei por esta nota promissória, no vencimento indicado, a ${escapePromissoria(empresa.nome)} ou à sua ordem, a quantia de ${valorNota}, em moeda corrente nacional. Local de pagamento: ${escapePromissoria(local||'—')}.</td></tr>
       </tbody></table>
       <div class="promissoria-sign"><img alt="Assinatura desenhada pelo cliente" hidden><span>Assinatura do cliente</span></div>
-    </div></section>
+    </div>
     ${pagamento&&!pagamento.voided?`<div class="promissoria-paid">
       <strong>PAGO</strong><span>${escapePromissoria(empresa.nome)}</span>
       <time datetime="${escapePromissoria(pagamento.date)}">${vencimentoDaPromissoria(pagamento.date)}</time>
     </div>`:''}
+    </section>
   </article>`;
 }
 
@@ -138,7 +139,7 @@ export function promissoriaPrint(dialog, sheet, numeroPedido, status){
   };
   const parcela=sheet.querySelector('.promissoria-note h3')?.textContent.split(' · ')[1];
   frame.srcdoc=`<!doctype html><html lang="pt-BR"><meta charset="utf-8"><title>Promissória ${escapePromissoria(numeroPedido)}${parcela?` - ${escapePromissoria(parcela)}`: ''}</title>
-    <style>${promissoriaCss} @page{size:A4;margin:8mm}body{margin:0}main{position:relative;height:280mm;width:194mm}@media print{.promissoria-sheet{position:static}}</style>
+    <style>${promissoriaCss} @page{size:A4;margin:8mm}body{margin:0}main{height:280mm;width:194mm}</style>
     <main>${sheet.outerHTML}</main></html>`;
   dialog.querySelector('iframe')?.remove();
   dialog.append(frame);
