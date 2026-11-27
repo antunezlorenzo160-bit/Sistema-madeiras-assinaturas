@@ -1,6 +1,7 @@
 import {promissoriaCss,promissoriaSheet,promissoriaSignature,promissoriaPrint} from '../promissoria-document.mjs';
 
-const token=location.hash.slice(1);
+const [token,parte]=location.hash.slice(1).split('/');
+const parcela=parte===undefined?undefined:Number(parte);
 const main=document.querySelector('main'), preview=document.querySelector('#documento');
 const form=main.querySelector('form'), status=main.querySelector('#status');
 const confirm=form.querySelector('[type="submit"]'), save=main.querySelector('#salvar');
@@ -14,7 +15,7 @@ async function request(action,additional={}){
   const response=await fetch('/.netlify/functions/assinatura-promissoria',{
     method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',
     signal:AbortSignal.timeout(20000),
-    body:JSON.stringify({action,token,...additional})
+    body:JSON.stringify({action,token,parcela,...additional})
   });
   const result=await response.json();
   if(!response.ok)throw new Error(result.error||'Não foi possível acessar a promissória.');
@@ -24,7 +25,7 @@ async function request(action,additional={}){
 function render(result){
   saved=result;
   const {numeroPedido,snapshot,vencimento,local,emissao}=result.document;
-  preview.innerHTML=promissoriaSheet(numeroPedido,snapshot,vencimento,local,emissao);
+  preview.innerHTML=promissoriaSheet(numeroPedido,snapshot,vencimento,local,emissao,result.parcela?{...result.parcela,quantidade:result.document.parcelas.length}:null);
   if(result.signedAt){
     const image=preview.querySelector('.promissoria-sign img');
     image.src=result.signature;

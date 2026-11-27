@@ -1,3 +1,4 @@
+import {calcularParcelasPromissoria} from '../../public/promissoria-parcelas.mjs';
 import {createHash,createHmac} from 'node:crypto';
 import {authenticate,failure,json,PlatformError,serverDb} from './lib/platform-auth.mjs';
 import {financeOwnerContext} from './lib/finance-access.mjs';
@@ -18,12 +19,16 @@ function invitationRef(db,token){
   return db.doc(collection+'/'+createHash('sha256').update(token).digest('hex'));
 }
 
+function validDate(value){
+  if(typeof value!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(value))return false;
+  const date=new Date(value+'T00:00:00Z');
+  return Number.isFinite(+date)&&date.toISOString().slice(0,10)===value;
+}
+
 function documentFrom(input){
   const {numeroPedido,vencimento,local,snapshot}=input;
   const invalid=()=>{throw new PlatformError(400,'Confira os dados e o vencimento da promissória.');};
-  if(typeof numeroPedido!=='string'||!/^\d{5}$/.test(numeroPedido)||typeof vencimento!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(vencimento)||typeof local!=='string'||!local.trim()||local.length>120)invalid();
-  const date=new Date(vencimento+'T00:00:00Z');
-  if(!Number.isFinite(+date)||date.toISOString().slice(0,10)!==vencimento)invalid();
+  if(typeof numeroPedido!=='string'||!/^\d{5}$/.test(numeroPedido)||!validDate(vencimento)||typeof local!=='string'||!local.trim()||local.length>120)invalid();
   const text=(value,max=250)=>typeof value==='string'?value.slice(0,max):'';
   const fields=(source,keys)=>Object.fromEntries(keys.map(key=>[key,text(source?.[key])]));
   const cliente=fields(snapshot?.cliente,['nome','telefone','documento','logradouro','numero','complemento','bairro','cep','cidade','uf']);
@@ -41,11 +46,37 @@ function documentFrom(input){
     return {titulo,volume,centavos};
   });
   const emissao=new Date().toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'});
-  return {numeroPedido,vencimento,local:local.trim(),emissao,snapshot:{cliente,empresa,calc,total,totalPedidos,produtos,transporte:text(snapshot.transporte)}};
+  let parcelas;
+  if(input.parcelas!==undefined){
+    if(!Array.isArray(input.parcelas)||input.parcelas.some(row=>!validDate(row?.vencimento)))invalid();
+    let centavos;
+    try{centavos=calcularParcelasPromissoria(input.parcelas.map(row=>row.percentual),total);}
+    catch(error){throw new PlatformError(400,error.message);}
+    parcelas=input.parcelas.map((row,index)=>({numero:index+1,percentual:Number(String(row.percentual).replace(',','.')),vencimento:row.vencimento,centavos:centavos[index]}));
+  }
+  return {numeroPedido,vencimento,local:local.trim(),emissao,...(parcelas?{parcelas}:{}),snapshot:{cliente,empresa,calc,total,totalPedidos,produtos,transporte:text(snapshot.transporte)}};
 }
 
-function recordView(record){
-  return {document:record.document,signature:record.signature??null,signedAt:record.signedAt??null,expiresAt:record.expiresAt};
+function parcelaSelecionada(record,numero){
+  const parcelas=record.document.parcelas;
+  if(!parcelas){
+    if(numero!==undefined)throw new PlatformError(404,'Parcela não encontrada.');
+    return null;
+  }
+  const index=numero??1;
+  if(!Number.isInteger(index)||index<1||index>parcelas.length)throw new PlatformError(404,'Parcela não encontrada.');
+  return parcelas[index-1];
+}
+
+function recordView(record,parcela=null,assinatura=record){
+  return {document:record.document,parcela,signature:assinatura?.signature??null,signedAt:assinatura?.signedAt??null,expiresAt:record.expiresAt};
+}
+
+async function readParcela(db,ref,record,numero,read){
+  const parcela=parcelaSelecionada(record,numero);
+  if(!parcela)return recordView(record);
+  const signed=await read(db.doc(ref.path+'/parcelas/'+parcela.numero));
+  return recordView(record,parcela,signed.data());
 }
 
 export default async function handler(req){
@@ -68,17 +99,19 @@ export default async function handler(req){
         const saved=await tx.get(ref);
         if(saved.exists){
           const record=saved.data();
+          const view=await readParcela(db,ref,record,input.parcela,child=>tx.get(child));
           if(input.action==='create'&&record.expiresAt<=now){
             record.expiresAt=now+days;
             tx.update(ref,{expiresAt:record.expiresAt});
           }
-          return {...recordView(record),token,empresaId};
+          return {...view,expiresAt:record.expiresAt,token,empresaId};
         }
         if(input.action==='owner-read')return {document:null,empresaId};
         const document=documentFrom(input);
         const record={empresaId,loadId:input.loadId,document,createdAt:now,createdBy:identity.uid,expiresAt:now+days};
+        const parcela=parcelaSelecionada(record,input.parcela);
         tx.create(ref,record);
-        return {...recordView(record),token,empresaId};
+        return {...recordView(record,parcela,null),token,empresaId};
       });
       return json(200,result);
     }
@@ -88,13 +121,20 @@ export default async function handler(req){
       if(!saved.exists||saved.data().expiresAt<=now)throw new PlatformError(404,'Link inválido ou expirado. Peça à empresa para renovar o link.');
       return saved.data();
     };
-    if(input.action==='view')return json(200,recordView(read(await ref.get())));
+    if(input.action==='view')return json(200,await readParcela(db,ref,read(await ref.get()),input.parcela,child=>child.get()));
     if(input.accepted!==true)throw new PlatformError(400,'Confirme que você leu e concorda com o documento.');
     try{validateSignatureImage(input.signature);}catch(error){throw new PlatformError(400,error.message);}
     const result=await db.runTransaction(async tx=>{
       const record=read(await tx.get(ref));
-      if(record.signedAt)return recordView(record);
+      const parcela=parcelaSelecionada(record,input.parcela);
       const signed={signature:input.signature,signedAt:now};
+      if(parcela){
+        const child=db.doc(ref.path+'/parcelas/'+parcela.numero), existing=await tx.get(child);
+        if(existing.exists)return recordView(record,parcela,existing.data());
+        tx.create(child,signed);
+        return recordView(record,parcela,signed);
+      }
+      if(record.signedAt)return recordView(record);
       tx.update(ref,signed);
       return recordView({...record,...signed});
     });

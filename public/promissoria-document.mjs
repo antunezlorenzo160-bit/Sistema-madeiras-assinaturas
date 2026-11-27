@@ -1,4 +1,5 @@
 const escapePromissoria=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+const vencimentoDaPromissoria=value=>escapePromissoria(value.split('-').reverse().join('/'));
 const valorPromissoria=cents=>(cents/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 
 export const promissoriaCss = `
@@ -23,13 +24,14 @@ export const promissoriaCss = `
 @media print{.promissoria-sheet{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
 `;
 
-export function promissoriaSheet(numeroPedido, snapshot, vencimento, local, emissao){
+export function promissoriaSheet(numeroPedido, snapshot, vencimento, local, emissao, parcela=null){
   const {cliente,empresa,produtos,calc,totalPedidos,total,transporte}=snapshot;
-  const data=vencimento?escapePromissoria(vencimento.split('-').reverse().join('/')):'—';
+  const data=parcela?vencimentoDaPromissoria(parcela.vencimento):vencimento?escapePromissoria(vencimento.split('-').reverse().join('/')):'—';
   const logo=typeof empresa.logoDataUrl==='string'&&/^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(empresa.logoDataUrl)?empresa.logoDataUrl:'';
   const cabecalho=[empresa.cnpj&&'CNPJ '+empresa.cnpj,[empresa.logradouro,empresa.numero,empresa.bairro].filter(Boolean).join(' · '),[empresa.cidade,empresa.uf].filter(Boolean).join(' / '),[empresa.telefone,empresa.email,empresa.site].filter(Boolean).join(' · ')].filter(Boolean);
 
   const valor=valorPromissoria(total);
+  const valorNota=parcela?valorPromissoria(parcela.centavos):valor;
   const endereco=[cliente.logradouro,cliente.numero,cliente.complemento,cliente.bairro,cliente.cep].filter(Boolean).join(' · ');
   const rowsProdutos=produtos.map(({titulo,volume,centavos})=>
     `<tr><td>${escapePromissoria(titulo)}</td><td class="promissoria-money">${volume>0?volume.toLocaleString('pt-BR',{minimumFractionDigits:4,maximumFractionDigits:4})+' m³':'—'}</td><td class="promissoria-money">${valorPromissoria(centavos)}</td></tr>`
@@ -61,14 +63,14 @@ export function promissoriaSheet(numeroPedido, snapshot, vencimento, local, emis
     <div class="promissoria-total">TOTAL DO PEDIDO: ${valor}</div>
     <hr class="promissoria-cut">
     <section class="promissoria-note"><div class="promissoria-band promissoria-side">REPÚBLICA FEDERATIVA DO BRASIL</div><div>
-      <h3>NOTA PROMISSÓRIA</h3>
+      <h3>NOTA PROMISSÓRIA${parcela?` · PARCELA ${parcela.numero}/${parcela.quantidade}`: ''}</h3>
       <table><tbody>
-        <tr><td><b>Número</b> ${escapePromissoria(numeroPedido)}</td><td><b>Vencimento</b> ${data}</td><td><b>Valor</b> ${valor}</td></tr>
+        <tr><td><b>Número</b> ${escapePromissoria(numeroPedido)}</td><td><b>Vencimento</b> ${data}</td><td><b>Valor</b> ${valorNota}</td></tr>
         <tr><td colspan="3"><b>Empresa</b> ${escapePromissoria(empresa.nome)}${empresa.cnpj?' · CNPJ '+escapePromissoria(empresa.cnpj):''}</td></tr>
         <tr><td colspan="3"><b>Cliente</b> ${escapePromissoria(cliente.nome)}</td></tr>
         <tr><td colspan="3"><b>CPF / CNPJ</b> ${escapePromissoria(cliente.documento||'—')}</td></tr>
         <tr><td colspan="3"><b>Local e data de emissão</b> ${escapePromissoria(local||'—')} · ${escapePromissoria(emissao)}</td></tr>
-        <tr><td colspan="3">Pagarei por esta nota promissória, no vencimento indicado, a ${escapePromissoria(empresa.nome)} ou à sua ordem, a quantia de ${valor}, em moeda corrente nacional. Local de pagamento: ${escapePromissoria(local||'—')}.</td></tr>
+        <tr><td colspan="3">Pagarei por esta nota promissória, no vencimento indicado, a ${escapePromissoria(empresa.nome)} ou à sua ordem, a quantia de ${valorNota}, em moeda corrente nacional. Local de pagamento: ${escapePromissoria(local||'—')}.</td></tr>
       </tbody></table>
       <div class="promissoria-sign"><img alt="Assinatura desenhada pelo cliente" hidden><span>Assinatura do cliente</span></div>
     </div></section>
@@ -125,7 +127,8 @@ export function promissoriaPrint(dialog, sheet, numeroPedido, status){
       frame.contentWindow.print();
     }catch(error){status.textContent=error.message;frame.remove();}
   };
-  frame.srcdoc=`<!doctype html><html lang="pt-BR"><meta charset="utf-8"><title>Promissória ${escapePromissoria(numeroPedido)}</title>
+  const parcela=sheet.querySelector('.promissoria-note h3')?.textContent.split(' · ')[1];
+  frame.srcdoc=`<!doctype html><html lang="pt-BR"><meta charset="utf-8"><title>Promissória ${escapePromissoria(numeroPedido)}${parcela?` - ${escapePromissoria(parcela)}`: ''}</title>
     <style>${promissoriaCss} @page{size:A4;margin:8mm}body{margin:0}main{height:280mm;width:194mm}</style>
     <main>${sheet.outerHTML}</main></html>`;
   dialog.querySelector('iframe')?.remove();
