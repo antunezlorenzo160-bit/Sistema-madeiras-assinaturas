@@ -1,7 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {randomUUID} from 'node:crypto';
 import {financeDbV804} from './fixtures/finance-db.mjs';
 import {financeCollectionPath} from '../Netlify/Funtions/lib/finance-access.mjs';
-import {listSaleReceipts,saveSaleReceipt,saleReceiptPathV807,saleReceiptSignatureV807,confirmPromissoriaPayment,readPromissoriaPayment} from '../Netlify/Funtions/lib/sale-receipts.mjs';
+import {listSaleReceipts,saveSaleReceipt,saleReceiptPathV807,saleReceiptSignatureV807,confirmPromissoriaPayment,readPromissoriaPayment,readPromissoriaPaymentOptions,linkExistingPromissoriaPayment} from '../Netlify/Funtions/lib/sale-receipts.mjs';
 import {readCashBook} from '../Netlify/Funtions/lib/cash-book.mjs';
 import {loadSaleKeys} from '../Netlify/Funtions/lib/load-sales.mjs';
 import {aggregateFinance} from '../public/company-finance.mjs';
@@ -66,4 +66,31 @@ test('promissory installments reuse sale receipts and credit cash at most once p
  assert.equal((await cash(s)).balanceCents,40000);
  assert.equal((await readPromissoriaPayment(s.db,'tenant',loadId,1)).voided,true);
  await assert.rejects(()=>confirmPromissoriaPayment(s.db,s.identity,{...base,numero:1,amountCents:60000},now),/anulado/);
+});
+
+test('existing sale receipt can mark one promissory installment paid without changing cash',async()=>{
+ const at=Date.UTC(2026,10,10,12),loadId='old-receipt-load';
+ const s=financeDbV804([['empresas/tenant/dados/sm2_carregamentos/registros/a',
+  {grupoCargaId:loadId,cargaStatus:'concluido',cargaBaixadaEm:at,atualizadoEm:at,valor:360,quantidade:10,volume:2,tipoMedida:'m3',madeiraId:'wood'}]]);
+ const init=request(await row(s),{payment:{mode:'cash',paidDate:'2026-11-20'}});
+ await saveSaleReceipt(s.db,s.identity,init,now);
+ const before=await cash(s);
+ const details={empresaId:'tenant',loadId,numero:1,amountCents:36000,paymentId:init.operationId};
+ const options=await readPromissoriaPaymentOptions(s.db,'tenant',loadId,1,36000);
+ assert.equal(options.payment,null);
+ assert.deepEqual(options.matchingPayments,[{id:init.operationId,date:'2026-11-20',amountCents:36000}]);
+ assert.deepEqual((await readPromissoriaPaymentOptions(s.db,'tenant',loadId,1,18000)).matchingPayments,[]);
+ await assert.rejects(()=>linkExistingPromissoriaPayment(s.db,s.identity,{...details,amountCents:18000},now),/mesmo valor/);
+ const concurrent=await Promise.allSettled([1,2].map(numero=>linkExistingPromissoriaPayment(s.db,s.identity,{...details,numero},now)));
+ assert.equal(concurrent.filter(result=>result.status==='fulfilled').length,1);
+ const winner=concurrent[0].status==='fulfilled'?1:2;
+ const expected={date:'2026-11-20',amountCents:36000,voided:false};
+ assert.deepEqual(await readPromissoriaPayment(s.db,'tenant',loadId,winner),expected);
+ const writes=s.writes.length;
+ assert.deepEqual(await linkExistingPromissoriaPayment(s.db,s.identity,{...details,numero:winner},now),expected);
+ assert.deepEqual(await confirmPromissoriaPayment(s.db,s.identity,{...details,numero:winner,date:'2026-11-20'},now),expected);
+ assert.equal(s.writes.length,writes);
+ assert.deepEqual(await cash(s),before);
+ await saveSaleReceipt(s.db,s.identity,request(await row(s),{action:'void',paymentId:init.operationId}),now);
+ assert.equal((await readPromissoriaPayment(s.db,'tenant',loadId,winner)).voided,true);
 });

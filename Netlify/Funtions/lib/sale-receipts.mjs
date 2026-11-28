@@ -71,10 +71,44 @@ async function saleForReceipt(db,empresaId,loadId,read=ref=>ref.get()){
 const promissoriaPaymentId=(loadId,numero)=>loadSaleKeys('promissoria-receipt:'+loadId+':'+numero).entryId;
 const promissoriaReceiptRef=(db,empresaId,loadId)=>db.doc(saleReceiptPathV807(empresaId)+'/'+loadSaleKeys(loadId).entryId);
 
+const paymentView=payment=>payment?{date:payment.date,amountCents:payment.amountCents,voided:!!payment.voidedAt}:null;
+const linkedPayment=(payments,loadId,numero)=>payments.find(row=>row.id===promissoriaPaymentId(loadId,numero)||row.promissoriaParcela===numero);
+const eligibleExistingPayment=(row,amountCents)=>!row.voidedAt&&row.amountCents===amountCents&&row.promissoriaParcela===undefined&&row.source?.type!=='promissoria';
+
 export async function readPromissoriaPayment(db,empresaId,loadId,numero,read=ref=>ref.get()){
  const receipt=await read(promissoriaReceiptRef(db,empresaId,loadId));
- const payment=receipt.data()?.settlement?.payments?.find(row=>row.id===promissoriaPaymentId(loadId,numero));
- return payment?{date:payment.date,amountCents:payment.amountCents,voided:!!payment.voidedAt}:null;
+ return paymentView(linkedPayment(receipt.data()?.settlement?.payments??[],loadId,numero));
+}
+
+export async function readPromissoriaPaymentOptions(db,empresaId,loadId,numero,amountCents,read=ref=>ref.get()){
+ const receipt=await read(promissoriaReceiptRef(db,empresaId,loadId));
+ const payments=receipt.data()?.settlement?.payments??[];
+ const payment=paymentView(linkedPayment(payments,loadId,numero));
+ const matchingPayments=payment?[]:payments.filter(row=>eligibleExistingPayment(row,amountCents)).map(row=>({id:row.id,date:row.date,amountCents:row.amountCents}));
+ return {payment,matchingPayments};
+}
+
+export async function linkExistingPromissoriaPayment(db,identity,{empresaId,loadId,numero,amountCents,paymentId},now=Date.now()){
+ if(typeof paymentId!=='string'||!/^[-a-f0-9]{36}$/i.test(paymentId))throw new PlatformError(400,'Selecione o recebimento que já entrou no caixa.');
+ return db.runTransaction(async tx=>{
+  const context=await financeOwnerContext(db,identity,ref=>tx.get(ref),true,now);
+  if(context.empresaId!==empresaId)throw new PlatformError(403,'A empresa mudou.');
+  const ref=promissoriaReceiptRef(db,empresaId,loadId),snap=await tx.get(ref),previous=snap.data();
+  if(!previous||previous.loadId!==loadId)throw new PlatformError(409,'Nenhum recebimento encontrado para este carregamento.');
+  const payments=previous.settlement?.payments??[];
+  const linked=linkedPayment(payments,loadId,numero);
+  if(linked){
+   if(linked.id===paymentId&&!linked.voidedAt)return paymentView(linked);
+   throw new PlatformError(409,'Esta promissória já tem um recebimento vinculado.');
+  }
+  const payment=payments.find(row=>row.id===paymentId);
+  if(!payment||!eligibleExistingPayment(payment,amountCents))throw new PlatformError(409,'Escolha um recebimento ativo, ainda sem vínculo, com o mesmo valor desta promissória.');
+  const updated={...payment,promissoriaParcela:numero,promissoriaLinkedAt:now,promissoriaLinkedBy:identity.uid};
+  const next={...previous,settlement:{...previous.settlement,payments:payments.map(row=>row.id===paymentId?updated:row)},revision:previous.revision+1,updatedAt:now,updatedBy:identity.uid};
+  tx.set(ref,next);
+  tx.create(db.doc(ref.path+'/versoes/'+next.revision),{action:'sale-receipt.link-promissoria',at:now,by:identity.uid,previous,next});
+  return paymentView(updated);
+ });
 }
 
 export async function confirmPromissoriaPayment(db,identity,{empresaId,loadId,numero,amountCents,date,dueDate},now=Date.now()){
@@ -83,7 +117,7 @@ export async function confirmPromissoriaPayment(db,identity,{empresaId,loadId,nu
  if(context.empresaId!==empresaId)throw new PlatformError(403,'A empresa mudou.');
  const receipt=await promissoriaReceiptRef(db,empresaId,loadId).get();
  const operationId=promissoriaPaymentId(loadId,numero);
- const previous=receipt.data()?.settlement?.payments?.find(row=>row.id===operationId);
+ const previous=linkedPayment(receipt.data()?.settlement?.payments??[],loadId,numero);
  if(previous){
   if(previous.voidedAt)throw new PlatformError(409,'O recebimento desta promissória foi anulado em Recebimentos de vendas.');
   return {date:previous.date,amountCents:previous.amountCents,voided:false};

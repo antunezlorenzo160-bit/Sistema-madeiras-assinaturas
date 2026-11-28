@@ -45,6 +45,9 @@ function promissoriaLinkPanel(dialog, gid, prepare, onRecord){
   const link=panel.querySelector('input'), whatsapp=panel.querySelector('a');
   const selector=dialog.querySelector('[data-parcela-select]');
   const paymentForm=dialog.querySelector('[data-payment-form]');
+  const linkPaymentForm=dialog.querySelector('[data-link-payment-form]');
+  const existingPayment=linkPaymentForm.elements.receipt;
+  const linkPayment=linkPaymentForm.querySelector('button');
   const paymentStatus=dialog.querySelector('[data-payment-status]');
   const paymentDate=paymentForm.elements.date;
   const confirmPayment=paymentForm.querySelector('button');
@@ -54,6 +57,11 @@ function promissoriaLinkPanel(dialog, gid, prepare, onRecord){
   const showPayment=record=>{
     const payment=record?.payment;
     paymentForm.hidden=!record||!!payment;
+    const matches=record?.matchingPayments??[];
+    linkPaymentForm.hidden=!!payment||!matches.length;
+    existingPayment.replaceChildren(new Option('Selecione o recebimento',''),...matches.map(row=>
+      new Option(vencimentoDaPromissoria(row.date)+' · '+valorPromissoria(row.amountCents)+' · ref. '+row.id.slice(-6),row.id)
+    ));
     paymentStatus.textContent=payment?(payment.voided?'Recebimento anulado':'Pago em '+vencimentoDaPromissoria(payment.date))+' · '+valorPromissoria(payment.amountCents):'';
     if(record)paymentForm.querySelector('strong').textContent=valorPromissoria(record.parcela?.centavos??record.document.snapshot.total);
   };
@@ -64,7 +72,7 @@ function promissoriaLinkPanel(dialog, gid, prepare, onRecord){
     busy=true;
     for(const button of [create,copy,view,panel.querySelector('[data-refresh-link]')])button.disabled=true;
     selector.disabled=true;
-    confirmPayment.disabled=true;
+    confirmPayment.disabled=linkPayment.disabled=true;
     status.textContent='Consultando assinatura…';
     try{
       const result=await financeRequestV722({action,loadId:gid,...(saved?.document.parcelas?{parcela:Number(selector.value)}:{}),...payload},null,'assinatura-promissoria');
@@ -99,30 +107,40 @@ function promissoriaLinkPanel(dialog, gid, prepare, onRecord){
       whatsapp.hidden=!shareable;
       view.hidden=!saved?.signedAt&&!saved?.document.parcelas&&!saved?.payment;
       selector.disabled=false;
-      confirmPayment.disabled=false;
+      confirmPayment.disabled=linkPayment.disabled=false;
       create.hidden=!!active||!!saved?.signedAt;
       create.textContent=saved?'Renovar link':'Gerar link de assinatura';
       for(const button of [create,copy,view,panel.querySelector('[data-refresh-link]')])button.disabled=false;
     }
   };
-  paymentForm.onsubmit=async event=>{
-    event.preventDefault();
-    if(!saved||saved.payment||busy||paying||company!==empresaV456||!finOwnerV722())return;
-    const amount=saved.parcela?.centavos??saved.document.snapshot.total;
-    if(!window.confirm('Confirma o recebimento de '+valorPromissoria(amount)+' em '+vencimentoDaPromissoria(paymentDate.value)+'? Prossiga somente se este valor ainda não foi lançado no caixa.'))return;
+  const savePayment=async(action,payload,message)=>{
+    if(!saved||saved.payment||busy||paying||company!==empresaV456||!finOwnerV722()||!window.confirm(message))return;
     paying=true;
-    selector.disabled=confirmPayment.disabled=true;
-    paymentStatus.textContent='Registrando recebimento…';
+    selector.disabled=confirmPayment.disabled=linkPayment.disabled=true;
+    paymentStatus.textContent=action==='link-payment'?'Vinculando recebimento…':'Registrando recebimento…';
     try{
-      const result=await financeRequestV722({action:'confirm-payment',loadId:gid,date:paymentDate.value,
-        acknowledged:true,...(saved.parcela?{parcela:saved.parcela.numero}:{})},null,'assinatura-promissoria');
+      const result=await financeRequestV722({action,loadId:gid,...payload,
+        ...(saved.parcela?{parcela:saved.parcela.numero}:{})},null,'assinatura-promissoria');
       if(!dialog.open||company!==empresaV456)return;
       saved.payment=result.payment;
       showPayment(saved);
       await onRecord(saved);
       view.hidden=false;
     }catch(error){paymentStatus.textContent=error.message;}
-    finally{paying=false;selector.disabled=confirmPayment.disabled=false;}
+    finally{paying=false;selector.disabled=confirmPayment.disabled=linkPayment.disabled=false;}
+  };
+  paymentForm.onsubmit=event=>{
+    event.preventDefault();
+    if(!saved)return;
+    const amount=saved.parcela?.centavos??saved.document.snapshot.total;
+    savePayment('confirm-payment',{date:paymentDate.value,acknowledged:true},
+      'Confirma o recebimento de '+valorPromissoria(amount)+' em '+vencimentoDaPromissoria(paymentDate.value)+'? Prossiga somente se este valor ainda não foi lançado no caixa.');
+  };
+  linkPaymentForm.onsubmit=event=>{
+    event.preventDefault();
+    const receipt=saved?.matchingPayments?.find(row=>row.id===existingPayment.value);
+    if(receipt)savePayment('link-payment',{paymentId:receipt.id},
+      'Vincular o recebimento de '+valorPromissoria(receipt.amountCents)+' em '+vencimentoDaPromissoria(receipt.date)+' a esta promissória? O caixa fica com o lançamento existente.');
   };
   panel.addEventListener('toggle',()=>{if(panel.open)load('owner-read');});
   panel.querySelector('[data-refresh-link]').onclick=()=>load('owner-read');
@@ -236,6 +254,10 @@ async function promissoriaOpen(gid){
       <p>Valor a receber <strong></strong></p>
       <label>Data do recebimento <input type="date" name="date" required></label>
       <button class="btn btn-primary" type="submit">Confirmar pagamento</button>
+    </form>
+    <form data-link-payment-form hidden>
+      <label>Recebimento já registrado <select name="receipt" required></select></label>
+      <button class="btn btn-secondary" type="submit">Vincular recebimento existente</button>
     </form>
     <p data-payment-status role="status"></p>
     <div class="promissoria-actions">
