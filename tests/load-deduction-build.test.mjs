@@ -1,3 +1,5 @@
+import {loadCompletionMessageV792} from '../public/offline-sync-state.mjs';
+import {isMeasuredTotalV825,isLastroM3V825,isLinearTotalV744,linearRemainderV744} from '../public/linear-total.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
@@ -13,7 +15,7 @@ function setup(previousStorage){
  const values=new Map(),storage=previousStorage||{durable:true,getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,v),removeItem:k=>values.delete(k)};let serial=0;
  if(!storage.journalStore)storage.journalStore={value:null,async get(){return structuredClone(this.value);},async put(value){if(this.value)throw Error('Pending journal');this.value=structuredClone(value);},async remove(){this.value=null;}};
  const draft={id:'load-item',grupoCargaId:'group',quantidade:5,volume:5,valor:50,tipoMedida:'m3',madeira:'Pinus',cargaFluxoV388:true,cargaStatus:'aguardando_conferencia'};
- const context={window:{__v456Local:storage,__smLoadDeductionJournal:createLoadDeductionJournal(storage,{journalStore:storage.journalStore}),__smMergeLoadDeductionQueue:mergeLoadDeductionQueue},COL:{estoque1:'stock1',estoque2:'stock2',cargas:'loads',movimentos:'moves'},STORAGE:{lancamentos:'summary',movimentos:'movements'},OFFLINE_OPS_KEY:'queue',estoque1Lancamentos:[{id:'stock',quantidade:20,volume:20,valor:200}],estoque2Lancamentos:[],carregamentos:[draft],lancamentos:[draft],movimentos:[],sessaoCargaAtual:'group',Date,crypto:{randomUUID},conexaoOnline:()=>false,ehMadeiraVerde:()=>false,mesmaBitolaCarga:()=>true,nowBR:()=>'',adicionarReferenciaPesoV420:x=>x,doc:(...args)=>args,db:{},employeeCheckLoadWrite(){},employeeAssertWrite(){},exigirEscritaPlano(){},offlineOps:()=>JSON.parse(storage.getItem('queue')||'[]'),atualizarPendenciasCadastroV457(){},sincronizarOfflineOps:async()=>{},save(){throw Error('Legacy non-atomic save must not run');}};
+ const context={isMeasuredTotalV825,isLastroM3V825,isLinearTotalV744,linearRemainderV744,window:{__v456Local:storage,__smLoadDeductionJournal:createLoadDeductionJournal(storage,{journalStore:storage.journalStore}),__smMergeLoadDeductionQueue:mergeLoadDeductionQueue},COL:{estoque1:'stock1',estoque2:'stock2',cargas:'loads',movimentos:'moves'},STORAGE:{lancamentos:'summary',movimentos:'movements'},OFFLINE_OPS_KEY:'queue',estoque1Lancamentos:[{id:'stock',quantidade:20,volume:20,valor:200}],estoque2Lancamentos:[],carregamentos:[draft],lancamentos:[draft],movimentos:[],sessaoCargaAtual:'group',Date,crypto:{randomUUID},conexaoOnline:()=>false,ehMadeiraVerde:()=>false,mesmaBitolaCarga:()=>true,nowBR:()=>'',adicionarReferenciaPesoV420:x=>x,doc:(...args)=>args,db:{},employeeCheckLoadWrite(){},employeeAssertWrite(){},exigirEscritaPlano(){},offlineOps:()=>JSON.parse(storage.getItem('queue')||'[]'),atualizarPendenciasCadastroV457(){},sincronizarOfflineOps:async()=>{},save(){throw Error('Legacy non-atomic save must not run');}};
  vm.createContext(context);vm.runInContext(app.slice(start,end),context);
  return {context,storage,item:{...draft,cargaStatus:'concluido',cargaBaixadaEm:100}};
 }
@@ -50,7 +52,7 @@ function setupExecutor({storageFailure=false,renderFailure=false}={}){
  const s=setup(),c=s.context,alerts=[];
  const html=applyLoadDeductionSafety(readFileSync(new URL('../public/index.html',import.meta.url),'utf8')),app=template(html);
  const start=app.indexOf('  const baixasEmCurso=new Set();'),end=app.indexOf('  async function ajusteRapidoEDarBaixaCargaV390',start);
- Object.assign(c,{salvarCargaComBaixaV387:c.salvarCargaComBaixa,nomeUsuarioCargaV388:()=> 'Owner',employeeLoadActor:()=>({uid:'owner'}),iniciarMutacaoCargaV396(){},finalizarMutacaoCargaV396(){},save(){},console:{error(){}},alert:m=>alerts.push(m),fecharModalAjusteRapidoV390(){},atualizarFluxoCargaV388(){if(renderFailure)throw Error('render failed');},setTimeout});
+ Object.assign(c,{loadCompletionMessageV792,salvarCargaComBaixaV387:c.salvarCargaComBaixa,nomeUsuarioCargaV388:()=> 'Owner',employeeLoadActor:()=>({uid:'owner'}),iniciarMutacaoCargaV396(){},finalizarMutacaoCargaV396(){},save(){},console:{error(){}},alert:m=>alerts.push(m),fecharModalAjusteRapidoV390(){},atualizarFluxoCargaV388(){if(renderFailure)throw Error('render failed');},setTimeout});
  if(storageFailure)c.window.__smLoadDeductionJournal.commit=()=>{throw Object.assign(Error('local storage full'),{name:'QuotaExceededError'});};
  vm.runInContext(app.slice(start,end),c);return {...s,alerts};
 }
@@ -65,4 +67,15 @@ test('post-commit UI failure reports recorded deduction rather than an interrupt
 test('quota failure preserves stock and exposes the actual stage and reason',async()=>{
  const {context:c,item,alerts}=setupExecutor({storageFailure:true});await c.executarBaixaConferidaCargaV390('group',[item]);
  assert.equal(c.estoque1Lancamentos[0].quantidade,20);assert(alerts.some(m=>m.includes('QuotaExceededError')&&m.includes('Etapa: gravação do item')));
+});
+
+test('46 pieces of 20x20x5.5m scan each stock identity once, preserve source rows, movements and restart/idempotency',async()=>{
+ const {context:c,storage}=setup();const row={id:'load46',grupoCargaId:'g',madeiraId:'wood',madeira:'Garapeira',tipoMedida:'m3',largura:20,espessura:20,comprimento:5.5,quantidade:46,volume:10.12,cargaFluxoV388:true,cargaStatus:'concluido',cargaBaixadaEm:123};
+ const original=Array.from({length:5000},(_,index)=>({...row,id:'stock'+index,quantidade:1,volume:0.22,cargaBaixadaEm:undefined}));c.estoque1Lancamentos=original;c.estoque2Lancamentos=[{id:'unrelated',madeiraId:'other',quantidade:1,volume:1}];c.carregamentos=[{...row,cargaStatus:'aguardando_conferencia',cargaBaixadaEm:undefined}];c.lancamentos=[];
+ const before=JSON.stringify(original),other=c.estoque2Lancamentos[0];let comparisons=0;c.mesmaBitolaCarga=(a,b)=>{comparisons++;return a.madeiraId===b.madeiraId;};
+ await c.salvarCargaComBaixa(row,'estoque1','Carga');assert(comparisons<=5000);assert.equal(c.estoque1Lancamentos.length,4954);assert.equal(JSON.stringify(original),before);assert.equal(c.estoque1Lancamentos[0],original[46]);assert.equal(c.estoque2Lancamentos[0],other);assert.equal(c.movimentos.length,46);assert(Math.abs(c.movimentos.reduce((sum,r)=>sum+r.volume,0)-10.12)<1e-9);assert.equal(JSON.parse(storage.getItem('carregamentos_lancamentos_v1'))[0].quantidade,46);
+ await c.salvarCargaComBaixa(row,'estoque1','Carga');assert.equal(c.estoque1Lancamentos.length,4954);assert.equal(c.movimentos.length,46);
+});
+test('group deduction keeps durable item checkpoints without broadcasting or starting a sender after every item',async()=>{
+ const {context:c,item,storage}=setup();let sends=0,broadcasts=0;c.cargaMutationDepthV396=1;c.sincronizarOfflineOps=async()=>{sends++;};c.window.__smSyncSummaryTabsV606=()=>{broadcasts++;};await c.salvarCargaComBaixa({...item,cargaStatus:'concluido',cargaBaixadaEm:123},'estoque1','Carga');assert.equal(sends,0);assert.equal(broadcasts,0);assert.equal(JSON.parse(storage.getItem('carregamentos_lancamentos_v1')).length,1);assert(JSON.parse(storage.getItem('queue')).some(row=>row.nome==='loads'));
 });

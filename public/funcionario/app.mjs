@@ -1,3 +1,4 @@
+import {resolveEmployeeEntry} from './access-flow.mjs?v=2';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js';
 import { initializeAuth,browserLocalPersistence,inMemoryPersistence,createUserWithEmailAndPassword,signInWithEmailAndPassword,sendEmailVerification,signOut,sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
 const app=initializeApp({apiKey:'AIzaSyBQ1_mmY0mP8mdbonbmWLVv6VaDXuzHZkU',authDomain:'estoque-madeiras-cc4d7.firebaseapp.com',projectId:'estoque-madeiras-cc4d7',appId:'1:201851719270:web:8d71d7f6862d7c4709a7a7'},'sm-madeiras-login');
@@ -13,14 +14,12 @@ async function complete(){
  const user=auth.currentUser;if(!user)throw Error('Entre com sua conta.');
  await user.reload();
  if(!user.emailVerified){$('verification').hidden=false;$('change-account').hidden=false;status('Confirme seu e-mail para liberar o acesso.');return;}
- status('Ativando seu acesso…');
+ status('Verificando seu acesso…');
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);
  try{
-  const idToken=await user.getIdToken(true);
-  const response=await fetch('/.netlify/functions/company-employees',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+idToken},body:JSON.stringify({action:'invite.redeem',token,empresaId}),signal:controller.signal});
-  const data=await response.json();if(!response.ok)throw Error(data.error||'Não foi possível concluir o cadastro.');
+  const result=await resolveEmployeeEntry({user,token,empresaId,signal:controller.signal});
   $('register-form').hidden=true;$('forgot-password').hidden=true;$('verification').hidden=true;$('open-system').hidden=false;$('change-account').hidden=true;
-  status('Acesso ativado. Abra o sistema com esta conta para usar as áreas liberadas.');
+  status(result.existing?'Seu acesso já está ativo. Abra o sistema para continuar.':'Acesso ativado. Abra o sistema com esta conta para usar as áreas liberadas.');
  }finally{clearTimeout(timer);}
 }
 function showPassword(visible){
@@ -44,7 +43,7 @@ $('forgot-password').onclick=()=>run(async()=>{
  catch(error){status(error.code==='auth/user-not-found'?success:({'auth/invalid-email':'Confira o e-mail informado.','auth/too-many-requests':'Muitas tentativas. Aguarde alguns minutos antes de tentar novamente.','auth/network-request-failed':'Não foi possível conectar. Confira a internet e tente novamente.'}[error.code]||'Não foi possível solicitar a recuperação. Tente novamente mais tarde.'));}
 });
 $('register-form').onsubmit=event=>{event.preventDefault();run(async()=>{
- if(!token)throw Error('Abra o link completo de convite enviado pelo administrador.');
+ if($('mode').value==='create'&&(!token||!empresaId))throw Error('Abra o link completo de convite enviado pelo administrador para criar seu acesso.');
  status('Verificando conta…');
  const password=$('password').value;$('password').value='';showPassword(false);
  const sign=$('mode').value==='create'?createUserWithEmailAndPassword:signInWithEmailAndPassword;
@@ -56,4 +55,16 @@ $('register-form').onsubmit=event=>{event.preventDefault();run(async()=>{
 $('confirm').onclick=()=>run(complete);
 $('resend').onclick=()=>run(async()=>{await sendEmailVerification(auth.currentUser);status('Confirmação enviada. Confira também o spam.');});
 $('change-account').onclick=()=>run(async()=>{await signOut(auth);$('verification').hidden=true;$('change-account').hidden=true;status('Entre com o e-mail do convite.');});
-if(!token){$('register-form').hidden=true;status('Este cadastro exige o link completo de convite enviado pelo administrador.');}
+function updateEntryMode(){
+ const creating=$('mode').value==='create';
+ $('submit').textContent=creating?'Continuar cadastro':'Entrar';
+ $('password').autocomplete=creating?'new-password':'current-password';
+ $('password').minLength=creating?8:6;
+}
+$('mode').addEventListener('change',updateEntryMode);
+if(!token||!empresaId){
+ $('mode').value='login';$('mode').querySelector('option[value="create"]').disabled=true;
+ document.querySelector('h1').textContent='Entre como funcionário.';
+ status('Use sua conta já ativada. Para o primeiro acesso, abra o convite enviado pelo administrador.');
+}
+updateEntryMode();

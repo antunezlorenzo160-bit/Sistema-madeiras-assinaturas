@@ -1,0 +1,7 @@
+## Totais descritivos abaixo dos itens no PDF V787 — 17/11
+
+Usuário pediu retirar totais e cabeçalhos entre os itens e descrever abaixo os totais por espessura/comprimento e total por espécie. Resumo da calculadora agora reúne linhas por espécie e formato de colunas, mantendo espessura/largura/comprimento em cada linha. Não repete cabeçalho por mudança de comprimento ou espessura; cabeçalhos de continuação por coluna/página permanecem para leitura. Subtotais não entram mais como tfoot nessas tabelas.
+
+Área inferior tem descrição por combinação: espécie — espessura cm × comprimento m: subtotal fonte. Total de espessura vem da linha fonte já calculada. Total da espécie é copiado do cartão de volume/área por espécie já calculado no resumo, sem somar linhas arredondadas novamente; mantém unidades separadas se houver mais de uma. Rodapé permite quebra entre descrições extensas. Alteração de apresentação do clone, sem recalcular registros, mudar ordem de itens, estoque ou financeiro. PDFs de outros fluxos mantêm sua projeção existente.
+
+Validação:4suítes passaram (totais do resumo, tabelas compactas, impressão e UI de pedidos); build38scripts válidos. Integração prova0tfoot,1cabeçalho para dois comprimentos da mesma espécie,0,7000e0,0955abaixo, totaldeespessura/espécie0,7955preservados apesar do arredondamento das linhas. Sem PDFAndroid nativo ou base privada; somente prévia12, produção inalterada.

@@ -1,0 +1,9 @@
+## Apagar carga da calculadora em lote V781 — 17/11
+
+Usuário confirmou travamento no botão Apagar carga da calculadora. Exclusão enfileirava cada pacote fora do acumulador de lote, repetindo leitura/JSON da fila e escritas para cada registro. Agora usa o acumulador já existente e as mesmas verificações por item, com um checkpoint confirmado após remover a montagem das projeções. Aguarda armazenamento local; envio ao servidor continua independente. Não altera botão Excluir carregamento da lista.
+
+Trava toques simultâneos e edição dos controles durante a operação. Fila de delete é preparada antes de alterar as listas; falha de permissão restaura o buffer original e preserva a montagem. Falha de persistência conserva estado pendente para Tentar salvar sem lançar novamente, não permite repetir exclusão nem indica sucesso prematuro. Cargas fechadas seguem somente limpeza do resumo; cargas de outros grupos, estoque e baixas físicas permanecem preservados. Não houve exclusão de registro real por ferramentas.
+
+Validação:5suítes passaram (exclusão calculadora, lote, preparação rápida, armazenamento durável e build baixa); build38scripts válidos. Novos casos1000pacotes/1checkpoint, preservação de grupo alheio e linha de estoque, permissão recusada após preparação parcial, duplo toque e falha de gravação com trava. Sem navegador nativo/Android ou base privada; somente prévia12, produção inalterada.
+
+A suíte adicional employee-load-access teve5casos aprovados e2falhas de fixture fora da exclusão: comparação do build inteiro após reexecutar injeções de acesso sobre HTML final da prévia e ausência de priceLoadServices no contexto VM do salvamento de pré-carga. Arquivos de produção de acesso, regras e salvamento de pré-carga não foram alterados. Regras/permissões por item permanecem chamadas pelo acumulador original. Essas duas falhas não foram apresentadas como testes aprovados.

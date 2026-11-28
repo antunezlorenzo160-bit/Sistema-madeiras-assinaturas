@@ -6,7 +6,7 @@ import {applyCalculatorLoadDelete} from '../scripts/calculator-load-delete.mjs';
 const draft=(id,group='current')=>({id,grupoCargaId:group,cargaFluxoV388:true,cargaStatus:'montagem',destino:'carga'});
 function setup(items,visible=items){
  const calls={queue:[],pc:0,render:0,alerts:[],saved:0};
- const c={carregamentos:structuredClone(items),lancamentos:structuredClone(visible),sessaoCargaAtual:'current',contadorPacotes:7,sessaoPacotes:'old',COL:{cargas:'loads'},STORAGE:{lancamentos:'summary'},crypto:{randomUUID:()=> 'next'},confirm:()=>true,alert:m=>calls.alerts.push(m),exigirEscritaPlano(){},document:{getElementById:()=>null},window:{statusEfetivoCargaV589:x=>x.cargaStatus,__v456Local:{setItem(){}}},enfileirarOffline:(...a)=>calls.queue.push(a),save:()=>calls.saved++,sincronizarOfflineOps:async()=>{},salvarContador(){},renderLancamentosV387:()=>calls.render++,atualizarFluxoCargaV388(){},atualizarPainelPacotes(){},calcPreview(){},pcAtualizarPlanilhaDirecionada:()=>calls.pc++};
+ const c={lotePacotesEmCurso:false,opsBlocoPacotes:new Map(),packetPersistenceFailureV778(){c.window.__smPacketPersistencePendingV778=true;},persistirBlocoPacotes:async()=>{calls.saved++;},carregamentos:structuredClone(items),lancamentos:structuredClone(visible),sessaoCargaAtual:'current',contadorPacotes:7,sessaoPacotes:'old',COL:{cargas:'loads'},STORAGE:{lancamentos:'summary'},crypto:{randomUUID:()=> 'next'},confirm:()=>true,alert:m=>calls.alerts.push(m),exigirEscritaPlano(){},document:{getElementById:()=>null},window:{statusEfetivoCargaV589:x=>x.cargaStatus,__v456Local:{setItem(){}}},enfileirarOffline:(...a)=>calls.queue.push(a),save:()=>calls.saved++,sincronizarOfflineOps:async()=>{},salvarContador(){},renderLancamentosV387:()=>calls.render++,atualizarFluxoCargaV388(){},atualizarPainelPacotes(){},calcPreview(){},pcAtualizarPlanilhaDirecionada:()=>calls.pc++};
  c.itensGrupoCargaV388=(g,status)=>c.carregamentos.filter(x=>x.cargaFluxoV388&&x.grupoCargaId===g&&x.cargaStatus===status);
  c.itensCargaAtualV388=()=>c.itensGrupoCargaV388(c.sessaoCargaAtual,'montagem');
  c.ocultarDoResumo=async ids=>{c.lancamentos=c.lancamentos.filter(x=>!ids.includes(x.id));};
@@ -34,4 +34,22 @@ test('clear-summary writes only its local key and never calls the legacy shared-
 test('failed local persistence restores the original calculator summary',async()=>{
  const {c}=setup([draft('a')]);c.save=()=>{throw Error('disk full');};
  await assert.rejects(c.apagarSomenteResumoCarga(),/disk full/);assert.equal(c.lancamentos.length,1);assert.equal(c.carregamentos.length,1);
+});
+
+test('large calculator draft deletion buffers1000delete operations and persists one batch, preserving unrelated load and entries',async()=>{
+ const rows=Array.from({length:1000},(_,i)=>draft('p'+i));const {c,calls}=setup([...rows,draft('other','saved')],[...rows,{id:'stock',destino:'estoque2'}]);let commits=0;
+ c.enfileirarOffline=(name,id,obj,mode)=>{assert(c.lotePacotesEmCurso);assert(c.window.__smPacketBatchActiveV779);c.opsBlocoPacotes.set(id,{name,id,obj,mode});};
+ c.persistirBlocoPacotes=async()=>{commits++;assert.equal(c.opsBlocoPacotes.size,1000);for(const op of c.opsBlocoPacotes.values())assert.equal(op.mode,'delete');c.opsBlocoPacotes.clear();};
+ await c.apagarCargaAtualV388();assert.equal(commits,1);assert.deepEqual(c.carregamentos.map(x=>x.id),['other']);assert.deepEqual(c.lancamentos.map(x=>x.id),['stock']);assert.equal(c.lotePacotesEmCurso,false);assert.equal(c.window.__smPacketBatchActiveV779,false);assert.equal(calls.render,1);
+});
+test('permission failure before applying deletion restores buffered operations and keeps every draft row',async()=>{
+ const rows=Array.from({length:20},(_,i)=>draft('p'+i));const {c}=setup(rows);c.opsBlocoPacotes.set('unrelated',{id:'keep'});let n=0;
+ c.enfileirarOffline=(name,id)=>{if(++n===10)throw Error('permission denied');c.opsBlocoPacotes.set(id,{id});};
+ await assert.rejects(c.apagarCargaAtualV388(),/permission denied/);assert.equal(c.carregamentos.length,20);assert.equal(c.lancamentos.length,20);assert.equal(c.opsBlocoPacotes.size,1);assert(c.opsBlocoPacotes.has('unrelated'));assert.equal(c.lotePacotesEmCurso,false);
+});
+test('double tap while saving performs one deletion; failed save stays pending and cannot be launched again',async()=>{
+ const {c,calls}=setup([draft('a')]);let reject;const controls=[{disabled:false}],button={textContent:'Apagar carga',disabled:false};c.document={querySelectorAll:()=>controls,getElementById:id=>id==='btnLimparLancamentos'?button:null};
+ c.persistirBlocoPacotes=()=>new Promise((resolve,fail)=>reject=fail);
+ const pending=c.apagarCargaAtualV388();await c.apagarCargaAtualV388();assert.equal(calls.queue.length,1);assert.equal(controls[0].disabled,true);
+ reject(Error('disk failed'));await pending;assert.equal(c.window.__smPacketPersistencePendingV778,true);assert(button.disabled);assert.equal(calls.render,0);assert.equal(c.lotePacotesEmCurso,false);await c.apagarCargaAtualV388();assert.equal(calls.queue.length,1);
 });

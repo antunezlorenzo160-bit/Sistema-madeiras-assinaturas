@@ -1,0 +1,174 @@
+#relatorios{min-width:0;max-width:100%;box-sizing:border-box}
+#relatorios>h2{font-size:22px;margin:4px 0 14px}
+#relatorios [hidden]{display:none!important}
+.reports-tabs-v722{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 16px}
+.reports-tabs-v722 button{min-height:44px}
+.reports-tabs-v722 button[aria-pressed=true]{background:var(--accent)!important;color:#18120a!important}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759){min-width:0;max-width:100%;contain:inline-size}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .note{color:var(--muted);font-size:12px;line-height:1.6}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) h3{font-size:18px;margin:0 0 12px}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) h4{font-size:14px;margin:6px 0 12px}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) summary{cursor:pointer;font-weight:700;min-height:36px;line-height:1.5}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-period,:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:14px 0}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) label{display:flex;flex-direction:column;gap:6px;min-width:0;font-size:13px;font-weight:700}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) input,:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) select{width:100%;min-width:0;box-sizing:border-box;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:10px;min-height:44px;font-size:14px}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) label small{font-weight:400;font-size:11px;color:var(--muted);line-height:1.4}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:16px 0}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-stats>div{min-width:0;padding:12px;background:var(--panel2);border:1px solid var(--line);border-radius:9px}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-stats small{display:block;color:var(--muted);font-size:12px;margin-bottom:7px}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-stats strong{display:block;font-size:19px;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-negative{color:var(--danger)}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-actions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-actions button{min-height:42px;font-size:13px}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-entry{padding:14px 0;border-top:1px solid var(--line);font-size:13px;line-height:1.5;overflow-wrap:anywhere}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-entry p{margin:5px 0}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-entry small{color:var(--muted)}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-cancelled{opacity:.65}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-period-chart{border-top:1px solid var(--line);padding:12px 0;margin-top:10px}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-chart-label{display:flex;justify-content:space-between;gap:8px;font-size:12px;margin:8px 0 4px}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-track{height:9px;background:var(--panel2);border-radius:4px;overflow:hidden}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-track>span{display:block;height:100%}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-bar-sale{background:#239b79}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-bar-purchase{background:#7296d8}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-bar-expense{background:#d9a441}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-bar-loss{background:#d85d5d}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-table-scroll{width:100%;min-width:0;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-table-scroll table{min-width:720px!important;display:table!important;width:100%!important;border-collapse:collapse;table-layout:auto!important}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-table-scroll table tr{display:table-row!important}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-table-scroll table td:nth-child(n),:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-table-scroll table th:nth-child(n){display:table-cell!important;width:auto!important;white-space:nowrap!important;padding:8px!important;font-size:12px!important;text-align:right!important;background:transparent!important;color:var(--text)!important}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-table-scroll table td:first-child,:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-table-scroll table th:first-child{text-align:left!important}
+@media(max-width:640px){#relatorios>h2{font-size:19px}:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-stats{grid-template-columns:repeat(2,minmax(0,1fr))}:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-stats strong{font-size:16px}:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-period,:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-form-grid{grid-template-columns:1fr}:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .card{padding:12px}:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-actions button{flex:1 1 130px}.reports-tabs-v722 button{flex:1 1 140px;font-size:12px;padding:10px 7px}}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-load-sale-v724{margin:10px 0;padding:10px;border:1px solid var(--line);border-radius:9px;max-width:100%;min-width:0}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-load-sale-v724 label{margin:10px 0}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-load-sale-v724 input[type=checkbox]{display:inline-block;min-height:20px;width:20px;vertical-align:middle}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-load-sale-v724 button{min-height:44px;margin-top:10px;font-size:13px}
+
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-positive{color:var(--success)}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-bar-profit{background:#239b79}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-bar-deficit{background:#d85d5d}
+@media(max-width:640px){:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-stats>div:last-child:nth-child(odd){grid-column:1/-1}}
+
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-minimum-policy-v726{padding:12px;margin:14px 0;border:1px solid var(--line);border-radius:9px}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-minimum-policy-v726 label{max-width:420px;margin:12px 0}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-minimum-policy-v726 button{min-height:44px;font-size:13px}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-minimum-warning{border-left:3px solid var(--accent);background:var(--panel2);padding:10px;font-size:13px;line-height:1.5;color:var(--text)}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-minimum-met{color:var(--success)}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) #finStatsV722{grid-template-columns:repeat(4,minmax(0,1fr))}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-review-v735{color:var(--accent)}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) #finSaleChecksV735{margin:22px 0}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-sale-check-v735{border:1px solid var(--line);border-radius:10px;padding:12px;margin:12px 0;min-width:0}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-sale-check-v735 h4{font-size:16px;overflow-wrap:anywhere}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-sale-line-v735{display:flex;justify-content:space-between;align-items:baseline;gap:12px;border-bottom:1px solid var(--line);padding:9px 0;font-size:13px}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-sale-line-v735 span{min-width:0;overflow-wrap:anywhere}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-sale-line-v735 strong{flex-shrink:0;font-variant-numeric:tabular-nums}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-sale-closing-v735{margin:16px 0;padding-top:8px;border-top:2px solid var(--line)}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .fin-sale-check-v735 button{min-height:44px;margin-top:12px;font-size:13px}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) #finOtherTotalsV735{margin:16px 0}
+@media(max-width:760px){:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) #finStatsV722{grid-template-columns:repeat(2,minmax(0,1fr))}}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .trip-check-v741{display:flex;flex-direction:row;align-items:flex-start;gap:10px;margin:12px 0;padding:10px;border:1px solid var(--line);border-radius:8px;overflow-wrap:anywhere}
+:is(#financePanelV722,#sharedTripsV741,#cashPanelV759) .trip-check-v741 input{width:22px;min-width:22px;min-height:22px;height:22px;margin:2px 0}
+#tripSavedV741{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}#tripSavedV741 h4{width:100%}#tripSavedV741 button{max-width:100%;white-space:normal;overflow-wrap:anywhere;min-height:44px}
+
+#carregamentos [hidden],#sharedTripsV741 [hidden]{display:none!important}
+.trip-toolbar-v742{padding:12px 0;border-bottom:1px solid var(--line);margin-bottom:12px}.trip-toolbar-v742 .fin-actions{display:flex;flex-wrap:wrap;gap:8px}.trip-toolbar-v742 button{min-height:44px;white-space:normal}.trip-toolbar-v742 .note{font-size:13px;line-height:1.5}
+.trip-list-selector-v742{display:none}.trip-list-row-v742{min-width:0}.trip-selecting-v742 .trip-list-row-v742{display:grid;grid-template-columns:36px minmax(0,1fr);gap:6px;align-items:center}.trip-selecting-v742 .trip-list-row-v742>.v408-destino-linha{grid-column:2}.trip-selecting-v742 .trip-list-selector-v742{display:flex;align-items:center;justify-content:center;grid-column:1;grid-row:1;min-height:44px;margin-top:7px}.trip-list-selector-v742 input{width:24px;height:24px;margin:0;accent-color:var(--accent)}
+@media(max-width:640px){.trip-toolbar-v742 .fin-actions button{flex:1 1 140px}.trip-toolbar-v742{font-size:13px}}
+
+#cashPanelV759 .cash-row-v759{border-top:1px solid var(--line);padding:12px 0;font-size:14px;overflow-wrap:anywhere}#cashPanelV759 .cash-row-v759 p{margin:5px 0}#cashPanelV759 .cash-row-v759 button{margin-top:8px}#cashPanelV759 .fin-stats{grid-template-columns:repeat(4,minmax(0,1fr))}@media(max-width:900px){#cashPanelV759 .fin-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* V760: a desktop dashboard uses width instead of shrinking the whole application. */
+@media screen and (min-width:1100px){
+ #relatorios>h2{font-size:20px;margin:2px 0 8px}
+ #relatorios .reports-tabs-v722{margin:4px 0 10px;gap:8px}
+ #relatorios .reports-tabs-v722 button{min-height:34px}
+ #relatorios #stockChartsV720{padding:12px!important;margin-bottom:10px}
+ #stockChartsV720>summary{font-size:16px;min-height:26px;line-height:1.4}
+ #stockChartsV720 .sc-intro{margin:4px 0 8px;gap:8px;flex-wrap:nowrap}
+ #stockChartsV720 .sc-intro p{font-size:13px}
+ #stockChartsV720 .sc-intro button{min-height:32px;flex:0 0 auto}
+ #stockChartsV720 .sc-filters{grid-template-columns:minmax(86px,.8fr) minmax(100px,1fr) minmax(150px,1.5fr) repeat(2,minmax(120px,1fr)) minmax(90px,.8fr);gap:8px}
+ #stockChartsV720 .sc-filters label{gap:3px;margin:0;font-size:12px}
+ #stockChartsV720 .sc-filters :is(input,select){min-height:34px;padding:7px 8px}
+ #stockChartsV720 #scSyncV720{margin:5px 0;font-size:12px}
+ #stockChartsV720 #scResultsV720{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:12px;align-items:start}
+ #stockChartsV720 #scResultsV720[hidden]{display:none!important}
+ #stockChartsV720 .sc-stats{grid-column:1/-1;margin:3px 0 0;gap:10px}
+ #stockChartsV720 .sc-stats>div{padding:10px 12px}
+ #stockChartsV720 .sc-stats small{margin-bottom:4px}
+ #stockChartsV720 .sc-stats strong{font-size:21px}
+ #stockChartsV720 .sc-section{margin:0;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--panel2)}
+ #stockChartsV720 .sc-section h3{font-size:16px;margin-bottom:7px}
+ #stockChartsV720 .sc-section .note{line-height:1.35;margin:5px 0}
+ #stockChartsV720 .sc-legend{margin:6px 0;gap:12px}
+ #stockChartsV720 .sc-chart-scroll{overflow-x:hidden}
+ #stockChartsV720 .sc-chart-scroll svg{min-width:0!important;max-width:100%;width:100%;height:auto}
+ #stockChartsV720 #scInventoryV720{max-height:260px;overflow:auto;scrollbar-gutter:stable;padding-right:6px}
+ #stockChartsV720 .sc-stock-row{margin:10px 0}
+ #stockChartsV720 .sc-number-details{margin:8px 0 0;padding:7px 9px}
+ #stockChartsV720 .sc-number-details>summary{min-height:26px;line-height:26px}
+ #financePanelV722 .fin-period{grid-template-columns:repeat(3,minmax(130px,1fr)) auto;align-items:end;margin:8px 0}
+ #financePanelV722 .fin-period label{gap:3px}
+ #financePanelV722 #finStatsV722{grid-template-columns:repeat(4,minmax(0,1fr));margin:8px 0}
+ #financePanelV722 #finStatsV722>div{padding:10px 12px}
+ #financePanelV722 #finStatsV722 strong{font-size:20px}
+ #financePanelV722 #finPendingV722{margin:6px 0 10px}
+ #financePanelV722 .dashboard-charts-v760{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:12px;align-items:start;margin:10px 0 14px}
+ #financePanelV722 .dashboard-charts-v760>details{min-width:0;padding:12px;background:var(--panel2);border:1px solid var(--line);border-radius:10px}
+ #financePanelV722 .dashboard-charts-v760>details>summary{font-size:15px;min-height:28px}
+ #financePanelV722 .dashboard-charts-v760 #finChartV722{max-height:360px;overflow:auto;scrollbar-gutter:stable}
+ #financePanelV722 .dashboard-charts-v760 #finOtherStatsV735{grid-template-columns:repeat(2,minmax(0,1fr));margin:8px 0}
+ #financePanelV722 .fin-period-chart{padding:8px 0;margin-top:6px}
+ #financePanelV722 .fin-chart-label{margin:5px 0 3px}
+ #financePanelV722 .dashboard-settings-v760{margin-top:12px;border-top:1px solid var(--line);padding-top:8px}
+ #cashPanelV759:not([hidden]){display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:12px;align-items:start}
+ #cashPanelV759>.card:first-child{grid-column:1/-1}
+ #cashPanelV759>.card{min-width:0}
+ #cashPanelV759>.card:first-child .fin-period{grid-template-columns:repeat(2,minmax(140px,1fr)) auto;align-items:end;margin:8px 0}
+ #cashPanelV759 #cashStatsV759{grid-template-columns:repeat(4,minmax(0,1fr));margin:8px 0}
+}
+@media screen and (min-width:1100px){
+ #relatorios #stockChartsV720{position:relative}
+ #stockChartsV720>summary{padding-right:160px;min-height:34px}
+ #stockChartsV720 .sc-intro{position:absolute;top:10px;right:12px;margin:0}
+ #stockChartsV720 .sc-intro p{display:none}
+}
+
+/* Reports keep the navigation and sync status without the system logo. */
+@media screen{
+ body:has(#relatorios.tab.active)>header h1.marca-v474{display:none!important}
+}
+
+/* V812: compact report navigation; mobile lives in the existing fixed header. */
+@media screen{
+ #reportsViewBarV812{display:flex!important;flex-wrap:nowrap!important;gap:6px!important;margin:6px 0 10px!important;max-width:640px}
+ #reportsViewBarV812>button{flex:1 1 0!important;min-width:0!important;min-height:40px!important;padding:8px 6px!important;margin:0!important;font-size:12px!important;line-height:1.2!important;white-space:normal!important;border-radius:9px!important}
+ #reportsViewBarV812 [hidden]{display:none!important}
+}
+@media screen and (max-width:760px){
+ body>header>#reportsDockV815.reports-docked-v812{width:100%!important;max-width:none!important;margin:7px 0 0!important;padding-top:7px;border-top:1px solid var(--line);box-sizing:border-box}
+ body>header>#reportsDockV815.reports-docked-v812 #reportsViewBarV812>button{min-height:38px!important}
+}
+@media print{#reportsViewBarV812{display:none!important}}
+
+/* V815: title travels with the selectors; labels have a lighter weight and tone. */
+@media screen{
+ #reportsDockV815{max-width:640px;margin:4px 0 10px}
+ #reportsDockV815>h2{font-size:18px;line-height:1.25;margin:0 0 6px;font-weight:600}
+ html body #reportsViewBarV812>button{font-weight:500!important;text-shadow:none!important;color:var(--muted,#bcc9c1)!important}
+ html body #reportsViewBarV812>button[aria-pressed="true"]{color:#314033!important}
+}
+@media screen and (max-width:760px){
+ body>header>#reportsDockV815.reports-docked-v812>h2{font-size:16px;margin:0 0 6px}
+ body>header>#reportsDockV815.reports-docked-v812 #reportsViewBarV812{margin:0!important}
+}
+
+/* V817: trip creation and saved trips stay with the mobile load header. */
+#tripToolbarDockV817[hidden]{display:none!important}
+@media screen and (max-width:760px){
+ #tripToolbarDockV817{margin-top:7px;padding-top:7px;border-top:1px solid var(--line);width:100%;box-sizing:border-box}
+ #tripToolbarDockV817>.fin-actions{display:flex;flex-wrap:nowrap;gap:7px;margin:0}
+ html body #tripToolbarDockV817 button{flex:1 1 0;min-width:0;min-height:40px;margin:0;padding:7px 8px;font-size:12px;line-height:1.2;font-weight:500;text-shadow:none;white-space:normal}
+ #tripToolbarDockV817 [hidden]{display:none!important}
+ body.trip-toolbar-fixed-v817 #carregamentos .trip-toolbar-v742{padding:0;border:0;margin:0}
+}
+@media print{#tripToolbarDockV817{display:none!important}}

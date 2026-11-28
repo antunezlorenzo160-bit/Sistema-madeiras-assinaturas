@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Assinar nota promissória</title>
+  <style>
+    body{margin:0;background:#edf2ee;color:#16231b;font:16px/1.45 system-ui,sans-serif}
+    main{max-width:760px;margin:auto;padding:16px}
+    h1{font-size:1.5rem}
+    .signature-dialog{box-sizing:border-box;width:min(calc(100% - 24px),460px);max-height:calc(100dvh - 24px);overflow:auto;padding:16px;border:1px solid #355845;border-radius:12px;color:#16231b}
+    .signature-dialog::backdrop{background:rgba(11,25,17,.56)}
+    .signature-dialog h2{margin:0 0 4px;font-size:1.2rem}
+    .signature-dialog p{margin:0 0 8px}
+    .signature-form{margin:0}
+    .signature-area{position:relative;width:min(100%,48dvh);margin:0 auto 12px;outline:1px solid #355845;border-radius:6px;background:#fff}
+    .signature-area::after{content:"";position:absolute;top:64%;left:6%;right:6%;border-top:1px dashed #788b7e;pointer-events:none}
+    canvas{display:block;width:100%;height:auto;touch-action:none;user-select:none}
+    button{font:inherit;padding:10px 14px;border:1px solid #154423;border-radius:6px;color:#154423;background:white;cursor:pointer}
+    button[type=submit]{background:#154423;color:white}
+    form{margin:16px 0}
+    .actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+    [hidden]{display:none!important}
+  </style>
+  <script type="module" src="./app.mjs"></script>
+</head>
+<body>
+  <main>
+    <h1>Assinar nota promissória</h1>
+    <div id="documento"></div>
+    <button type="button" id="abrir-assinatura" hidden>Assinar promissória</button>
+    <dialog class="signature-dialog" aria-labelledby="titulo-assinatura">
+      <form class="signature-form">
+        <h2 id="titulo-assinatura">Desenhe sua assinatura</h2>
+        <p>Use a linha como guia.</p>
+        <div class="signature-area"><canvas id="assinatura" aria-label="Área para desenhar a assinatura" width="480" height="600"></canvas></div>
+        <label><input type="checkbox" required> Li e concordo com a promissória.</label>
+        <div class="actions">
+          <button type="button" id="fechar-assinatura">Voltar ao documento</button>
+          <button type="button" id="limpar">Limpar</button>
+          <button type="submit">Confirmar assinatura</button>
+        </div>
+        <p id="status-assinatura" role="status"></p>
+      </form>
+    </dialog>
+    <p id="status" role="status">Carregando promissória…</p>
+    <button type="button" id="salvar" hidden>Salvar PDF assinado</button>
+  </main>
+</body>
+</html>

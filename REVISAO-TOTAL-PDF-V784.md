@@ -1,0 +1,7 @@
+## Total na última linha da tabela do resumo V784 — 17/11
+
+Usuário mostrou PDF do Resumo dos lançamentos, com grupo Itaúba2,5cm/volume0,7955m³, pedindo total de cada medida na última linha. Pergunta opcional enviada para distinguir espessura/comprimento/medida completa; enquanto sem resposta, adotado e comunicado agrupamento já visível no PDF por espécie/espessura. Não altera agrupamento, ordem ou itens.
+
+Compactação antes descartava a linha de resumo de espessura da tabela e a guardava só no rodapé geral. Agora preserva seu total calculado como última linha da tabela do grupo, rotulada Volume total, com número na coluna de volume. Usa exatamente o texto do total existente, sem recalcular a soma de linhas arredondadas. Paginador reserva espaço para o total e marca último fragmento, imprimindo-o uma única vez mesmo em duas colunas/múltiplas páginas. CSS específico evita larguras herdadas em célula com colspan e destaca o total. Sem novos totais dos pedidos incluídos ou alteração de seu formato; só grupos com footer fornecido ganham linha.
+
+Validação:4suítes passaram (total do resumo, tabelas compactas, impressão de pedidos e UI de documento), build38scripts válidos. Teste com80linhas preserva todas, total uma vez por grupo no último fragmento. Integração do clone da calculadora conserva total fonte0,7955mesmo quando as linhas exibidas somariam0,7954. Sem mudança em estoque/preços/dados salvos. Sem inspeção nativa de PDF Android; somente prévia12, produção inalterada.

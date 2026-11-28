@@ -1,0 +1,48 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {normalizeLogLabourRowsV804,normalizeLogLabourV804,logLabourPaidV804} from '../public/log-labour.mjs';
+import {prepareLogLabourV804,confirmLogLabourV804,receiveLogLabourV804,cancelLogLabourV804,listLogLabourV804,logLabourRecordsV804} from '../Netlify/Funtions/lib/log-labour.mjs';
+import {financeCollectionPath,saveFinanceEntry,cancelFinanceEntry,listFinanceEntries} from '../Netlify/Funtions/lib/company-finance.mjs';
+import {readCashBook,saveCashBook,cashCollectionV759} from '../Netlify/Funtions/lib/cash-book.mjs';
+import {aggregateFinance} from '../public/company-finance.mjs';import {assessMinimumProfitPeriod} from '../public/minimum-profit.mjs';
+import {billingAccessWindow,BILLING_ACCESS_DAY} from '../public/billing-access.mjs';import {financeDbV804} from './fixtures/finance-db.mjs';
+const now=Date.UTC(2026,10,19,12),id='8a58eaf9-6084-4bb0-b68e-062fcf477f4b',id2='a2d00244-a75c-44a4-aa30-bd78176a744d',lineId='b28dedf2-646b-4981-b7ae-0de09b5ed6bd';
+const row=(extra={})=>({id:lineId,especie:'Pinus',diametro:30,comprimento:6,quantidade:1,precoMaoObra:100,formula:'diametro_quadrado',...extra});
+const config=(extra={})=>({companyId:'tenant',id,date:'2026-11-19',client:'Marlon',description:'Mão de obra de toras',reference:'Pedido 1',lines:[row()],payment:{mode:'credit',dueDate:'2026-11-30'},...extra});
+function setup(rows=[row()]){return financeDbV804(rows.map(r=>['empresas/tenant/dados/sm2_servicos/registros/cubagem_toras_linha_'+r.id,{...r,ativo:true}]));}
+test('group rounding and both formulas agree with cubage; normalization is canonical and never trusts a supplied total',()=>{
+ assert.equal(normalizeLogLabourV804(config()).totalCents,5400);assert.equal(normalizeLogLabourV804(config({lines:[row({formula:'cilindrica'})]})).totalCents,4241);
+ const lines=[row({id:'first',quantidade:1,precoMaoObra:0.01,diametro:10,comprimento:1}),row({id:'second',quantidade:1,precoMaoObra:0.01,diametro:10,comprimento:1})];assert.throws(()=>normalizeLogLabourRowsV804(lines),/limite/);
+ const a=row({id:'a',quantidade:3}),b=row({id:'b',diametro:20});assert.deepEqual(normalizeLogLabourRowsV804([a,b]),normalizeLogLabourRowsV804([b,a]));const before=JSON.stringify([a,b]);normalizeLogLabourRowsV804([a,b]);assert.equal(JSON.stringify([a,b]),before);
+ for(const invalid of [config({totalCents:1}),config({client:''}),config({lines:[row({precoMaoObra:0})]}),config({date:'2026-02-30'}),config({lines:[row(),row()]}),config({payment:{mode:'partial',dueDate:'2026-11-30',paidDate:'2026-11-19',paidCents:99999}})])assert.throws(()=>normalizeLogLabourV804(invalid));
+});
+test('credit service enters finance once, has no cash until received and cannot be duplicated under another ID',async()=>{
+ const s=setup(),before=s.records.get('empresas/tenant/dados/sm2_servicos/registros/cubagem_toras_linha_'+lineId),result=await confirmLogLabourV804(s.db,s.identity,config(),now);
+ assert.equal(result.receipt.totalCents,5400);assert.equal(logLabourPaidV804(result.receipt),0);assert.equal(s.records.get(financeCollectionPath('tenant')+'/'+result.receipt.entryId).type,'sale');assert(!s.writes.some(path=>path.startsWith(cashCollectionV759('tenant')+'/')));assert(!s.writes.some(path=>path.includes('/dados/')));assert.deepEqual(s.records.get('empresas/tenant/dados/sm2_servicos/registros/cubagem_toras_linha_'+lineId),before);
+ const n=s.writes.length;assert((await confirmLogLabourV804(s.db,s.identity,config(),now+1)).repeated);assert.equal(s.writes.length,n);await assert.rejects(()=>confirmLogLabourV804(s.db,s.identity,config({id:id2}),now),/outro serviço/);assert.equal(s.writes.length,n);
+ const prepared=await prepareLogLabourV804(s.db,s.identity,{companyId:'tenant',lineIds:[lineId]},now);assert.equal(prepared.service,null);assert.deepEqual(prepared.claimed,[lineId]);
+ const entries=await listFinanceEntries(s.db,s.identity,{from:'2026-11-01',to:'2026-11-30'},now);assert.equal(entries.entries.length,1);const report=aggregateFinance(entries.entries,{from:'2026-11-01',to:'2026-11-30'});assert.equal(report.total.sale,5400);assert.equal(report.total.cost,0);assert.equal(report.total.result,5400);
+});
+test('cash confirmation and successive partial receipts create exactly one cash entry for each payment; overpayment/replay conflict is rejected',async()=>{
+ const s=setup(),base=await confirmLogLabourV804(s.db,s.identity,config(),now);let receipt=base.receipt;
+ for(let n=0;n<3;n++){const paymentId=[id,id2,lineId][n],input={companyId:'tenant',id,revision:receipt.revision,paymentId,date:'2026-11-19',amountCents:1800};receipt=(await receiveLogLabourV804(s.db,s.identity,input,now+n)).receipt;const count=s.writes.length;assert((await receiveLogLabourV804(s.db,s.identity,input,now+n)).repeated);assert.equal(s.writes.length,count);}
+ assert.equal(logLabourPaidV804(receipt),5400);assert.equal(receipt.totalCents,5400);await assert.rejects(()=>receiveLogLabourV804(s.db,s.identity,{companyId:'tenant',id,revision:receipt.revision,paymentId:'27fb9f96-c3ce-4ad7-bd83-b3dedc53300d',date:'2026-11-19',amountCents:1},now),/saldo/);
+ const cash=await readCashBook(s.db,s.identity,{from:'2026-11-01',to:'2026-11-30'},now);assert.equal(cash.report.inCents,5400);assert.equal(cash.report.rows.length,3);assert(cash.report.rows.every(r=>r.source.type==='log-labour-payment'));
+ const received=cash.report.rows[0];await assert.rejects(()=>saveCashBook(s.db,s.identity,{companyId:'tenant',action:'cancel',entry:{id:received.id,revision:1}},now),/vinculado/);
+ const entry=s.records.get(financeCollectionPath('tenant')+'/'+receipt.entryId);await assert.rejects(()=>saveFinanceEntry(s.db,s.identity,{id:entry.id,revision:entry.revision,type:'sale',date:entry.date,description:entry.description,partner:entry.partner,reference:entry.reference,category:entry.category,amountCents:1,costCents:0},now),/mão de obra/);await assert.rejects(()=>cancelFinanceEntry(s.db,s.identity,{id:entry.id,revision:entry.revision},now),/mão de obra/);
+ const cancelled=await cancelLogLabourV804(s.db,s.identity,{companyId:'tenant',id,revision:receipt.revision},now);assert.equal(cancelled.receipt.status,'cancelled');assert.equal((await readCashBook(s.db,s.identity,{from:'2026-11-01',to:'2026-11-30'},now)).report.inCents,5400);assert((await cancelLogLabourV804(s.db,s.identity,{companyId:'tenant',id,revision:receipt.revision},now)).repeated);
+});
+test('instant or partial receipt is atomic with revenue; dates/amounts and row changes are validated server-side',async()=>{
+ const s=setup(),input=config({payment:{mode:'cash',paidDate:'2026-11-19'}}),result=await confirmLogLabourV804(s.db,s.identity,input,now);assert.equal(logLabourPaidV804(result.receipt),5400);assert.equal((await readCashBook(s.db,s.identity,{from:'2026-11-01',to:'2026-11-30'},now)).report.inCents,5400);
+ const partial=setup();assert.equal(logLabourPaidV804((await confirmLogLabourV804(partial.db,partial.identity,config({payment:{mode:'partial',dueDate:'2026-11-30',paidDate:'2026-11-19',paidCents:1000}}),now)).receipt),1000);
+ for(const change of [r=>r.precoMaoObra=101,r=>r.ativo=false,r=>r.formula='cilindrica']){const t=setup(),r=t.records.get('empresas/tenant/dados/sm2_servicos/registros/cubagem_toras_linha_'+lineId);change(r);await assert.rejects(()=>confirmLogLabourV804(t.db,t.identity,config(),now));assert.equal(t.writes.length,0);}
+ const future=setup();await assert.rejects(()=>confirmLogLabourV804(future.db,future.identity,config({payment:{mode:'cash',paidDate:'2026-11-20'}}),now),/futura/);assert.equal(future.writes.length,0);
+});
+test('ownership, verified email, billing, company and concurrent double registration are enforced transactionally',async()=>{
+ for(const change of [s=>s.identity.emailVerified=false,s=>s.identity.uid='employee',s=>s.records.set('empresas/tenant',{ownerUid:'other'}),s=>s.records.set('empresas/tenant/acesso/plano',billingAccessWindow(now-6*BILLING_ACCESS_DAY))]){const s=setup();change(s);await assert.rejects(()=>confirmLogLabourV804(s.db,s.identity,config(),now));assert.equal(s.writes.length,0);}
+ const mismatch=setup();await assert.rejects(()=>confirmLogLabourV804(mismatch.db,mismatch.identity,config({companyId:'other'}),now));assert.equal(mismatch.writes.length,0);
+ const concurrent=setup(),results=await Promise.allSettled([confirmLogLabourV804(concurrent.db,concurrent.identity,config(),now),confirmLogLabourV804(concurrent.db,concurrent.identity,config({id:id2}),now)]);assert.equal(results.filter(r=>r.status==='fulfilled').length,1);assert.equal([...concurrent.records.keys()].filter(k=>k.startsWith(logLabourRecordsV804('tenant')+'/')&&!k.slice((logLabourRecordsV804('tenant')+'/').length).includes('/')).length,1);
+});
+test('retry remains idempotent after source list was cleared, and service revenue cannot mask low wood margin',async()=>{
+ const s=setup();const receipt=(await confirmLogLabourV804(s.db,s.identity,config(),now)).receipt;s.records.delete('empresas/tenant/dados/sm2_servicos/registros/cubagem_toras_linha_'+lineId);assert((await confirmLogLabourV804(s.db,s.identity,config(),now)).repeated);assert.equal((await listLogLabourV804(s.db,s.identity,{from:'2026-11-01',to:'2026-11-30'},now)).receipts.length,1);
+ const service=s.records.get(financeCollectionPath('tenant')+'/'+receipt.entryId),wood={type:'sale',status:'active',amountCents:100,costCents:100,date:'2026-11-19'},entries=[service,wood],total=aggregateFinance(entries,{from:'2026-11-01',to:'2026-11-30'}).total,minimum=assessMinimumProfitPeriod(entries,total,{minimumBasisPoints:1000});assert.equal(minimum.saleCount,1);assert.equal(minimum.belowCount,1);assert.equal(minimum.serviceCents,5400);assert.equal(minimum.periodBelow,true);
+});

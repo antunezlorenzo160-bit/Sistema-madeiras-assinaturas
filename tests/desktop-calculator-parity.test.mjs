@@ -1,4 +1,5 @@
 import {test} from 'node:test';
+import {isLinearTotalV744,linearPieceTextV744} from '../public/linear-total.mjs';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
@@ -6,7 +7,7 @@ import {applyDesktopCalculatorParity} from '../scripts/desktop-calculator-parity
 const html=readFileSync(new URL('../public/index.html',import.meta.url),'utf8'),tail=html.slice(html.indexOf('const TEMPLATE=')+15);let end=1;for(;end<tail.length;end++){if(tail[end]==='\\'){end++;continue}if(tail[end]==='"'){end++;break}}
 const app=applyDesktopCalculatorParity(JSON.parse(tail.slice(0,end)));
 const escape=s=>String(s).replaceAll('<','&lt;').replaceAll('>','&gt;');
-const c={agruparItensMedida:arr=>arr.map(x=>({...x,_ids:[x.id]})),esc:escape,numCompOrc:Number,num2:x=>Number(x).toFixed(2),moeda:x=>'R$'+Number(x).toFixed(2),servicosLinearTexto:x=>x.encaixe?'Encaixe 10%':'',botaoOpcaoOrc:(ids,campo,ativo)=>`<button data-id="${ids}" data-field="${campo}" aria-pressed="${ativo}">CMDP</button>`};vm.createContext(c);
+const c={isLinearTotalV744,linearPieceTextV744,agruparItensMedida:arr=>arr.map(x=>({...x,_ids:[x.id]})),esc:escape,numCompOrc:Number,num2:x=>Number(x).toFixed(2),moeda:x=>'R$'+Number(x).toFixed(2),servicosLinearTexto:x=>x.encaixe?'Encaixe 10%':'',botaoOpcaoOrc:(ids,campo,ativo)=>`<button data-id="${ids}" data-field="${campo}" aria-pressed="${ativo}">CMDP</button>`};vm.createContext(c);
 vm.runInContext(app.slice(app.indexOf('function pcPlanilhaLinearHtml('),app.indexOf('function pcPlanilhaHtml(')),c);
 const rows=[{id:'L1',madeira:'Pinus',produto:'<Ripa>',tipoMedida:'linear',quantidade:2,comprimento:3.1,volume:6.2,comprimentoCobrado:3.5,acrescimoComprimento:.4,compensarPerda:true,encaixe:true,encaixePercentual:10,valor:77},{id:'M3',tipoMedida:'m3',valor:999}];
 test('desktop quotation displays real and billed lengths, service snapshots and CMDP toggle',()=>{
