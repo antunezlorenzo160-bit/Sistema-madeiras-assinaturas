@@ -167,6 +167,8 @@ export function applyPendingPreview(html){
  app=applyCompactStorageV778(app);
  app=applyDurableRecordStorageV779(app);
  app=applyPacketBatchV777(app);
+ replace("    const nome=nomeClienteCargaV407(itens);\n    const totais=[r.m3", "    const totais=[r.m3");
+ replace("gerarPdfBloco(doc,'Carregamento original — '+nome+(totais?' • '+totais:''))","gerarPdfBloco(doc,'Carregamento'+(totais?' · '+totais:''))");
  app=applyOrderDocumentBuildV767(app);
  replace('${orderDocButtonV767(gid)}','${orderDocButtonV767(gid)}${podeCopia&&finOwnerV722()?promissoriaButton(gid):""}');
  // The load's customer, pricing and transport helpers are private to this closure.
