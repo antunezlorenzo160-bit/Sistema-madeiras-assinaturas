@@ -1,20 +1,9 @@
-import test from 'node:test';import assert from 'node:assert/strict';import {compactPrintClone,simplifyCalculatorTotalsV788,simplifyCalculatorCloneV788,renderCompactPages} from '../public/compact-documents.mjs';
-test('one footer keeps length volumes, folds matching species/thickness totals and preserves unique physical metrics',()=>{
- const groups=[{species:'Garapeira',totals:['Garapeira — 5 cm × 5,5 m: 8,1950 m³','Garapeira — 5 cm × 5 m: 2,3900 m³','Garapeira — Total da espécie: 10,5850 m³'],speciesVolume:'10,5850 m³'},{species:'eucalipto',totals:['eucalipto — 3,0 m: 96,00 m','eucalipto — Total da espécie: 96,00 m'],speciesVolume:'96,00 m'}];
- simplifyCalculatorTotalsV788(groups,['Garapeira — Esp. 5 cm: 190 pç · 10,5850 m³ · Área de face: 211,7000 m² · Metros lineares: 1.030,50 m · Peso: 6.351,0 kg','eucalipto — Ripão 5x5: 32 pç · 96,00 m · Metros lineares: 96,00 m · Peso: não informado']);
- assert.equal(groups[0].totals.length,3);assert.match(groups[0].totals[2],/10,5850 m³ · 190 pç · Área de face: 211,7000 m² · Metros lineares: 1.030,50 m · Peso: 6.351,0 kg/);
- assert.deepEqual(groups[1].totals,['eucalipto — 3,0 m: 96,00 m · 32 pç']);assert(groups.every(g=>g.totalsHeading==='Totais'));
-});
-test('several thicknesses retain distinct totals and full species aggregate without assigning same-valued metrics to another thickness',()=>{
- const groups=[{species:'Garapeira',totals:['Garapeira — 5 cm × 3 m: 1,0000 m³','Garapeira — 10 cm × 3 m: 1,0000 m³','Garapeira — Total da espécie: 2,0000 m³'],speciesVolume:'2,0000 m³'}];
- simplifyCalculatorTotalsV788(groups,['Garapeira — Esp. 5 cm: 10 pç · 1,0000 m³ · Peso: 500,0 kg','Garapeira — Esp. 10 cm: 5 pç · 1,0000 m³ · Peso: 600,0 kg']);
- assert.match(groups[0].totals[0],/5 cm × 3 m: 1,0000 m³ · 10 pç · Peso: 500,0 kg/);assert.match(groups[0].totals[1],/10 cm × 3 m: 1,0000 m³ · 5 pç · Peso: 600,0 kg/);assert.equal(groups[0].totals.at(-1),'Garapeira — Total da espécie: 2,0000 m³');
-});
-test('calculator clone removes duplicate title, old footer, species cards and statistic boxes but retains unique counts in one short line',()=>{
+import test from 'node:test';import assert from 'node:assert/strict';import {compactPrintClone,simplifyCalculatorCloneV788,renderCompactPages} from '../public/compact-documents.mjs';
+test('calculator clone removes duplicate title, old footer, species cards and statistic boxes but retains the three summary fields',()=>{
  const node=text=>({textContent:text,removed:false,remove(){this.removed=true;}}),title=node('Resumo dos lançamentos'),species=node('Garapeira'),old=node('old totals'),cards=node('cards');let meta;
  const stats=Object.assign(node(),{before:node=>meta=node,querySelectorAll:()=>[['Lançamentos / unidades','36'],['Volume total','10,5850 m³ · 96,00 m'],['Valor total','R$ 15.000,00'],['Tipos de lançamento','19']].map(([label,value])=>({querySelector:selector=>({textContent:selector==='small'?label:value})}))});
  const root={ownerDocument:{createElement:()=>({})},querySelector:selector=>selector==='.stats'?stats:selector==='#summaryFooterV718'?old:selector==='#resumoEspeciesCalcV581'?cards:null,querySelectorAll:selector=>selector==='h2,h3'?[title,species]:selector==='.stats'?[stats]:[]};
- simplifyCalculatorCloneV788(root);assert(title.removed);assert(!species.removed);assert(old.removed);assert(cards.removed);assert(stats.removed);assert.equal(meta.textContent,'Lançamentos / unidades: 36 · Tipos de lançamento: 19');
+ simplifyCalculatorCloneV788(root);assert(title.removed);assert(!species.removed);assert(old.removed);assert(cards.removed);assert(stats.removed);assert.equal(meta.textContent,'Lançamentos / unidades: 36 · Volume total: 10,5850 m³ · 96,00 m · Tipos de lançamento: 19');
 });
 class Element{constructor(tag){this.tag=tag;this.children=[];this.dataset={};}append(c){this.children.push(c);}insertRow(){const r=new Element('tr');r.insertCell=()=>{const c=new Element('td');r.append(c);return c;};this.append(r);return r;}createTHead(){const h=new Element('thead');this.append(h);return h;}createTBody(){const b=new Element('tbody');this.append(b);return b;}}
 test('short summary balances two columns in one page without losing reading order',()=>{

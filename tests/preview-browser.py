@@ -23,5 +23,9 @@ with sync_playwright() as p:
 server.shutdown()
 import fitz
 pdf=fitz.open(out/'compact77.pdf');assert len(pdf)==1,len(pdf)
-assert '15,4392' in ''.join(page.get_text() for page in pdf)
+text=''.join(page.get_text() for page in pdf)
+for field in ['Peças lançadas: 451','Volume total: 15,4392 m³','Tipos de lançamento: 77']:
+ assert field in text,text
+for removed in ['Área de face','Metros lineares','Peso:','123,0000']:
+ assert removed not in text,text
 print('Chromium: 77 linhas,451 peças,1página A4; original DOM e cópia preservados.')
