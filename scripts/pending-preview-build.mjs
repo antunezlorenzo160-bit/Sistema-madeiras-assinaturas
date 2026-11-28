@@ -77,6 +77,16 @@ export function applyPendingPreview(html){
  replace('orcamento.push(oi);','orcamento.push(attachPriceV710(oi,orcamento));\n      repriceBudgetV710();\n      Object.assign(oi,orcamento.find(i=>i.id===oi.id)||oi);');
  replace('function renderOrcamento(){\n  if(lotePacotesEmCurso)return;','function renderOrcamento(){\n  if(lotePacotesEmCurso)return;\n  repriceBudgetV710();\n  priceDocumentNoticeV710(orcamento,document.getElementById("orcamento"));');
  replace('function renderLancamentos(){\n  if(lotePacotesEmCurso)return;','function renderLancamentos(){\n  if(lotePacotesEmCurso)return;\n  repriceLoadsV710();\n  priceDocumentNoticeV710(typeof carregamentos!=="undefined"?carregamentos.filter(i=>i.grupoCargaId===sessaoCargaAtual&&i.cargaStatus==="montagem"):[],document.getElementById("resumoCalculadoraExport"));');
+ replace('function renderLancamentos(){',read('ui/calculator-block-edit.js')+'\nfunction renderLancamentos(){');
+ replace("  const mostrarValor=false; // valor removido do resumo da calculadora por pedido do usuário",`  const rowsByBlock=new Map();
+  for(const row of fonteResumo){
+    const chave=chaveBlocoResumoV598(row);
+    if(!rowsByBlock.has(chave))rowsByBlock.set(chave,[]);
+    rowsByBlock.get(chave).push(row);
+  }
+  const mostrarValor=false; // valor removido do resumo da calculadora por pedido do usuário`);
+ replace("${medidasBlocoResumo?' — '+esc(medidasBlocoResumo):''}","${medidasBlocoResumo?' — '+esc(medidasBlocoResumo):''}${resumoBlocoBotao(chaveBlocoResumo,rowsByBlock,destino)}");
+
  replace('    carregamentos.push({...salvo});\n    lancamentos.push({...salvo});','    const priced=attachPriceV710(salvo,carregamentos.filter(i=>i.grupoCargaId===salvo.grupoCargaId));\n    Object.assign(salvo,priceLoadServices(priced));\n    carregamentos.push({...salvo});\n    lancamentos.push({...salvo});\n    repriceLoadsV710();\n    Object.assign(salvo,carregamentos.find(i=>i.id===salvo.id)||salvo);');
  // The reusable-client listener lives outside V407's closure; use its own field schema.
  replace('for(const[k]of camposClienteV407){const campo=form.querySelector(', 'for(const[k]of camposClientesV492){const campo=form.querySelector(');
