@@ -58,7 +58,9 @@ function promissoriaLinkPanel(dialog, gid, prepare, onRecord){
     const payment=record?.payment;
     paymentForm.hidden=!record||!!payment;
     const matches=record?.matchingPayments??[];
-    linkPaymentForm.hidden=!!payment||!matches.length;
+    linkPaymentForm.hidden=!record||!!payment;
+    existingPayment.closest('label').hidden=!matches.length;
+    existingPayment.required=matches.length>0;
     existingPayment.replaceChildren(new Option('Selecione o recebimento',''),...matches.map(row=>
       new Option(vencimentoDaPromissoria(row.date)+' · '+valorPromissoria(row.amountCents)+' · ref. '+row.id.slice(-6),row.id)
     ));
@@ -136,8 +138,16 @@ function promissoriaLinkPanel(dialog, gid, prepare, onRecord){
     savePayment('confirm-payment',{date:paymentDate.value,acknowledged:true},
       'Confirma o recebimento de '+valorPromissoria(amount)+' em '+vencimentoDaPromissoria(paymentDate.value)+'? Prossiga somente se este valor ainda não foi lançado no caixa.');
   };
-  linkPaymentForm.onsubmit=event=>{
+  linkPaymentForm.onsubmit=async event=>{
     event.preventDefault();
+    if(!saved||saved.payment||busy||paying||company!==empresaV456||!finOwnerV722())return;
+    if(!saved.matchingPayments?.length){
+      const result=await load('owner-read');
+      if(!result||!dialog.open||result.payment)return;
+      if(result.matchingPayments?.length){existingPayment.focus();return;}
+      paymentStatus.textContent='Nenhum recebimento registrado para este carregamento com o valor desta promissória. Ela continua pendente.';
+      return;
+    }
     const receipt=saved?.matchingPayments?.find(row=>row.id===existingPayment.value);
     if(receipt)savePayment('link-payment',{paymentId:receipt.id},
       'Vincular o recebimento de '+valorPromissoria(receipt.amountCents)+' em '+vencimentoDaPromissoria(receipt.date)+' a esta promissória? O caixa fica com o lançamento existente.');
